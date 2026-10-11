@@ -94,8 +94,8 @@ def build(competition="Premier League", season="2015/2016"):
         with open(mp) as f:
             xg = json.load(f)
 
-    # Predictor: fit + validate on the showcase league
-    model, metrics = predictor.validate(competition, season)
+    # Predictor: fit + validate on the showcase league (with recency weighting)
+    model, metrics = predictor.validate(competition, season, half_life_days=90)
     teams = model["teams"]
     ratings = predictor.team_ratings(model)
     fixtures = _fixture_rows(model, teams, n=10)
@@ -122,6 +122,32 @@ def build(competition="Premier League", season="2015/2016"):
         for t, a, d in ratings[:12])
 
     live = _live_section()
+
+    # Optional xT section (if src/xt.py has been run)
+    xt_section = ""
+    xt_imgs = sorted(glob.glob(os.path.join(ROOT, "output", "xt_surface_*.png")))
+    xt_leaders = sorted(glob.glob(os.path.join(ROOT, "output", "xt_leaders_*.json")))
+    if xt_imgs:
+        import shutil
+        shutil.copy(xt_imgs[0], os.path.join(SITE_DIR, "assets"))
+        img_name = os.path.basename(xt_imgs[0])
+        lead_rows = ""
+        if xt_leaders:
+            with open(xt_leaders[0]) as f:
+                for l in json.load(f)[:10]:
+                    lead_rows += (f"<tr><td>{html.escape(l['player'])}</td>"
+                                  f"<td>{html.escape(l['team'])}</td>"
+                                  f"<td class=a>{l['xt_added']:+.2f}</td></tr>")
+        xt_section = f"""
+  <h2>Expected Threat — ball progression</h2>
+  <div class=grid>
+    <div class=card><h3>xT surface</h3>
+      <img style="width:100%;border-radius:8px" src="assets/{html.escape(img_name)}" alt="xT surface"></div>
+    <div class=card><h3>Top ball progressors (total xT added)</h3>
+      <table><thead><tr><th>Player</th><th>Team</th><th>xT</th></tr></thead>
+      <tbody>{lead_rows}</tbody></table></div>
+  </div>"""
+
     built = dt.datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
 
     doc = f"""<!doctype html><html lang=en><head><meta charset=utf-8>
@@ -167,6 +193,8 @@ a{{color:var(--accent)}}footer{{text-align:center;color:var(--muted);font-size:1
   <div class=card><table>
     <thead><tr><th>Team</th><th>Attack</th><th>Defence</th></tr></thead>
     <tbody>{rt_rows}</tbody></table></div>
+
+  {xt_section}
 
   <h2>Sample outputs</h2>
   <div class=gallery>

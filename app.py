@@ -134,7 +134,8 @@ _PRED_CACHE = {}
 def _get_predictor(competition, season):
     key = (competition, season)
     if key not in _PRED_CACHE:
-        model, metrics = predictor.validate(competition, season)
+        # 90-day half-life: recency weighting (recent form counts more)
+        model, metrics = predictor.validate(competition, season, half_life_days=90)
         _PRED_CACHE[key] = (model, metrics)
     return _PRED_CACHE[key]
 

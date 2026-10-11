@@ -57,7 +57,7 @@ def _dc_tau(i, j, lam, mu, rho):
     return 1.0
 
 
-def _neg_log_likelihood(params, teams, hi, ai, hg, ag):
+def _neg_log_likelihood(params, teams, hi, ai, hg, ag, w):
     n = len(teams)
     attack = params[:n]
     defence = params[n:2 * n]
@@ -71,14 +71,30 @@ def _neg_log_likelihood(params, teams, hi, ai, hg, ag):
     for k in range(len(hg)):
         tau = _dc_tau(hg[k], ag[k], lam[k], mu[k], rho)
         tau = max(tau, 1e-10)
-        ll += (np.log(tau)
-               + poisson.logpmf(hg[k], lam[k])
-               + poisson.logpmf(ag[k], mu[k]))
+        # w[k] = recency weight (1.0 with no decay); weights recent games more
+        ll += w[k] * (np.log(tau)
+                      + poisson.logpmf(hg[k], lam[k])
+                      + poisson.logpmf(ag[k], mu[k]))
     return -ll
 
 
-def fit(train):
-    """Fit Dixon-Coles on a training DataFrame of matches."""
+def _recency_weights(train, half_life_days):
+    """exp decay so recent matches count more. half_life_days=None → all 1.0."""
+    if not half_life_days:
+        return np.ones(len(train))
+    dates = pd.to_datetime(train["date"], errors="coerce")
+    ref = dates.max()
+    age = (ref - dates).dt.days.fillna(0).values
+    return np.power(0.5, age / float(half_life_days))
+
+
+def fit(train, half_life_days=None):
+    """Fit Dixon-Coles on a training DataFrame of matches.
+
+    half_life_days: if set, recent matches are weighted more heavily (recency
+    weighting), reflecting that team strength drifts over a season. A half-life
+    of ~120 days means a match ~4 months old counts half as much as today's.
+    """
     teams = sorted(set(train["home_team"]).union(train["away_team"]))
     idx = {t: i for i, t in enumerate(teams)}
     n = len(teams)
@@ -87,13 +103,14 @@ def fit(train):
     ai = train["away_team"].map(idx).values
     hg = train["home_score"].values
     ag = train["away_score"].values
+    w = _recency_weights(train, half_life_days)
 
     # init: attack 0, defence 0, home_adv 0.25, rho -0.1
     x0 = np.concatenate([np.zeros(n), np.zeros(n), [0.25], [-0.1]])
     # identifiability: mean attack = 0
     cons = [{"type": "eq", "fun": lambda p: np.sum(p[:n])}]
 
-    res = minimize(_neg_log_likelihood, x0, args=(teams, hi, ai, hg, ag),
+    res = minimize(_neg_log_likelihood, x0, args=(teams, hi, ai, hg, ag, w),
                    constraints=cons, method="SLSQP",
                    options={"maxiter": 200, "ftol": 1e-6})
 
@@ -164,7 +181,7 @@ def _rps(probs, outcome):
     return s / 2.0
 
 
-def validate(competition, season, train_frac=0.65):
+def validate(competition, season, train_frac=0.65, half_life_days=None):
     m = pd.read_parquet(MATCHES_PATH)
     df = m[(m["competition"] == competition) & (m["season"] == season)].copy()
     if df.empty:
@@ -173,7 +190,7 @@ def validate(competition, season, train_frac=0.65):
     split = int(len(df) * train_frac)
     train, test = df.iloc[:split], df.iloc[split:]
 
-    model = fit(train)
+    model = fit(train, half_life_days=half_life_days)
 
     # Base-rate baseline from the training set
     base = np.array([
@@ -209,6 +226,7 @@ def validate(competition, season, train_frac=0.65):
         "rps": round(rps / n, 4),
         "baseline_rps": round(base_rps / n, 4),
         "home_advantage": round(model["home_adv"], 3),
+        "half_life_days": half_life_days,
     }
     return model, metrics
 
