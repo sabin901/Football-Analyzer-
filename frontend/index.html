@@ -142,28 +142,120 @@ function Form({form}){
 }
 function Loading({label}){ return html`<div class="loading"><span class="spinner"></span>${label||'Loading…'}</div>`; }
 
+/* ---- inline SVG: actual vs expected points scatter ---- */
+function Scatter({table,onPick}){
+  const W=640,H=430,pad=48;
+  const xs=table.map(t=>t.xpts), ys=table.map(t=>t.pts);
+  const lo=Math.min(...xs,...ys)-3, hi=Math.max(...xs,...ys)+3;
+  const sx=v=>pad+(v-lo)/(hi-lo)*(W-pad*1.4);
+  const sy=v=>H-pad-(v-lo)/(hi-lo)*(H-pad*1.6);
+  const ticks=[]; for(let v=Math.ceil(lo/10)*10; v<hi; v+=10) ticks.push(v);
+  return html`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">
+    ${ticks.map(v=>html`<g>
+      <line x1=${sx(v)} y1=${sy(lo)} x2=${sx(v)} y2=${sy(hi)} stroke="#1b232e"/>
+      <line x1=${sx(lo)} y1=${sy(v)} x2=${sx(hi)} y2=${sy(v)} stroke="#1b232e"/>
+      <text x=${sx(v)} y=${H-pad+16} fill="#6b7686" font-size="10" text-anchor="middle">${v}</text>
+      <text x=${pad-10} y=${sy(v)+3} fill="#6b7686" font-size="10" text-anchor="end">${v}</text>
+    </g>`)}
+    <line x1=${sx(lo)} y1=${sy(lo)} x2=${sx(hi)} y2=${sy(hi)} stroke="#3a4553" stroke-dasharray="5 5"/>
+    <text x=${W-pad} y=${sy(hi)+14} fill="#6b7686" font-size="10" text-anchor="end">on the line = as expected</text>
+    <text x=${W/2} y=${H-10} fill="#93a0b1" font-size="11" text-anchor="middle">Expected points (xPts)</text>
+    <text x=14 y=${H/2} fill="#93a0b1" font-size="11" text-anchor="middle" transform="rotate(-90 14 ${H/2})">Actual points</text>
+    ${table.map(t=>{const over=t.pts>=t.xpts; return html`<g style="cursor:pointer" onClick=${()=>onPick&&onPick(t.team)}>
+      <title>${t.team}: ${t.pts} pts vs ${t.xpts} xPts (${t.xpts_diff>0?'+':''}${t.xpts_diff})</title>
+      <circle cx=${sx(t.xpts)} cy=${sy(t.pts)} r="5.5" fill=${over?'#46d19e':'#ff6b6b'} fill-opacity="0.85" stroke="#0b0e13" stroke-width="1"/>
+      <text x=${sx(t.xpts)+8} y=${sy(t.pts)+3} fill="#c3ccd8" font-size="9.5">${t.team.length>12?t.team.slice(0,11)+'…':t.team}</text>
+    </g>`;})}
+  </svg>`;
+}
+
+/* ---- inline SVG: cumulative points progression ---- */
+function PointsLine({log}){
+  const W=640,H=300,pad=40; const n=log.length;
+  const maxP=Math.max(log[n-1].cum_pts, log[n-1].cum_xpts||0)+2;
+  const sx=i=>pad+i/(n-1)*(W-pad*1.4);
+  const sy=v=>H-pad-v/maxP*(H-pad*1.5);
+  const path=(key)=>log.map((l,i)=>`${i?'L':'M'}${sx(i).toFixed(1)} ${sy(l[key]).toFixed(1)}`).join(' ');
+  const hasX=log[n-1].cum_xpts!=null;
+  return html`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">
+    ${[0,Math.round(maxP/2),Math.round(maxP)].map(v=>html`<g>
+      <line x1=${pad} y1=${sy(v)} x2=${W-pad*0.4} y2=${sy(v)} stroke="#1b232e"/>
+      <text x=${pad-8} y=${sy(v)+3} fill="#6b7686" font-size="10" text-anchor="end">${v}</text></g>`)}
+    ${hasX?html`<path d=${path('cum_xpts')} fill="none" stroke="#ffd34e" stroke-width="2" stroke-dasharray="4 4" opacity="0.9"/>`:null}
+    <path d=${path('cum_pts')} fill="none" stroke="#4ea1ff" stroke-width="2.5"/>
+    <text x=${W-pad} y=18 fill="#4ea1ff" font-size="11" text-anchor="end">actual points</text>
+    ${hasX?html`<text x=${W-pad} y=33 fill="#ffd34e" font-size="11" text-anchor="end">expected points</text>`:null}
+    <text x=${W/2} y=${H-6} fill="#93a0b1" font-size="11" text-anchor="middle">Matchday →</text>
+  </svg>`;
+}
+
+/* ---- team profile drill-down ---- */
+function TeamProfile({competition,season,team,onBack}){
+  const [d,setD]=useState(null); const [err,setErr]=useState("");
+  useEffect(()=>{ setD(null); get(`${API}/api/team?competition=${encodeURIComponent(competition)}&season=${encodeURIComponent(season)}&team=${encodeURIComponent(team)}`).then(setD).catch(e=>setErr(e.message)); },[team]);
+  if(err) return html`<div class="err">${err}</div>`;
+  if(!d) return html`<${Loading} label=${`Loading ${team}…`}/>`;
+  const s=d.summary, h=d.splits.home, a=d.splits.away;
+  return html`<div>
+    <div style="margin-bottom:14px"><button class="tab" onClick=${onBack}>← Back to table</button></div>
+    <div class="card">
+      <h2>${s.team} <span class="tag">${s.competition} ${s.season}</span></h2>
+      <div class="stat-grid">
+        <${Stat} value=${s.points} label="Points" cls="accent"/>
+        ${s.has_xpts?html`<${Stat} value=${s.xpts} label="Expected points" cls="gold"/>`:null}
+        ${s.has_xpts?html`<${Stat} value=${`${(s.points-s.xpts)>0?'+':''}${(s.points-s.xpts).toFixed(1)}`} label="Over / under" cls=${s.points>=s.xpts?'green':'red'}/>`:null}
+        <${Stat} value=${`${s.goals_for} / ${s.goals_against}`} label="Goals for / against"/>
+        <${Stat} value=${`${h.pts} / ${a.pts}`} label="Points home / away"/>
+      </div>
+      <h3 style="margin-top:8px">Points progression</h3>
+      <${PointsLine} log=${d.log}/>
+    </div>
+    <div class="two">
+      <div class="card"><h3>Home / away split</h3>
+        <table><thead><tr><th></th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>Pts</th></tr></thead>
+        <tbody>
+          <tr><td class="teamcell">Home</td><td class="num">${h.p}</td><td class="num g">${h.w}</td><td class="num mut">${h.d}</td><td class="num r">${h.l}</td><td class="num">${h.gf}</td><td class="num">${h.ga}</td><td class="num" style="font-weight:700">${h.pts}</td></tr>
+          <tr><td class="teamcell">Away</td><td class="num">${a.p}</td><td class="num g">${a.w}</td><td class="num mut">${a.d}</td><td class="num r">${a.l}</td><td class="num">${a.gf}</td><td class="num">${a.ga}</td><td class="num" style="font-weight:700">${a.pts}</td></tr>
+        </tbody></table>
+      </div>
+      <div class="card"><h3>Match log</h3>
+        <div style="max-height:300px;overflow:auto"><table>
+          <thead><tr><th>MD</th><th></th><th>Opponent</th><th>Score</th><th>R</th></tr></thead>
+          <tbody>${d.log.map(l=>html`<tr>
+            <td class="pos">${l.md}</td><td class="mut" style="font-size:11px">${l.venue}</td>
+            <td class="teamcell">${l.opponent}</td><td class="num">${l.gf}–${l.ga}</td>
+            <td><span class="fb ${l.result}" style="width:17px;height:17px">${l.result}</span></td></tr>`)}</tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>`;
+}
+
 /* ---------------- League Table ---------------- */
 function TableTab(){
   const [seasons,setSeasons]=useState([]); const [sel,setSel]=useState("");
   const [data,setData]=useState(null); const [loading,setLoading]=useState(false); const [err,setErr]=useState("");
+  const [team,setTeam]=useState(null);
   useEffect(()=>{ get(`${API}/api/predict/seasons`).then(s=>{setSeasons(s); if(s.length){const d=s.find(x=>x.label.startsWith('Premier')&&x.season.includes('2022'))||s[0]; setSel(d.competition+'|'+d.season);}}).catch(e=>setErr(e.message)); },[]);
-  useEffect(()=>{ if(!sel) return; const [c,s]=sel.split("|"); setLoading(true); setErr(""); setData(null);
+  useEffect(()=>{ if(!sel) return; const [c,s]=sel.split("|"); setLoading(true); setErr(""); setData(null); setTeam(null);
     get(`${API}/api/table?competition=${encodeURIComponent(c)}&season=${encodeURIComponent(s)}`).then(setData).catch(e=>setErr(e.message)).finally(()=>setLoading(false));
   },[sel]);
+  const [c,s]=(sel||"|").split("|");
   const maxAbs = data? Math.max(1,...data.table.map(t=>Math.abs(t.xpts_diff))):1;
   return html`
-  <div class="hero"><h1>League table</h1><p>Actual standings next to the model's <b>expected points (xPts)</b> — the gap reveals who's over- or under-performing their underlying quality, the way analytics departments read a season.</p></div>
+  <div class="hero"><h1>League table</h1><p>Actual standings next to the model's <b>expected points (xPts)</b> — the gap reveals who's over- or under-performing their underlying quality, the way analytics departments read a season. Click any team for its full profile.</p></div>
   <div class="card">
     <div class="controls"><div class="field"><label>Competition & season</label>
       <select value=${sel} onChange=${e=>setSel(e.target.value)}>
-        ${seasons.map(s=>html`<option value="${s.competition}|${s.season}">${s.label}</option>`)}
+        ${seasons.map(x=>html`<option value="${x.competition}|${x.season}">${x.label}</option>`)}
       </select></div></div>
   </div>
   ${err&&html`<div class="err">${err}</div>`}
   ${loading&&html`<${Loading} label="Building the table…"/>`}
-  ${data&&html`<div class="card">
+  ${data&&team&&html`<${TeamProfile} competition=${c} season=${s} team=${team} onBack=${()=>setTeam(null)}/>`}
+  ${data&&!team&&html`<div class="card">
     <h2>${data.competition} <span class="tag">${data.season}</span></h2>
-    <p class="sub">xPts = points the model expected from the same fixtures. Diff = actual − expected (green over-performing, red under).</p>
+    <p class="sub">xPts = points the model expected from the same fixtures. Diff = actual − expected (green over-performing, red under). Click a team to drill in.</p>
     <div style="overflow:auto">
     <table>
       <thead><tr>
@@ -174,7 +266,7 @@ function TableTab(){
       ${data.table.map(t=>{
         const cls = t.xpts_diff>0.5?'pos':(t.xpts_diff<-0.5?'neg':'zero');
         const w = Math.round(Math.abs(t.xpts_diff)/maxAbs*100);
-        return html`<tr>
+        return html`<tr style="cursor:pointer" onClick=${()=>setTeam(t.team)}>
           <td class="pos">${t.position}</td>
           <td class="teamcell">${t.team}</td>
           <td class="num mut">${t.played}</td><td class="num mut">${t.won}</td><td class="num mut">${t.draw}</td><td class="num mut">${t.lost}</td>
@@ -191,6 +283,11 @@ function TableTab(){
         </tr>`;})}
       </tbody>
     </table></div>
+  </div>`}
+  ${data&&!team&&data.has_xpts&&html`<div class="card">
+    <h2>Actual vs expected points</h2>
+    <p class="sub">Each dot is a team. Above the dashed line = over-performing the model (luck, finishing, game-management); below = under-performing (unlucky, wasteful). Click a dot for the team profile.</p>
+    <${Scatter} table=${data.table} onPick=${setTeam}/>
   </div>`}`;
 }
 
