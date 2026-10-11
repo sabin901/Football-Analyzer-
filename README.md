@@ -114,6 +114,7 @@ football-data.co.uk ─► src/live_api.py ──► odds CSVs (vs-market benchm
 Understat / FBref ──► src/sources.py   ──► deeper xG + stats                  [your machine]
 ```
 
+- `python src/import_results.py` — top-5 leagues × 23 seasons of results (**41,601 matches, 116 league-seasons** — 2002–2025) for broad predictor testing
 - `python src/ingest.py` — bulk import every shot from ~3,960 matches (resumable)
 - `python src/live_api.py sync` — live fixtures/results/standings (free key)
 - `python src/live_api.py odds E0 2324` — results + betting odds, no key

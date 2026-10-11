@@ -36,9 +36,30 @@ warnings.filterwarnings("ignore")
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(HERE, "..", "data")
-MATCHES_PATH = os.path.join(DATA_DIR, "matches.parquet")
+MATCHES_PATH = os.path.join(DATA_DIR, "matches.parquet")           # StatsBomb catalogue
+RESULTS_HISTORY = os.path.join(DATA_DIR, "results_history.parquet")  # top-5 leagues, many seasons
 MODEL_DIR = os.path.join(HERE, "..", "models")
 MAX_GOALS = 10
+
+
+def load_catalogue():
+    """Combined match catalogue: the big top-5-league history (many seasons)
+    plus any StatsBomb competition-seasons it doesn't already cover
+    (World Cups, WSL, etc.)."""
+    cols = ["competition", "season", "home_team", "away_team",
+            "home_score", "away_score", "date"]
+    frames = []
+    if os.path.exists(RESULTS_HISTORY):
+        frames.append(pd.read_parquet(RESULTS_HISTORY)[cols])
+    if os.path.exists(MATCHES_PATH):
+        sb = pd.read_parquet(MATCHES_PATH)[cols]
+        if frames:
+            have = set(map(tuple, frames[0][["competition", "season"]].drop_duplicates().values))
+            sb = sb[~sb.apply(lambda r: (r["competition"], r["season"]) in have, axis=1)]
+        frames.append(sb)
+    if not frames:
+        raise FileNotFoundError("No match catalogue found.")
+    return pd.concat(frames, ignore_index=True)
 
 
 # ---------------------------------------------------------------------------
@@ -182,7 +203,7 @@ def _rps(probs, outcome):
 
 
 def validate(competition, season, train_frac=0.65, half_life_days=None):
-    m = pd.read_parquet(MATCHES_PATH)
+    m = load_catalogue()
     df = m[(m["competition"] == competition) & (m["season"] == season)].copy()
     if df.empty:
         raise ValueError(f"No matches for {competition} {season}")

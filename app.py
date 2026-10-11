@@ -143,10 +143,9 @@ def _get_predictor(competition, season):
 @app.get("/api/predict/seasons")
 def predict_seasons():
     """Competition-seasons with enough matches to fit a predictor (league round-robins)."""
-    import pandas as pd
-    m = pd.read_parquet(predictor.MATCHES_PATH)
+    m = predictor.load_catalogue()
     g = m.groupby(["competition", "season"]).size().reset_index(name="n")
-    g = g[g["n"] >= 180].sort_values("n", ascending=False)   # ~full league seasons
+    g = g[g["n"] >= 180].sort_values(["competition", "season"])   # ~full league seasons
     return [{"competition": r["competition"], "season": r["season"],
              "matches": int(r["n"]),
              "label": f"{r['competition']} — {r['season']}"} for _, r in g.iterrows()]
