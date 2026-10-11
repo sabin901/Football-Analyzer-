@@ -429,9 +429,11 @@ function PctRadar({radar}){
 function PlayersTab(){
   const [sets,setSets]=useState([]);const [key,setKey]=useState("");const [list,setList]=useState([]);
   const [player,setPlayer]=useState("");const [d,setD]=useState(null);const [err,setErr]=useState("");const [loading,setLoading]=useState(false);
+  const [vaep,setVaep]=useState(null);
   useEffect(()=>{ get(`${API}/api/players/sets`).then(s=>{setSets(s);if(s.length)setKey(s[0].key);}).catch(e=>setErr(e.message)); },[]);
-  useEffect(()=>{ if(!key)return;setList([]);setPlayer("");setD(null);
-    get(`${API}/api/players?key=${encodeURIComponent(key)}`).then(l=>{setList(l);if(l.length)pick(l[0].player,key);}).catch(e=>setErr(e.message)); },[key]);
+  useEffect(()=>{ if(!key)return;setList([]);setPlayer("");setD(null);setVaep(null);
+    get(`${API}/api/players?key=${encodeURIComponent(key)}`).then(l=>{setList(l);if(l.length)pick(l[0].player,key);}).catch(e=>setErr(e.message));
+    get(`${API}/api/vaep?key=${encodeURIComponent(key)}`).then(setVaep).catch(()=>setVaep(null)); },[key]);
   async function pick(name,k){ setPlayer(name);setLoading(true);setErr("");setD(null);
     try{ setD(await get(`${API}/api/player?key=${encodeURIComponent(k||key)}&player=${encodeURIComponent(name)}`)); }catch(e){setErr(e.message);}finally{setLoading(false);} }
   return html`<div class="view">
@@ -459,6 +461,11 @@ function PlayersTab(){
         </tbody></table>
       </div>
     </div>`}
+    ${vaep&&html`<div class="card"><h2>VAEP leaderboard <span class="tag">socceraction · P(score) AUC ${vaep.auc_score} · P(concede) AUC ${vaep.auc_concede}</span></h2>
+      <p class="sub">Valuing Actions by Estimating Probabilities — every action worth how much it changes the chance of scoring minus conceding. The reference implementation (Decroos et al.), so progression is credited, not just shots.</p>
+      <table><thead><tr><th>#</th><th>Player</th><th>Team</th><th>VAEP / 90</th></tr></thead><tbody>
+        ${vaep.leaders.map((l,i)=>html`<tr><td class="pos">${i+1}</td><td class="teamcell">${l.player}</td><td class="mut">${l.team}</td><td class="num a">${l.vaep_p90>0?'+':''}${l.vaep_p90}</td></tr>`)}
+      </tbody></table></div>`}
   </div>`;
 }
 

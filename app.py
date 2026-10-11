@@ -360,6 +360,25 @@ def players_list(key: str):
              "minutes": int(r["minutes"])} for _, r in df.iterrows()]
 
 
+@app.get("/api/vaep")
+def vaep_leaderboard(key: str):
+    """VAEP leaderboard for a league-season, if src/vaep_socceraction.py has
+    produced it. 404 (handled quietly by the UI) when it hasn't."""
+    import pandas as pd
+    base = os.path.dirname(os.path.abspath(__file__))
+    pq = os.path.join(base, "data", f"vaep_{key}.parquet")
+    meta_p = os.path.join(base, "models", f"vaep_{key}.json")
+    if not os.path.exists(pq):
+        raise HTTPException(404, "No VAEP for this set yet.")
+    df = pd.read_parquet(pq).head(20)
+    meta = json.load(open(meta_p)) if os.path.exists(meta_p) else {}
+    return {"auc_score": meta.get("auc_score"), "auc_concede": meta.get("auc_concede"),
+            "library": meta.get("library", "socceraction"),
+            "leaders": [{"player": r["player"], "team": r.get("team", ""),
+                         "vaep_p90": float(r["vaep_p90"]), "minutes": int(r["minutes"])}
+                        for _, r in df.iterrows()]}
+
+
 @app.get("/api/player")
 def player_profile(key: str, player: str):
     df = _players_df(key)

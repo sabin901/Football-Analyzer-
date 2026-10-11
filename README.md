@@ -163,6 +163,25 @@ FastAPI · Preact · StatsBomb open data.
 
 ---
 
+## 🔬 VAEP — possession value (reference implementation)
+
+The player tab shows a **VAEP leaderboard** (Valuing Actions by Estimating
+Probabilities — Decroos et al.) when you generate it. VAEP values every action by
+how much it changes the chance of scoring minus conceding, so progression is
+credited, not just shots. It runs via the reference **`socceraction`** library,
+which pins an older pandas/pandera than the app, so it lives in its own venv:
+
+```bash
+python -m venv .venv-vaep && source .venv-vaep/bin/activate   # Windows: .venv-vaep\Scripts\activate
+pip install -r requirements-vaep.txt
+python src/vaep_socceraction.py "La Liga" "2015/2016"
+```
+
+That writes `data/vaep_<league>_<season>.parquet` and the app's Players tab
+auto-detects it — no code change. (A from-scratch VAEP was attempted first and
+*not shipped*: with sparse goal labels it collapsed to shot proximity and ranked
+elite progressors poorly — a reminder that VAEP needs the full SPADL pipeline.)
+
 ## 🛣️ Roadmap
 
 - **Odds benchmark** — score the predictor against bookmaker closing odds (RPS)
