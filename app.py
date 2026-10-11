@@ -180,20 +180,23 @@ def predict_fixture(competition: str, season: str, home: str, away: str):
 
 @app.get("/api/xt")
 def xt_output():
-    """Serve the generated Expected Threat surface + top ball progressors."""
+    """Serve every generated Expected Threat set (one per league-season)."""
     import glob
     surfaces = sorted(glob.glob(os.path.join(OUTPUT_DIR, "xt_surface_*.png")))
-    leaders_files = sorted(glob.glob(os.path.join(OUTPUT_DIR, "xt_leaders_*.json")))
     if not surfaces:
         raise HTTPException(404, "No xT output yet. Run: python src/xt.py \"La Liga\" \"2015/2016\"")
-    leaders = []
-    if leaders_files:
-        with open(leaders_files[0]) as f:
-            leaders = json.load(f)
-    # derive a readable title from the filename
-    name = os.path.basename(surfaces[0]).replace("xt_surface_", "").replace(".png", "")
-    title = name.replace("_", " ").replace("-", "/")
-    return {"surface": os.path.basename(surfaces[0]), "leaders": leaders, "title": title}
+    sets = []
+    for surf in surfaces:
+        key = os.path.basename(surf).replace("xt_surface_", "").replace(".png", "")
+        title = key.replace("_", " ").replace("-", "/")
+        leaders = []
+        lf = os.path.join(OUTPUT_DIR, f"xt_leaders_{key}.json")
+        if os.path.exists(lf):
+            with open(lf) as f:
+                leaders = json.load(f)
+        sets.append({"key": key, "title": title,
+                     "surface": os.path.basename(surf), "leaders": leaders})
+    return {"sets": sets}
 
 
 @app.get("/api/model")
