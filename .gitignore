@@ -17,3 +17,6 @@ data/*
 !data/players_*.parquet
 !data/live/
 !data/live/**
+# experimental VAEP outputs (not production-ready)
+data/vaep_*.parquet
+models/vaep_*.json
