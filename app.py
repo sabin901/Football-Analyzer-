@@ -233,6 +233,57 @@ def league_table(competition: str, season: str):
     return out
 
 
+@app.get("/api/team")
+def team_profile(competition: str, season: str, team: str):
+    """A team's season: match log with running points & expected points,
+    home/away splits, and a summary — the drill-down from the league table."""
+    cat = predictor.load_catalogue()
+    df = cat[(cat["competition"] == competition) & (cat["season"] == season)].copy()
+    df = df[(df["home_team"] == team) | (df["away_team"] == team)]
+    if df.empty:
+        raise HTTPException(404, "No matches for that team/season.")
+    df = df.sort_values("date").reset_index(drop=True)
+
+    model = None
+    try:
+        model, _ = _get_predictor(competition, season)
+    except Exception:
+        model = None
+
+    log, cum_pts, cum_xpts = [], 0, 0.0
+    splits = {"home": {"p": 0, "w": 0, "d": 0, "l": 0, "gf": 0, "ga": 0, "pts": 0},
+              "away": {"p": 0, "w": 0, "d": 0, "l": 0, "gf": 0, "ga": 0, "pts": 0}}
+    for i, r in df.iterrows():
+        home_game = r["home_team"] == team
+        venue = "home" if home_game else "away"
+        opp = r["away_team"] if home_game else r["home_team"]
+        gf = int(r["home_score"] if home_game else r["away_score"])
+        ga = int(r["away_score"] if home_game else r["home_score"])
+        res = "W" if gf > ga else ("D" if gf == ga else "L")
+        pts = 3 if res == "W" else (1 if res == "D" else 0)
+        cum_pts += pts
+        xp = None
+        if model is not None:
+            pr = predictor.predict(model, r["home_team"], r["away_team"])
+            if pr:
+                xp = (3 * pr["p_home"] + pr["p_draw"]) if home_game else (3 * pr["p_away"] + pr["p_draw"])
+                cum_xpts += xp
+        s = splits[venue]
+        s["p"] += 1; s["gf"] += gf; s["ga"] += ga; s["pts"] += pts
+        s["w"] += res == "W"; s["d"] += res == "D"; s["l"] += res == "L"
+        log.append({"md": i + 1, "date": str(r["date"])[:10], "venue": venue[0].upper(),
+                    "opponent": opp, "gf": gf, "ga": ga, "result": res, "pts": pts,
+                    "cum_pts": cum_pts, "cum_xpts": round(cum_xpts, 1) if xp is not None else None})
+
+    summary = {"team": team, "competition": competition, "season": season,
+               "played": len(df), "points": cum_pts,
+               "xpts": round(cum_xpts, 1) if model is not None else None,
+               "goals_for": sum(l["gf"] for l in log),
+               "goals_against": sum(l["ga"] for l in log),
+               "has_xpts": model is not None}
+    return {"summary": summary, "splits": splits, "log": log}
+
+
 @app.get("/api/predict/fixture")
 def predict_fixture(competition: str, season: str, home: str, away: str):
     """Predict a single fixture."""
