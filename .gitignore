@@ -13,3 +13,5 @@ output/ui_*.png
 # ingested data: ship the small match catalogue, not the big shot corpus
 data/*
 !data/matches.parquet
+!data/live/
+!data/live/**
