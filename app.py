@@ -140,12 +140,17 @@ def _get_predictor(competition, season):
     return _PRED_CACHE[key]
 
 
+# The five major European top leagues — the predictor's scope.
+MAJOR_LEAGUES = ["Premier League", "La Liga", "Serie A", "Bundesliga", "Ligue 1"]
+
+
 @app.get("/api/predict/seasons")
 def predict_seasons():
-    """Competition-seasons with enough matches to fit a predictor (league round-robins)."""
+    """Season options for the predictor — the five major top leagues only."""
     m = predictor.load_catalogue()
+    m = m[m["competition"].isin(MAJOR_LEAGUES)]
     g = m.groupby(["competition", "season"]).size().reset_index(name="n")
-    g = g[g["n"] >= 180].sort_values(["competition", "season"])   # ~full league seasons
+    g = g[g["n"] >= 180].sort_values(["competition", "season"], ascending=[True, False])
     return [{"competition": r["competition"], "season": r["season"],
              "matches": int(r["n"]),
              "label": f"{r['competition']} — {r['season']}"} for _, r in g.iterrows()]
