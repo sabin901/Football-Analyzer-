@@ -3,216 +3,265 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Soccer Analytics</title>
+<title>Football Analyzer</title>
 <style>
   :root{
-    --bg:#0d1117; --panel:#12161c; --panel2:#161c24; --line:#232b35;
-    --fg:#e8edf2; --muted:#8a97a6; --accent:#4ea1ff; --accent2:#ffd34e;
-    --red:#ff6b6b; --radius:14px;
+    --bg:#0b0e13; --bg2:#0f141b; --panel:#141a22; --panel2:#1a212b; --raise:#1e2630;
+    --line:#242d39; --line2:#2d3745;
+    --fg:#eef2f7; --mut:#93a0b1; --mut2:#6b7686;
+    --accent:#4ea1ff; --accent-dim:#2b5c93; --gold:#ffd34e; --green:#46d19e; --red:#ff6b6b;
+    --r:14px; --r-sm:10px;
+    --sh:0 1px 3px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.25);
+    --fs: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--fg);
-       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-       -webkit-font-smoothing:antialiased;}
-  a{color:var(--accent)}
-  header{padding:26px 28px 18px;border-bottom:1px solid var(--line);
-         display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-  header h1{font-size:22px;margin:0;font-weight:700;letter-spacing:.3px}
-  header .ball{font-size:26px}
-  header .tag{color:var(--muted);font-size:13px;margin-left:auto}
-  .tabs{display:flex;gap:6px;padding:16px 28px 0;flex-wrap:wrap}
-  .tab{padding:9px 18px;border-radius:999px;border:1px solid var(--line);
-       background:var(--panel);color:var(--muted);cursor:pointer;font-size:14px;
-       transition:.15s}
-  .tab:hover{color:var(--fg);border-color:#303a47}
-  .tab.active{background:var(--accent);color:#06101f;border-color:var(--accent);font-weight:600}
-  main{padding:22px 28px 60px;max-width:1120px;margin:0 auto}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
-        padding:20px;margin-bottom:20px}
-  .card h2{margin:0 0 4px;font-size:16px}
-  .card p.sub{margin:0 0 16px;color:var(--muted);font-size:13px}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--fs);
+       -webkit-font-smoothing:antialiased;line-height:1.5;
+       background-image:radial-gradient(1200px 500px at 80% -10%, rgba(78,161,255,.06), transparent 60%);}
+  .num{font-variant-numeric:tabular-nums}
+  a{color:var(--accent);text-decoration:none}
+
+  /* ---- top bar ---- */
+  .topbar{position:sticky;top:0;z-index:20;backdrop-filter:blur(10px);
+    background:rgba(11,14,19,.82);border-bottom:1px solid var(--line)}
+  .topbar-in{max-width:1120px;margin:0 auto;padding:14px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:750;font-size:18px;letter-spacing:-.02em}
+  .brand .logo{font-size:22px;filter:drop-shadow(0 2px 6px rgba(78,161,255,.4))}
+  .brand .by{color:var(--mut2);font-weight:500;font-size:12px;margin-left:2px}
+  .nav{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+  .tab{appearance:none;border:1px solid transparent;background:transparent;color:var(--mut);
+    cursor:pointer;font-size:13.5px;font-weight:600;padding:8px 14px;border-radius:999px;
+    font-family:inherit;transition:.15s;white-space:nowrap}
+  .tab:hover{color:var(--fg);background:var(--panel)}
+  .tab.active{background:var(--accent);color:#06101f;box-shadow:0 2px 12px rgba(78,161,255,.35)}
+
+  main{max-width:1120px;margin:0 auto;padding:26px 22px 80px}
+  .hero{margin:6px 0 22px}
+  .hero h1{font-size:26px;margin:0 0 6px;letter-spacing:-.02em;font-weight:750}
+  .hero p{margin:0;color:var(--mut);font-size:14.5px;max-width:720px}
+
+  .card{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);
+    border-radius:var(--r);padding:22px;margin-bottom:18px;box-shadow:var(--sh)}
+  .card h2{margin:0 0 3px;font-size:17px;font-weight:700;letter-spacing:-.01em}
+  .card h3{margin:0 0 12px;font-size:14px;font-weight:650;color:var(--fg)}
+  .card .sub{margin:0 0 18px;color:var(--mut);font-size:13px;max-width:760px}
+  .hint{font-size:12.5px;color:var(--mut2);margin-top:12px}
+
   .controls{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
-  .field{display:flex;flex-direction:column;gap:6px;min-width:200px;flex:1}
-  .field label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
-  select,button{font-size:14px;padding:10px 12px;border-radius:10px;
-         background:var(--panel2);color:var(--fg);border:1px solid var(--line)}
-  select:focus{outline:none;border-color:var(--accent)}
-  button.go{background:var(--accent);color:#06101f;border:none;font-weight:600;
-            cursor:pointer;padding:11px 22px}
-  button.go:disabled{opacity:.45;cursor:not-allowed}
-  button.go:hover:not(:disabled){filter:brightness(1.08)}
-  .report-img{width:100%;border-radius:10px;border:1px solid var(--line);margin-top:4px;
-              background:var(--panel2)}
-  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
-             gap:12px;margin-bottom:18px}
-  .stat{background:var(--panel2);border:1px solid var(--line);border-radius:12px;
-        padding:14px 16px}
-  .stat .v{font-size:22px;font-weight:700}
-  .stat .l{font-size:12px;color:var(--muted);margin-top:3px}
-  .stat .v.accent{color:var(--accent)} .stat .v.gold{color:var(--accent2)}
-  .stat .v.red{color:var(--red)}
+  .field{display:flex;flex-direction:column;gap:7px;min-width:190px;flex:1}
+  .field label{font-size:11px;color:var(--mut2);text-transform:uppercase;letter-spacing:.07em;font-weight:650}
+  select{font-size:14px;padding:11px 12px;border-radius:var(--r-sm);background:var(--panel2);
+    color:var(--fg);border:1px solid var(--line2);font-family:inherit;transition:.15s;cursor:pointer}
+  select:hover{border-color:#3a4553}
+  select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(78,161,255,.15)}
+  button.go{background:var(--accent);color:#06101f;border:none;font-weight:700;font-size:14px;
+    cursor:pointer;padding:12px 22px;border-radius:var(--r-sm);font-family:inherit;transition:.15s}
+  button.go:hover:not(:disabled){filter:brightness(1.07);transform:translateY(-1px)}
+  button.go:disabled{opacity:.4;cursor:not-allowed}
+
+  .report-img{width:100%;border-radius:var(--r-sm);border:1px solid var(--line);margin-top:6px;background:var(--panel2)}
+
+  /* ---- stat tiles ---- */
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:12px;margin-bottom:18px}
+  .stat{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:15px 16px;transition:.15s}
+  .stat:hover{border-color:var(--line2);transform:translateY(-1px)}
+  .stat .v{font-size:23px;font-weight:760;letter-spacing:-.02em}
+  .stat .l{font-size:12px;color:var(--mut);margin-top:4px;line-height:1.35}
+  .v.accent{color:var(--accent)} .v.gold{color:var(--gold)} .v.green{color:var(--green)} .v.red{color:var(--red)}
+
+  /* ---- tables ---- */
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  thead th{text-align:left;color:var(--mut2);font-weight:600;padding:9px 10px;font-size:11.5px;
+    text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--line2)}
+  tbody td{padding:10px;border-top:1px solid var(--line)}
+  tbody tr{transition:background .12s}
+  tbody tr:hover{background:var(--panel2)}
+  td.a{color:var(--accent)} td.r{color:var(--red)} td.g{color:var(--green)} td.mut{color:var(--mut)}
+  .pos{color:var(--mut2);font-variant-numeric:tabular-nums;width:26px}
+  .teamcell{font-weight:600}
+
+  /* form badges */
+  .form{display:inline-flex;gap:3px}
+  .fb{width:19px;height:19px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;
+    font-size:10.5px;font-weight:800;color:#0a0d12}
+  .fb.W{background:var(--green)} .fb.D{background:#55606f;color:#fff} .fb.L{background:var(--red)}
+
+  /* diff chip + mini bar */
+  .chip{display:inline-block;padding:2px 8px;border-radius:999px;font-weight:700;font-size:12px;font-variant-numeric:tabular-nums}
+  .chip.pos{background:rgba(70,209,158,.15);color:var(--green)}
+  .chip.neg{background:rgba(255,107,107,.15);color:var(--red)}
+  .chip.zero{background:#2a333f;color:var(--mut)}
+
+  /* probability bar (predictor) */
+  .probbar{display:flex;height:34px;border-radius:9px;overflow:hidden;border:1px solid var(--line2);margin-top:4px}
+  .probbar .seg{display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:750;color:#07101c}
+  .seg.h{background:var(--accent)} .seg.d{background:#55606f;color:#fff} .seg.a{background:var(--red)}
+
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:820px){.two{grid-template-columns:1fr}}
+  .muted{color:var(--mut)}
+
   .spinner{display:inline-block;width:18px;height:18px;border:2.5px solid #2a3340;
-           border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;
-           vertical-align:middle;margin-right:8px}
+    border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:9px}
   @keyframes spin{to{transform:rotate(360deg)}}
-  .loading{color:var(--muted);font-size:14px;padding:30px 0;text-align:center}
-  .err{color:var(--red);font-size:14px;padding:12px;background:#2a1618;
-       border:1px solid #512a2d;border-radius:10px}
-  .two{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-  @media(max-width:760px){.two{grid-template-columns:1fr}}
-  .muted{color:var(--muted)}
-  .hint{font-size:12.5px;color:var(--muted);margin-top:10px}
+  .loading{color:var(--mut);font-size:14px;padding:34px 0;text-align:center}
+  .err{color:var(--red);font-size:14px;padding:13px 16px;background:rgba(255,107,107,.08);
+    border:1px solid rgba(255,107,107,.3);border-radius:var(--r-sm);margin-bottom:16px}
+  .tag{display:inline-block;font-size:11px;color:var(--mut2);font-weight:600;background:var(--panel2);
+    border:1px solid var(--line);padding:3px 9px;border-radius:999px;margin-left:8px;vertical-align:middle}
+  footer{max-width:1120px;margin:0 auto;padding:10px 22px 50px;color:var(--mut2);font-size:12px;text-align:center}
 </style>
 </head>
 <body>
 <div id="root"></div>
 
 <script type="importmap">
-{
-  "imports": {
-    "preact": "/app/vendor/preact.mjs",
-    "preact/hooks": "/app/vendor/hooks.mjs",
-    "htm": "/app/vendor/htm.mjs"
-  }
-}
+{ "imports": {
+  "preact":"/app/vendor/preact.mjs",
+  "preact/hooks":"/app/vendor/hooks.mjs",
+  "htm":"/app/vendor/htm.mjs" } }
 </script>
 <script type="module">
 import { h, render } from "preact";
 import { useState, useEffect } from "preact/hooks";
 import htm from "htm";
 const html = htm.bind(h);
-
-const API = "";  // same origin
+const API = "";
 
 async function get(url){
   const r = await fetch(url);
   if(!r.ok){ const t = await r.text(); throw new Error(t || r.statusText); }
   return r.json();
 }
+function Stat({value,label,cls}){
+  return html`<div class="stat"><div class="v num ${cls||''}">${value}</div><div class="l">${label}</div></div>`;
+}
+function Form({form}){
+  return html`<span class="form">${(form||[]).map(f=>html`<span class="fb ${f}">${f}</span>`)}</span>`;
+}
+function Loading({label}){ return html`<div class="loading"><span class="spinner"></span>${label||'Loading…'}</div>`; }
 
-function Stat({value, label, cls}){
-  return html`<div class="stat"><div class="v ${cls||''}">${value}</div>
-    <div class="l">${label}</div></div>`;
+/* ---------------- League Table ---------------- */
+function TableTab(){
+  const [seasons,setSeasons]=useState([]); const [sel,setSel]=useState("");
+  const [data,setData]=useState(null); const [loading,setLoading]=useState(false); const [err,setErr]=useState("");
+  useEffect(()=>{ get(`${API}/api/predict/seasons`).then(s=>{setSeasons(s); if(s.length){const d=s.find(x=>x.label.startsWith('Premier')&&x.season.includes('2022'))||s[0]; setSel(d.competition+'|'+d.season);}}).catch(e=>setErr(e.message)); },[]);
+  useEffect(()=>{ if(!sel) return; const [c,s]=sel.split("|"); setLoading(true); setErr(""); setData(null);
+    get(`${API}/api/table?competition=${encodeURIComponent(c)}&season=${encodeURIComponent(s)}`).then(setData).catch(e=>setErr(e.message)).finally(()=>setLoading(false));
+  },[sel]);
+  const maxAbs = data? Math.max(1,...data.table.map(t=>Math.abs(t.xpts_diff))):1;
+  return html`
+  <div class="hero"><h1>League table</h1><p>Actual standings next to the model's <b>expected points (xPts)</b> — the gap reveals who's over- or under-performing their underlying quality, the way analytics departments read a season.</p></div>
+  <div class="card">
+    <div class="controls"><div class="field"><label>Competition & season</label>
+      <select value=${sel} onChange=${e=>setSel(e.target.value)}>
+        ${seasons.map(s=>html`<option value="${s.competition}|${s.season}">${s.label}</option>`)}
+      </select></div></div>
+  </div>
+  ${err&&html`<div class="err">${err}</div>`}
+  ${loading&&html`<${Loading} label="Building the table…"/>`}
+  ${data&&html`<div class="card">
+    <h2>${data.competition} <span class="tag">${data.season}</span></h2>
+    <p class="sub">xPts = points the model expected from the same fixtures. Diff = actual − expected (green over-performing, red under).</p>
+    <div style="overflow:auto">
+    <table>
+      <thead><tr>
+        <th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th>
+        <th>Pts</th>${data.has_xpts?html`<th>xPts</th><th>Diff</th><th style="width:120px">Over / under</th>`:null}<th>Form</th>
+      </tr></thead>
+      <tbody>
+      ${data.table.map(t=>{
+        const cls = t.xpts_diff>0.5?'pos':(t.xpts_diff<-0.5?'neg':'zero');
+        const w = Math.round(Math.abs(t.xpts_diff)/maxAbs*100);
+        return html`<tr>
+          <td class="pos">${t.position}</td>
+          <td class="teamcell">${t.team}</td>
+          <td class="num mut">${t.played}</td><td class="num mut">${t.won}</td><td class="num mut">${t.draw}</td><td class="num mut">${t.lost}</td>
+          <td class="num mut">${t.gf}</td><td class="num mut">${t.ga}</td><td class="num">${t.gd>0?'+':''}${t.gd}</td>
+          <td class="num" style="font-weight:750">${t.pts}</td>
+          ${data.has_xpts?html`
+            <td class="num mut">${t.xpts}</td>
+            <td><span class="chip ${cls}">${t.xpts_diff>0?'+':''}${t.xpts_diff}</span></td>
+            <td><div style="height:7px;border-radius:4px;background:#222b36;position:relative">
+              <div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:#3a4553"></div>
+              <div style="position:absolute;top:0;bottom:0;${t.xpts_diff>=0?'left:50%':'right:50%'};width:${w/2}%;border-radius:4px;background:${t.xpts_diff>=0?'var(--green)':'var(--red)'}"></div>
+            </div></td>`:null}
+          <td><${Form} form=${t.form}/></td>
+        </tr>`;})}
+      </tbody>
+    </table></div>
+  </div>`}`;
 }
 
-// ---------- Match report tab ----------
-function MatchTab({comps}){
-  const [sel, setSel] = useState("");
-  const [matches, setMatches] = useState([]);
-  const [matchId, setMatchId] = useState("");
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
-
-  useEffect(()=>{
-    if(!sel){ setMatches([]); return; }
-    const [c,s] = sel.split("_");
-    setMatches([]); setMatchId(""); setData(null);
-    get(`${API}/api/matches?competition_id=${c}&season_id=${s}`)
-      .then(setMatches).catch(e=>setErr(e.message));
-  },[sel]);
-
-  async function run(){
-    if(!matchId) return;
-    setLoading(true); setErr(""); setData(null);
-    try{ setData(await get(`${API}/api/report/${matchId}`)); }
-    catch(e){ setErr(e.message); }
-    finally{ setLoading(false); }
-  }
-
-  const st = data && data.stats;
-  const home = data && data.home, away = data && data.away;
+/* ---------------- Match report ---------------- */
+function MatchTab(){
+  const [comps,setComps]=useState([]); const [sel,setSel]=useState(""); const [matches,setMatches]=useState([]);
+  const [matchId,setMatchId]=useState(""); const [data,setData]=useState(null); const [loading,setLoading]=useState(false); const [err,setErr]=useState("");
+  useEffect(()=>{ get(`${API}/api/competitions`).then(setComps).catch(e=>setErr(e.message)); },[]);
+  useEffect(()=>{ if(!sel){setMatches([]);return;} const [c,s]=sel.split("_"); setMatches([]);setMatchId("");setData(null);
+    get(`${API}/api/matches?competition_id=${c}&season_id=${s}`).then(setMatches).catch(e=>setErr(e.message)); },[sel]);
+  async function run(){ if(!matchId)return; setLoading(true);setErr("");setData(null);
+    try{ setData(await get(`${API}/api/report/${matchId}`)); }catch(e){ setErr(e.message);}finally{setLoading(false);} }
+  const st=data&&data.stats, home=data&&data.home, away=data&&data.away;
   return html`
+  <div class="hero"><h1>Post-match report</h1><p>The club review in one dashboard — shot maps, the cumulative-xG race, pass networks and the key numbers, generated from event data the moment you pick a match.</p></div>
   <div class="card">
-    <h2>Post-match report</h2>
-    <p class="sub">Pick a competition, then a match. The xG model is applied live and a full dashboard is generated.</p>
     <div class="controls">
       <div class="field"><label>Competition</label>
-        <select value=${sel} onChange=${e=>setSel(e.target.value)}>
-          <option value="">Select…</option>
-          ${comps.map(c=>html`<option value="${c.competition_id}_${c.season_id}">${c.label}</option>`)}
-        </select></div>
+        <select value=${sel} onChange=${e=>setSel(e.target.value)}><option value="">Select…</option>
+          ${comps.map(c=>html`<option value="${c.competition_id}_${c.season_id}">${c.label}</option>`)}</select></div>
       <div class="field"><label>Match</label>
         <select value=${matchId} onChange=${e=>setMatchId(e.target.value)} disabled=${!matches.length}>
-          <option value="">${matches.length? "Select…":"—"}</option>
-          ${matches.map(m=>html`<option value=${m.match_id}>${m.label}</option>`)}
-        </select></div>
-      <button class="go" onClick=${run} disabled=${!matchId||loading}>
-        ${loading? "Generating…":"Generate report"}</button>
+          <option value="">${matches.length?"Select…":"—"}</option>
+          ${matches.map(m=>html`<option value=${m.match_id}>${m.label}</option>`)}</select></div>
+      <button class="go" onClick=${run} disabled=${!matchId||loading}>${loading?"Generating…":"Generate report"}</button>
     </div>
-    <p class="hint">First run for a match takes ~15–30s (it pulls full event data); after that it's cached and instant.</p>
+    <p class="hint">First run for a match pulls full event data (~15–30s), then it's cached and instant.</p>
   </div>
-
-  ${err && html`<div class="err">${err}</div>`}
-  ${loading && html`<div class="loading"><span class="spinner"></span>Crunching the match…</div>`}
-
-  ${data && html`<div class="card">
+  ${err&&html`<div class="err">${err}</div>`}
+  ${loading&&html`<${Loading} label="Crunching the match…"/>`}
+  ${data&&html`<div class="card">
     <h2>${home} ${data.score[home]} – ${data.score[away]} ${away}</h2>
-    <p class="sub">Model xG: ${st[home].xg_model} – ${st[away].xg_model}</p>
+    <p class="sub">Model xG ${st[home].xg_model} – ${st[away].xg_model}</p>
     <div class="stat-grid">
       <${Stat} value=${`${st[home].xg_model} / ${st[away].xg_model}`} label="Model xG (H/A)" cls="gold"/>
       <${Stat} value=${`${st[home].shots} / ${st[away].shots}`} label="Shots"/>
       <${Stat} value=${`${st[home].possession}% / ${st[away].possession}%`} label="Possession"/>
       <${Stat} value=${`${st[home].pass_accuracy}% / ${st[away].pass_accuracy}%`} label="Pass accuracy"/>
     </div>
-    <img class="report-img" src="${API}/output/${data.png}?t=${Date.now()}" alt="match report"/>
-  </div>`}
-  `;
+    <img class="report-img" src="${API}/output/${data.png}?t=${Date.now()}"/>
+  </div>`}`;
 }
 
-// ---------- Scouting tab ----------
-function ScoutTab({comps}){
-  const [sel, setSel] = useState("");
-  const [teams, setTeams] = useState([]);
-  const [team, setTeam] = useState("");
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
-
-  useEffect(()=>{
-    if(!sel){ setTeams([]); return; }
-    const [c,s] = sel.split("_");
-    setTeams([]); setTeam(""); setData(null);
-    get(`${API}/api/teams?competition_id=${c}&season_id=${s}`)
-      .then(setTeams).catch(e=>setErr(e.message));
-  },[sel]);
-
-  async function run(){
-    if(!sel||!team) return;
-    const [c,s] = sel.split("_");
-    setLoading(true); setErr(""); setData(null);
-    try{ setData(await get(`${API}/api/scout?competition_id=${c}&season_id=${s}&team=${encodeURIComponent(team)}`)); }
-    catch(e){ setErr(e.message); }
-    finally{ setLoading(false); }
-  }
-
+/* ---------------- Scouting ---------------- */
+function ScoutTab(){
+  const [comps,setComps]=useState([]); const [sel,setSel]=useState(""); const [teams,setTeams]=useState([]);
+  const [team,setTeam]=useState(""); const [data,setData]=useState(null); const [loading,setLoading]=useState(false); const [err,setErr]=useState("");
+  useEffect(()=>{ get(`${API}/api/competitions`).then(setComps).catch(e=>setErr(e.message)); },[]);
+  useEffect(()=>{ if(!sel){setTeams([]);return;} const [c,s]=sel.split("_"); setTeams([]);setTeam("");setData(null);
+    get(`${API}/api/teams?competition_id=${c}&season_id=${s}`).then(setTeams).catch(e=>setErr(e.message)); },[sel]);
+  async function run(){ if(!sel||!team)return; const [c,s]=sel.split("_"); setLoading(true);setErr("");setData(null);
+    try{ setData(await get(`${API}/api/scout?competition_id=${c}&season_id=${s}&team=${encodeURIComponent(team)}`)); }catch(e){ setErr(e.message);}finally{setLoading(false);} }
   return html`
+  <div class="hero"><h1>Scouting report</h1><p>A full season opponent profile — where a side creates and concedes, its set-piece reliance, attacking bias and form — the pre-match and recruitment view.</p></div>
   <div class="card">
-    <h2>Season scouting report</h2>
-    <p class="sub">Aggregate a team across a whole season — the pre-match / recruitment view.</p>
     <div class="controls">
       <div class="field"><label>Competition</label>
-        <select value=${sel} onChange=${e=>setSel(e.target.value)}>
-          <option value="">Select…</option>
-          ${comps.map(c=>html`<option value="${c.competition_id}_${c.season_id}">${c.label}</option>`)}
-        </select></div>
+        <select value=${sel} onChange=${e=>setSel(e.target.value)}><option value="">Select…</option>
+          ${comps.map(c=>html`<option value="${c.competition_id}_${c.season_id}">${c.label}</option>`)}</select></div>
       <div class="field"><label>Team</label>
         <select value=${team} onChange=${e=>setTeam(e.target.value)} disabled=${!teams.length}>
-          <option value="">${teams.length?"Select…":"—"}</option>
-          ${teams.map(t=>html`<option value=${t}>${t}</option>`)}
-        </select></div>
-      <button class="go" onClick=${run} disabled=${!team||loading}>
-        ${loading?"Analysing…":"Build report"}</button>
+          <option value="">${teams.length?"Select…":"—"}</option>${teams.map(t=>html`<option value=${t}>${t}</option>`)}</select></div>
+      <button class="go" onClick=${run} disabled=${!team||loading}>${loading?"Analysing…":"Build report"}</button>
     </div>
-    <p class="hint">A full season means ~30–40 matches of event data, so the first build can take a minute. Cached afterwards.</p>
+    <p class="hint">A full season is ~30–40 matches of event data, so the first build can take a minute. Cached afterwards.</p>
   </div>
-
-  ${err && html`<div class="err">${err}</div>`}
-  ${loading && html`<div class="loading"><span class="spinner"></span>Aggregating the season…</div>`}
-
-  ${data && html`<div class="card">
-    <h2>${data.team}</h2>
-    <p class="sub">Played ${data.played} · ${data.W}W ${data.D}D ${data.L}L · GF ${data.goals_for} GA ${data.goals_against}</p>
+  ${err&&html`<div class="err">${err}</div>`}
+  ${loading&&html`<${Loading} label="Aggregating the season…"/>`}
+  ${data&&html`<div class="card">
+    <h2>${data.team} <span class="tag">${data.W}W ${data.D}D ${data.L}L</span></h2>
+    <p class="sub">Played ${data.played} · GF ${data.goals_for} · GA ${data.goals_against}</p>
     <div class="stat-grid">
       <${Stat} value=${data.xg_for_per90} label="xG for / 90" cls="accent"/>
       <${Stat} value=${data.xg_against_per90} label="xG against / 90" cls="red"/>
@@ -220,215 +269,147 @@ function ScoutTab({comps}){
       <${Stat} value=${`${data.setpiece_xg_share_pct}%`} label="Set-piece xG share"/>
       <${Stat} value=${`${data.attack_left_pct}/${data.attack_central_pct}/${data.attack_right_pct}`} label="Attack L/C/R %"/>
     </div>
-    <img class="report-img" src="${API}/output/${data.png}?t=${Date.now()}" alt="scouting report"/>
-  </div>`}
-  `;
+    <img class="report-img" src="${API}/output/${data.png}?t=${Date.now()}"/>
+  </div>`}`;
 }
 
-// ---------- Predictor tab ----------
+/* ---------------- Predictor ---------------- */
 function PredictTab(){
-  const [seasons, setSeasons] = useState([]);
-  const [sel, setSel] = useState("");
-  const [overview, setOverview] = useState(null);
-  const [home, setHome] = useState(""); const [away, setAway] = useState("");
-  const [pred, setPred] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
-
+  const [seasons,setSeasons]=useState([]); const [sel,setSel]=useState(""); const [ov,setOv]=useState(null);
+  const [home,setHome]=useState(""); const [away,setAway]=useState(""); const [pred,setPred]=useState(null);
+  const [loading,setLoading]=useState(false); const [err,setErr]=useState("");
   useEffect(()=>{ get(`${API}/api/predict/seasons`).then(setSeasons).catch(e=>setErr(e.message)); },[]);
-
-  async function loadSeason(v){
-    setSel(v); setOverview(null); setPred(null); setHome(""); setAway("");
-    if(!v) return;
-    const [c,s] = v.split("|");
-    setLoading(true); setErr("");
-    try{ setOverview(await get(`${API}/api/predict/overview?competition=${encodeURIComponent(c)}&season=${encodeURIComponent(s)}`)); }
-    catch(e){ setErr(e.message); }
-    finally{ setLoading(false); }
-  }
-  async function runFixture(){
-    if(!sel||!home||!away) return;
-    const [c,s] = sel.split("|");
-    setLoading(true); setErr(""); setPred(null);
-    try{ setPred(await get(`${API}/api/predict/fixture?competition=${encodeURIComponent(c)}&season=${encodeURIComponent(s)}&home=${encodeURIComponent(home)}&away=${encodeURIComponent(away)}`)); }
-    catch(e){ setErr(e.message); }
-    finally{ setLoading(false); }
-  }
-
-  const m = overview && overview.metrics;
+  async function loadSeason(v){ setSel(v);setOv(null);setPred(null);setHome("");setAway(""); if(!v)return;
+    const [c,s]=v.split("|"); setLoading(true);setErr("");
+    try{ setOv(await get(`${API}/api/predict/overview?competition=${encodeURIComponent(c)}&season=${encodeURIComponent(s)}`)); }catch(e){setErr(e.message);}finally{setLoading(false);} }
+  async function runFixture(){ if(!sel||!home||!away)return; const [c,s]=sel.split("|"); setLoading(true);setErr("");setPred(null);
+    try{ setPred(await get(`${API}/api/predict/fixture?competition=${encodeURIComponent(c)}&season=${encodeURIComponent(s)}&home=${encodeURIComponent(home)}&away=${encodeURIComponent(away)}`)); }catch(e){setErr(e.message);}finally{setLoading(false);} }
+  const m=ov&&ov.metrics;
   return html`
+  <div class="hero"><h1>Match predictor</h1><p>A Dixon-Coles Poisson model with recency weighting fits every team's attack & defence from ${seasons.length} league-seasons, then forecasts any fixture: win/draw/loss, expected goals and the likeliest scorelines.</p></div>
   <div class="card">
-    <h2>Match predictor</h2>
-    <p class="sub">A Dixon-Coles Poisson model: fits each team's attack & defence from results, then predicts any fixture. Pick a league season to fit and validate it.</p>
-    <div class="controls">
-      <div class="field"><label>Competition & season</label>
-        <select value=${sel} onChange=${e=>loadSeason(e.target.value)}>
-          <option value="">Select…</option>
-          ${seasons.map(s=>html`<option value="${s.competition}|${s.season}">${s.label} (${s.matches})</option>`)}
-        </select></div>
-    </div>
+    <div class="controls"><div class="field"><label>Competition & season</label>
+      <select value=${sel} onChange=${e=>loadSeason(e.target.value)}><option value="">Select…</option>
+        ${seasons.map(s=>html`<option value="${s.competition}|${s.season}">${s.label}</option>`)}</select></div></div>
   </div>
-
-  ${err && html`<div class="err">${err}</div>`}
-  ${loading && html`<div class="loading"><span class="spinner"></span>Fitting the model…</div>`}
-
-  ${m && html`<div class="card">
-    <h2>Model quality — ${m.competition} ${m.season}</h2>
-    <p class="sub">Time-split validation: trained on the first ${m.train_matches} matches, tested on the next ${m.test_matches}. Lower RPS / log-loss is better.</p>
+  ${err&&html`<div class="err">${err}</div>`}
+  ${loading&&!ov&&html`<${Loading} label="Fitting the model…"/>`}
+  ${m&&html`<div class="card">
+    <h2>Model quality <span class="tag">${m.competition} ${m.season}</span></h2>
+    <p class="sub">Time-split: trained on the first ${m.train_matches}, tested on the next ${m.test_matches}. Lower RPS/log-loss is better.</p>
     <div class="stat-grid">
-      <${Stat} value=${`${(m.accuracy*100).toFixed(1)}%`} label=${`Accuracy (base ${(m.baseline_accuracy*100).toFixed(1)}%)`} cls="accent"/>
-      <${Stat} value=${m.rps} label=${`RPS (base ${m.baseline_rps})`} cls=${m.rps<m.baseline_rps?"gold":""}/>
-      <${Stat} value=${m.log_loss} label=${`Log loss (base ${m.baseline_log_loss})`}/>
+      <${Stat} value=${`${(m.accuracy*100).toFixed(1)}%`} label=${`Accuracy · base ${(m.baseline_accuracy*100).toFixed(1)}%`} cls="accent"/>
+      <${Stat} value=${m.rps} label=${`RPS · base ${m.baseline_rps}`} cls=${m.rps<m.baseline_rps?"green":""}/>
+      <${Stat} value=${m.log_loss} label=${`Log loss · base ${m.baseline_log_loss}`}/>
       <${Stat} value=${m.home_advantage} label="Home advantage"/>
     </div>
-    <p class="hint">An RPS near 0.19–0.21 is the professional range for 1X2 prediction. Beating the base-rate baseline on every metric means the model is genuinely learning team strength.</p>
+    <p class="hint">RPS near 0.19–0.21 is the professional range for 1X2. Beating the base rate on every metric means the model is learning real team strength.</p>
   </div>
-
   <div class="card">
     <h2>Predict a fixture</h2>
     <div class="controls">
-      <div class="field"><label>Home</label>
-        <select value=${home} onChange=${e=>setHome(e.target.value)}>
-          <option value="">Select…</option>
-          ${overview.teams.map(t=>html`<option value=${t}>${t}</option>`)}
-        </select></div>
-      <div class="field"><label>Away</label>
-        <select value=${away} onChange=${e=>setAway(e.target.value)}>
-          <option value="">Select…</option>
-          ${overview.teams.map(t=>html`<option value=${t}>${t}</option>`)}
-        </select></div>
+      <div class="field"><label>Home</label><select value=${home} onChange=${e=>setHome(e.target.value)}>
+        <option value="">Select…</option>${ov.teams.map(t=>html`<option value=${t}>${t}</option>`)}</select></div>
+      <div class="field"><label>Away</label><select value=${away} onChange=${e=>setAway(e.target.value)}>
+        <option value="">Select…</option>${ov.teams.map(t=>html`<option value=${t}>${t}</option>`)}</select></div>
       <button class="go" onClick=${runFixture} disabled=${!home||!away||home===away}>Predict</button>
     </div>
-    ${pred && html`<div style="margin-top:18px">
-      <div class="stat-grid">
-        <${Stat} value=${`${(pred.p_home*100).toFixed(0)}%`} label=${`${pred.home} win`} cls="accent"/>
-        <${Stat} value=${`${(pred.p_draw*100).toFixed(0)}%`} label="Draw"/>
-        <${Stat} value=${`${(pred.p_away*100).toFixed(0)}%`} label=${`${pred.away} win`} cls="red"/>
+    ${pred&&html`<div style="margin-top:18px">
+      <div class="probbar">
+        <div class="seg h" style="width:${pred.p_home*100}%">${(pred.p_home*100).toFixed(0)}%</div>
+        <div class="seg d" style="width:${pred.p_draw*100}%">${(pred.p_draw*100).toFixed(0)}%</div>
+        <div class="seg a" style="width:${pred.p_away*100}%">${(pred.p_away*100).toFixed(0)}%</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;color:var(--mut);font-size:12px;margin:6px 2px 0">
+        <span>${pred.home} win</span><span>Draw</span><span>${pred.away} win</span></div>
+      <div class="stat-grid" style="margin-top:16px">
         <${Stat} value=${`${pred.expected_home_goals} – ${pred.expected_away_goals}`} label="Expected goals" cls="gold"/>
+        <${Stat} value=${pred.most_likely[0].score} label="Likeliest scoreline"/>
         <${Stat} value=${`${(pred.over_2_5*100).toFixed(0)}%`} label="Over 2.5 goals"/>
       </div>
-      <p class="sub" style="margin-top:6px">Most likely scorelines: ${pred.most_likely.map(s=>`${s.score} (${(s.p*100).toFixed(0)}%)`).join("  ·  ")}</p>
+      <p class="sub" style="margin-top:8px">Top scorelines: ${pred.most_likely.map(s=>`${s.score} (${(s.p*100).toFixed(0)}%)`).join("  ·  ")}</p>
     </div>`}
   </div>
-
   <div class="card">
     <h2>Fitted team strengths</h2>
-    <p class="sub">Attack & defence ratings the model learned (higher attack = scores more; lower/negative defence = concedes less).</p>
-    <div style="max-height:320px;overflow:auto">
-      <table style="width:100%;border-collapse:collapse;font-size:14px">
-        <thead><tr style="color:var(--muted);text-align:left">
-          <th style="padding:6px 8px">Team</th><th style="padding:6px 8px">Attack</th><th style="padding:6px 8px">Defence</th></tr></thead>
-        <tbody>
-          ${overview.ratings.map(r=>html`<tr style="border-top:1px solid var(--line)">
-            <td style="padding:6px 8px">${r.team}</td>
-            <td style="padding:6px 8px;color:var(--accent)">${r.attack>0?'+':''}${r.attack}</td>
-            <td style="padding:6px 8px;color:var(--red)">${r.defence>0?'+':''}${r.defence}</td></tr>`)}
-        </tbody>
-      </table>
-    </div>
-  </div>`}
-  `;
+    <p class="sub">Attack & defence ratings learned from results (higher attack scores more; lower/negative defence concedes less).</p>
+    <div style="max-height:340px;overflow:auto"><table>
+      <thead><tr><th>Team</th><th>Attack</th><th>Defence</th></tr></thead>
+      <tbody>${ov.ratings.map(r=>html`<tr><td class="teamcell">${r.team}</td>
+        <td class="num a">${r.attack>0?'+':''}${r.attack}</td><td class="num r">${r.defence>0?'+':''}${r.defence}</td></tr>`)}</tbody>
+    </table></div>
+  </div>`}`;
 }
 
-// ---------- Expected Threat tab ----------
+/* ---------------- Expected Threat ---------------- */
 function XtTab(){
-  const [sets, setSets] = useState(null);
-  const [i, setI] = useState(0);
-  const [err, setErr] = useState("");
+  const [sets,setSets]=useState(null); const [i,setI]=useState(0); const [err,setErr]=useState("");
   useEffect(()=>{ get(`${API}/api/xt`).then(d=>setSets(d.sets)).catch(e=>setErr(e.message)); },[]);
   if(err) return html`<div class="err">${err}</div>`;
-  if(!sets) return html`<div class="loading"><span class="spinner"></span>Loading Expected Threat…</div>`;
-  const d = sets[i];
+  if(!sets) return html`<${Loading} label="Loading Expected Threat…"/>`;
+  const d=sets[i];
   return html`
+  <div class="hero"><h1>Expected Threat</h1><p>xG only rewards the shot. xT values <b>moving the ball into danger</b> — the progressive passes and carries that create chances. The surface shows each zone's threat; the table ranks the best ball progressors.</p></div>
   <div class="card">
-    <h2>Expected Threat (xT)</h2>
-    <p class="sub">xG rewards only the shot. xT values moving the ball into danger — the progressive passes and carries that create chances. The surface shows how much threat each pitch zone carries; the table ranks the best ball progressors.</p>
-    ${sets.length>1 && html`<div class="controls"><div class="field"><label>League</label>
-      <select value=${i} onChange=${e=>setI(+e.target.value)}>
-        ${sets.map((s,idx)=>html`<option value=${idx}>${s.title}</option>`)}
-      </select></div></div>`}
-    <img class="report-img" style="margin-top:12px" src="${API}/output/${d.surface}?t=${Date.now()}" alt="xT surface"/>
+    ${sets.length>1&&html`<div class="controls" style="margin-bottom:14px"><div class="field"><label>League</label>
+      <select value=${i} onChange=${e=>setI(+e.target.value)}>${sets.map((s,idx)=>html`<option value=${idx}>${s.title}</option>`)}</select></div></div>`}
+    <img class="report-img" src="${API}/output/${d.surface}?t=${Date.now()}"/>
   </div>
   <div class="card">
-    <h2>Top ball progressors — ${d.title}</h2>
+    <h2>Top ball progressors <span class="tag">${d.title}</span></h2>
     <p class="sub">Total xT added through completed passes & carries (positive progressions only).</p>
-    <table style="width:100%;border-collapse:collapse;font-size:14px">
-      <thead><tr style="color:var(--muted);text-align:left">
-        <th style="padding:6px 8px">#</th><th style="padding:6px 8px">Player</th>
-        <th style="padding:6px 8px">Team</th><th style="padding:6px 8px">xT added</th></tr></thead>
-      <tbody>
-        ${d.leaders.map((l,idx)=>html`<tr style="border-top:1px solid var(--line)">
-          <td style="padding:6px 8px;color:var(--muted)">${idx+1}</td>
-          <td style="padding:6px 8px">${l.player}</td>
-          <td style="padding:6px 8px;color:var(--muted)">${l.team}</td>
-          <td style="padding:6px 8px;color:var(--accent)">+${l.xt_added}</td></tr>`)}
-      </tbody>
-    </table>
+    <table><thead><tr><th>#</th><th>Player</th><th>Team</th><th>xT added</th></tr></thead>
+      <tbody>${d.leaders.map((l,idx)=>html`<tr><td class="pos">${idx+1}</td><td class="teamcell">${l.player}</td>
+        <td class="mut">${l.team}</td><td class="num a">+${l.xt_added}</td></tr>`)}</tbody></table>
   </div>`;
 }
 
-// ---------- Model tab ----------
+/* ---------------- Model ---------------- */
 function ModelTab(){
-  const [m, setM] = useState(null);
-  const [err, setErr] = useState("");
+  const [m,setM]=useState(null); const [err,setErr]=useState("");
   useEffect(()=>{ get(`${API}/api/model`).then(setM).catch(e=>setErr(e.message)); },[]);
   if(err) return html`<div class="err">${err}</div>`;
-  if(!m) return html`<div class="loading"><span class="spinner"></span>Loading model…</div>`;
+  if(!m) return html`<${Loading} label="Loading model…"/>`;
   return html`
+  <div class="hero"><h1>The xG model</h1><p>Gradient-boosted expected goals trained on ${m.n_shots.toLocaleString()} shots — validated by ROC-AUC and a calibration curve, because a usable xG must be probabilistically honest, not just rank-ordered.</p></div>
   <div class="card">
-    <h2>The xG model</h2>
-    <p class="sub">Gradient-boosted trees trained on StatsBomb open data. Held-out validation below.</p>
     <div class="stat-grid">
       <${Stat} value=${m.roc_auc} label="ROC-AUC" cls="accent"/>
       <${Stat} value=${m.brier} label="Brier score"/>
       <${Stat} value=${m.log_loss} label="Log loss"/>
       <${Stat} value=${m.n_shots.toLocaleString()} label="Shots trained on"/>
-      <${Stat} value=${`${m.predicted_goals_test} / ${m.actual_goals_test}`} label="Pred/actual goals (test)" cls="gold"/>
+      <${Stat} value=${`${m.predicted_goals_test} / ${m.actual_goals_test}`} label="Pred / actual goals" cls="gold"/>
     </div>
-    <p class="hint">A ROC-AUC around 0.77–0.82 is the professional range for xG. "Predicted ≈ actual" on held-out shots is the calibration check.</p>
+    <p class="hint">ROC-AUC ~0.78–0.82 is the professional range. "Predicted ≈ actual" on held-out shots is the calibration check.</p>
   </div>
   <div class="two">
-    <div class="card"><h2>Calibration</h2>
-      <p class="sub">Does a 0.3 xG chance really go in ~30% of the time?</p>
-      <img class="report-img" src="${API}/output/${m.calibration_png}?t=${Date.now()}"/>
-    </div>
-    <div class="card"><h2>Feature importance</h2>
-      <p class="sub">What the model leans on most.</p>
-      <img class="report-img" src="${API}/output/${m.importance_png}?t=${Date.now()}"/>
-    </div>
+    <div class="card"><h3>Calibration</h3><p class="sub">Does a 0.3-xG chance really go in ~30% of the time?</p>
+      <img class="report-img" src="${API}/output/${m.calibration_png}?t=${Date.now()}"/></div>
+    <div class="card"><h3>Feature importance</h3><p class="sub">What the model leans on most.</p>
+      <img class="report-img" src="${API}/output/${m.importance_png}?t=${Date.now()}"/></div>
   </div>`;
 }
 
-// ---------- App shell ----------
+/* ---------------- Shell ---------------- */
+const TABS=[["table","League table"],["match","Match report"],["scout","Scouting"],
+            ["predict","Predictor"],["xt","Expected Threat"],["model","xG model"]];
 function App(){
-  const [tab, setTab] = useState("match");
-  const [comps, setComps] = useState([]);
-  const [err, setErr] = useState("");
-  useEffect(()=>{ get(`${API}/api/competitions`).then(setComps).catch(e=>setErr(e.message)); },[]);
-
+  const [tab,setTab]=useState("table");
   return html`
-  <header>
-    <span class="ball">⚽</span>
-    <h1>Soccer Analytics</h1>
-    <span class="tag">xG model · post-match & scouting reports · StatsBomb open data</span>
-  </header>
-  <div class="tabs">
-    <div class=${"tab"+(tab==="match"?" active":"")} onClick=${()=>setTab("match")}>Match report</div>
-    <div class=${"tab"+(tab==="scout"?" active":"")} onClick=${()=>setTab("scout")}>Scouting report</div>
-    <div class=${"tab"+(tab==="predict"?" active":"")} onClick=${()=>setTab("predict")}>Predictor</div>
-    <div class=${"tab"+(tab==="xt"?" active":"")} onClick=${()=>setTab("xt")}>Expected Threat</div>
-    <div class=${"tab"+(tab==="model"?" active":"")} onClick=${()=>setTab("model")}>The model</div>
-  </div>
+  <div class="topbar"><div class="topbar-in">
+    <div class="brand"><span class="logo">⚽</span>Football Analyzer<span class="by">· StatsBomb + top-5 leagues</span></div>
+    <nav class="nav">${TABS.map(([k,l])=>html`<button class=${"tab"+(tab===k?" active":"")} onClick=${()=>setTab(k)}>${l}</button>`)}</nav>
+  </div></div>
   <main>
-    ${err && html`<div class="err">Couldn't reach the backend: ${err}</div>`}
-    ${tab==="match" && html`<${MatchTab} comps=${comps}/>`}
-    ${tab==="scout" && html`<${ScoutTab} comps=${comps}/>`}
-    ${tab==="predict" && html`<${PredictTab}/>`}
-    ${tab==="xt" && html`<${XtTab}/>`}
-    ${tab==="model" && html`<${ModelTab}/>`}
-  </main>`;
+    ${tab==="table"&&html`<${TableTab}/>`}
+    ${tab==="match"&&html`<${MatchTab}/>`}
+    ${tab==="scout"&&html`<${ScoutTab}/>`}
+    ${tab==="predict"&&html`<${PredictTab}/>`}
+    ${tab==="xt"&&html`<${XtTab}/>`}
+    ${tab==="model"&&html`<${ModelTab}/>`}
+  </main>
+  <footer>Built on StatsBomb open data · xG, xT and predictions from this repo's own models · <a href="https://github.com/sabin901/Football-Analyzer-">source on GitHub</a></footer>`;
 }
-
 render(html`<${App}/>`, document.getElementById("root"));
 </script>
 </body>

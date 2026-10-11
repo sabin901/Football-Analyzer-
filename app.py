@@ -169,6 +169,70 @@ def predict_overview(competition: str, season: str):
             "teams": model["teams"]}
 
 
+_TABLE_CACHE = {}
+
+
+@app.get("/api/table")
+def league_table(competition: str, season: str):
+    """League table: actual standings + the model's expected points (xPts),
+    over/under-performance, and last-5 form — the analytics league view."""
+    key = (competition, season)
+    if key in _TABLE_CACHE:
+        return _TABLE_CACHE[key]
+    import pandas as pd
+    cat = predictor.load_catalogue()
+    df = cat[(cat["competition"] == competition) & (cat["season"] == season)].copy()
+    if df.empty:
+        raise HTTPException(404, "No matches for that competition/season.")
+    df = df.sort_values("date").reset_index(drop=True)
+
+    teams = sorted(set(df["home_team"]).union(df["away_team"]))
+    rec = {t: {"team": t, "played": 0, "won": 0, "draw": 0, "lost": 0,
+               "gf": 0, "ga": 0, "pts": 0, "xpts": 0.0, "form": []} for t in teams}
+
+    # fitted model (cached) for expected points
+    model = None
+    try:
+        model, _ = _get_predictor(competition, season)
+    except Exception:
+        model = None
+
+    for _, r in df.iterrows():
+        h, a = r["home_team"], r["away_team"]
+        hs, as_ = int(r["home_score"]), int(r["away_score"])
+        for t, gf, ga in ((h, hs, as_), (a, as_, hs)):
+            rec[t]["played"] += 1
+            rec[t]["gf"] += gf; rec[t]["ga"] += ga
+            if gf > ga:
+                rec[t]["pts"] += 3; rec[t]["won"] += 1; rec[t]["form"].append("W")
+            elif gf == ga:
+                rec[t]["pts"] += 1; rec[t]["draw"] += 1; rec[t]["form"].append("D")
+            else:
+                rec[t]["lost"] += 1; rec[t]["form"].append("L")
+        if model is not None:
+            pr = predictor.predict(model, h, a)
+            if pr:
+                rec[h]["xpts"] += 3 * pr["p_home"] + pr["p_draw"]
+                rec[a]["xpts"] += 3 * pr["p_away"] + pr["p_draw"]
+
+    table = []
+    for t in teams:
+        d = rec[t]
+        d["gd"] = d["gf"] - d["ga"]
+        d["xpts"] = round(d["xpts"], 1)
+        d["xpts_diff"] = round(d["pts"] - d["xpts"], 1)   # + = overperforming
+        d["form"] = d["form"][-5:]
+        table.append(d)
+    table.sort(key=lambda z: (-z["pts"], -z["gd"], -z["gf"]))
+    for i, d in enumerate(table, 1):
+        d["position"] = i
+
+    out = {"competition": competition, "season": season,
+           "has_xpts": model is not None, "table": table}
+    _TABLE_CACHE[key] = out
+    return out
+
+
 @app.get("/api/predict/fixture")
 def predict_fixture(competition: str, season: str, home: str, away: str):
     """Predict a single fixture."""
