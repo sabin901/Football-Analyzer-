@@ -49,6 +49,7 @@ runs that comparison once the odds are pulled (`python src/live_api.py odds E0 2
 | Capability | What you get |
 |---|---|
 | **xG model** | Gradient-boosted expected-goals model, 100k+ shots, calibrated, with reliability + feature-importance plots |
+| **Player profiles** | Per-90 metrics percentile-ranked vs positional peers (radar) + statistical player similarity — the scouting view |
 | **Expected Threat (xT)** | Values ball *progression*, not just shots — an xT surface + ranked ball progressors (Koke, Kroos top La Liga 15/16) |
 | **Post-match report** | Score, shot maps, cumulative-xG race, pass networks — the club review in one dashboard |
 | **Scouting report** | Season opponent profile: xG for/against, chance-creation & vulnerability heatmaps, set-piece reliance, form |
