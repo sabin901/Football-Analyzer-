@@ -543,22 +543,34 @@ function XtTab(){
 
 /* ---------------- Model ---------------- */
 function ModelTab(){
-  const [m,setM]=useState(null);const [err,setErr]=useState("");
-  useEffect(()=>{ get(`${API}/api/model`).then(setM).catch(e=>setErr(e.message)); },[]);
+  const [m,setM]=useState(null);const [bt,setBt]=useState(null);const [err,setErr]=useState("");
+  useEffect(()=>{ get(`${API}/api/model`).then(setM).catch(e=>setErr(e.message));
+    get(`${API}/api/backtest`).then(setBt).catch(()=>{}); },[]);
   if(err) return html`<div class="err">${err}</div>`;
   if(!m) return html`<${Loading} label="Loading model…"/>`;
   return html`<div class="view">
-    <div class="hero"><h1>The xG model</h1><p>Gradient-boosted expected goals trained on ${m.n_shots.toLocaleString()} shots — validated by ROC-AUC and a calibration curve, because a usable xG must be probabilistically honest, not just rank-ordered.</p></div>
-    <div class="card"><div class="stat-grid">
+    <div class="hero"><h1>The models</h1><p>Two engines — an expected-goals model validated by calibration, and a match predictor backtested across every league-season. Honest metrics, not hand-picked ones.</p></div>
+    <div class="card"><h2>xG model</h2><p class="sub">Gradient-boosted expected goals on ${m.n_shots.toLocaleString()} shots.</p>
+      <div class="stat-grid">
       <${Stat} value=${m.roc_auc} label="ROC-AUC" cls="accent"/>
       <${Stat} value=${m.brier} label="Brier score"/>
       <${Stat} value=${m.log_loss} label="Log loss"/>
       <${Stat} value=${m.n_shots.toLocaleString()} label="Shots trained on"/>
       <${Stat} value=${`${m.predicted_goals_test} / ${m.actual_goals_test}`} label="Pred / actual goals" cls="gold"/>
     </div><p class="hint">ROC-AUC ~0.78–0.82 is the professional range. "Predicted ≈ actual" is the calibration check.</p></div>
+    ${bt&&html`<div class="card"><h2>Predictor backtest <span class="tag">${bt.league_seasons} league-seasons</span></h2>
+      <p class="sub">Every top-5-league season (2002–2025), time-split and scored by RPS. Two rating bases compared, both against the base-rate baseline. The xG basis (chance quality) is the default because it won here.</p>
+      <div class="stat-grid">
+        <${Stat} value=${bt.xg_basis.mean_rps} label="xG-basis mean RPS" cls="green"/>
+        <${Stat} value=${bt.goals_basis.mean_rps} label="Goals-basis mean RPS"/>
+        <${Stat} value=${bt.baseline.mean_rps} label="Baseline mean RPS" cls="red"/>
+        <${Stat} value=${`${bt.seasons_goals_beats_baseline}/${bt.league_seasons}`} label="Seasons beating baseline" cls="accent"/>
+        <${Stat} value=${`${bt.seasons_xg_beats_goals}/${bt.league_seasons}`} label="Seasons xG beats goals" cls="gold"/>
+      </div>
+      <img class="report-img" src="${API}/output/${bt.plot}?t=${Date.now()}"/></div>`}
     <div class="two">
-      <div class="card"><h3>Calibration</h3><p class="sub">Does a 0.3-xG chance really go in ~30% of the time?</p><img class="report-img" src="${API}/output/${m.calibration_png}?t=${Date.now()}"/></div>
-      <div class="card"><h3>Feature importance</h3><p class="sub">What the model leans on most.</p><img class="report-img" src="${API}/output/${m.importance_png}?t=${Date.now()}"/></div>
+      <div class="card"><h3>xG calibration</h3><p class="sub">Does a 0.3-xG chance really go in ~30% of the time?</p><img class="report-img" src="${API}/output/${m.calibration_png}?t=${Date.now()}"/></div>
+      <div class="card"><h3>Feature importance</h3><p class="sub">What the xG model leans on most.</p><img class="report-img" src="${API}/output/${m.importance_png}?t=${Date.now()}"/></div>
     </div>
   </div>`;
 }

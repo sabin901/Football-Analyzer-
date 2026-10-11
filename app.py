@@ -134,10 +134,25 @@ _PRED_CACHE = {}
 def _get_predictor(competition, season):
     key = (competition, season)
     if key not in _PRED_CACHE:
-        # 90-day half-life: recency weighting (recent form counts more)
-        model, metrics = predictor.validate(competition, season, half_life_days=90)
+        # xG basis (chance quality) + 90-day recency weighting — the combination
+        # the 115-season backtest found best.
+        model, metrics = predictor.validate(competition, season,
+                                            half_life_days=90, basis="xg")
         _PRED_CACHE[key] = (model, metrics)
     return _PRED_CACHE[key]
+
+
+@app.get("/api/backtest")
+def backtest_summary():
+    """Aggregated backtest across all 115 league-seasons (goals vs xG basis)."""
+    import os as _os
+    p = _os.path.join(MODELS_DIR, "backtest.json")
+    if not _os.path.exists(p):
+        raise HTTPException(404, "No backtest yet. Run: python src/backtest.py")
+    with open(p) as f:
+        data = json.load(f)
+    data["plot"] = "backtest.png"
+    return data
 
 
 # The five major European top leagues — the predictor's scope.
