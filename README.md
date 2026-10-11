@@ -16,8 +16,8 @@
 
 | Model | Metric | Result | Benchmark | Why it matters |
 |---|---|---|---|---|
-| **xG** (expected goals) | ROC-AUC | **0.77** | pro models 0.78–0.82 | Separates good chances from bad ones |
-| **xG** calibration | pred vs actual goals | **421 vs 419** | — | A "0.3 xG" chance really scores ~30% |
+| **xG** (expected goals) | ROC-AUC | **0.79** | pro models 0.78–0.82 | Separates good chances from bad ones |
+| **xG** calibration | pred vs actual goals | **2162 vs 2171** | — | A "0.3 xG" chance really scores ~30% |
 | **Predictor** (Dixon-Coles + recency) | Accuracy | **51.9%** | base rate 44.4% | 1X2 outcome, Premier League 2015/16 |
 | **Predictor** | RPS | **0.2005** | base rate 0.226 | Lower is better; pro range ~0.19–0.21 |
 
@@ -32,7 +32,7 @@ reflects that. The natural next benchmark is **bookmaker closing odds** (RPS
 
 | Capability | What you get |
 |---|---|
-| **xG model** | Gradient-boosted expected-goals model, ~15k+ shots, calibrated, with reliability + feature-importance plots |
+| **xG model** | Gradient-boosted expected-goals model, 75k+ shots, calibrated, with reliability + feature-importance plots |
 | **Expected Threat (xT)** | Values ball *progression*, not just shots — an xT surface + ranked ball progressors (Koke, Kroos top La Liga 15/16) |
 | **Post-match report** | Score, shot maps, cumulative-xG race, pass networks — the club review in one dashboard |
 | **Scouting report** | Season opponent profile: xG for/against, chance-creation & vulnerability heatmaps, set-piece reliance, form |
