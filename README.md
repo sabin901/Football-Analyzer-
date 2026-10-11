@@ -62,6 +62,49 @@ Outputs land in `output/`.
 
 ---
 
+## 📥 Importing data
+
+### StatsBomb (bulk, built in)
+
+`src/ingest.py` pulls **every shot from every available match** — ~3,960
+matches across 80 competition-seasons (La Liga, Premier League, Serie A, Ligue
+1, Bundesliga, multiple World Cups and Euros, NWSL, WSL, and more) — into one
+local dataset. It's **resumable**: already-ingested matches are skipped, so you
+can stop and restart any time.
+
+```bash
+python src/ingest.py              # ingest everything (resumable; ~1 hour)
+python src/ingest.py --limit 300  # just the next 300 matches
+python src/ingest.py --comp 11 90 # one competition+season (La Liga 20/21)
+python src/ingest.py --stats      # how much is ingested so far
+```
+
+The result (`data/shots.parquet`) becomes the xG model's training set
+automatically — `python src/xg_model.py` trains on the full ingested corpus
+when it's present, which is far larger than the default 4-competition pull.
+
+### Live sources (Understat, FBref, football-data.co.uk)
+
+These are live websites — reachable from any normal machine (but blocked by
+restrictive firewalls). `src/sources.py` imports them via the
+[`soccerdata`](https://soccerdata.readthedocs.io) package:
+
+```bash
+pip install soccerdata
+python src/sources.py understat ENG 2023     # shot data + xG, top-5 leagues
+python src/sources.py fbref ENG 2023         # Opta-derived season stats
+python src/sources.py matchhistory ENG 2023  # results + odds, deep history
+```
+
+### A note on SofaScore
+
+SofaScore has **no official/public API**. Its internal endpoints are
+undocumented, against its terms of service, and protected by bot-detection, so
+they're not a sound base for a project. The sources above are free, legitimate,
+and far more complete.
+
+---
+
 ## 🧠 The xG model
 
 | | |
