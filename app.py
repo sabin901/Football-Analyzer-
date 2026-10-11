@@ -28,6 +28,7 @@ from statsbombpy import sb
 import report as match_report
 import scouting as scout
 import predict as predictor
+import players as players_mod
 
 OUTPUT_DIR = os.path.join(HERE, "output")
 MODELS_DIR = os.path.join(HERE, "models")
@@ -331,6 +332,44 @@ def xt_output():
         sets.append({"key": key, "title": title,
                      "surface": os.path.basename(surf), "leaders": leaders})
     return {"sets": sets}
+
+
+_PLAYERS_CACHE = {}
+
+
+def _players_df(key):
+    import pandas as pd
+    if key not in _PLAYERS_CACHE:
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", f"players_{key}.parquet")
+        if not os.path.exists(path):
+            raise HTTPException(404, "No player data for that set.")
+        _PLAYERS_CACHE[key] = pd.read_parquet(path)
+    return _PLAYERS_CACHE[key]
+
+
+@app.get("/api/players/sets")
+def players_sets():
+    """Competition-seasons with a cached player dataset."""
+    return [{"key": c["key"], "title": c["title"]} for c in players_mod.cached()]
+
+
+@app.get("/api/players")
+def players_list(key: str):
+    df = _players_df(key).sort_values("npxg", ascending=False)
+    return [{"player": r["player"], "team": r["team"], "pos": r["pos"],
+             "minutes": int(r["minutes"])} for _, r in df.iterrows()]
+
+
+@app.get("/api/player")
+def player_profile(key: str, player: str):
+    df = _players_df(key)
+    prof = players_mod.percentile_profile(df, player)
+    if not prof:
+        raise HTTPException(404, "Player not found.")
+    sim = players_mod.similar_players(df, player, n=8)
+    row = df[df["player"] == player].iloc[0]
+    metrics = {players_mod.METRIC_LABELS[m]: float(row[m]) for m in players_mod.METRICS}
+    return {"profile": prof, "similar": sim, "metrics": metrics}
 
 
 @app.get("/api/model")

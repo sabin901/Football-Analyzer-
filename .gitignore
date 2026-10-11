@@ -14,5 +14,6 @@ output/ui_*.png
 data/*
 !data/matches.parquet
 !data/results_history.parquet
+!data/players_*.parquet
 !data/live/
 !data/live/**
