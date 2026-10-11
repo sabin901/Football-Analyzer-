@@ -178,6 +178,24 @@ def predict_fixture(competition: str, season: str, home: str, away: str):
     return pred
 
 
+@app.get("/api/xt")
+def xt_output():
+    """Serve the generated Expected Threat surface + top ball progressors."""
+    import glob
+    surfaces = sorted(glob.glob(os.path.join(OUTPUT_DIR, "xt_surface_*.png")))
+    leaders_files = sorted(glob.glob(os.path.join(OUTPUT_DIR, "xt_leaders_*.json")))
+    if not surfaces:
+        raise HTTPException(404, "No xT output yet. Run: python src/xt.py \"La Liga\" \"2015/2016\"")
+    leaders = []
+    if leaders_files:
+        with open(leaders_files[0]) as f:
+            leaders = json.load(f)
+    # derive a readable title from the filename
+    name = os.path.basename(surfaces[0]).replace("xt_surface_", "").replace(".png", "")
+    title = name.replace("_", " ").replace("-", "/")
+    return {"surface": os.path.basename(surfaces[0]), "leaders": leaders, "title": title}
+
+
 @app.get("/api/model")
 def model_metrics():
     """Return the trained model's validation metrics + plot URLs."""
