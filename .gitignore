@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+output/report_*.png
+output/report_*.json
+output/scout_*.png
+output/scout_*.json
+!output/report_8658.*
+!output/scout_2_27_Arsenal.*
+.DS_Store
