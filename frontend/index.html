@@ -1,205 +1,299 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Football Analyzer</title>
 <style>
   :root{
-    --bg:#0b0e13; --bg2:#0f141b; --panel:#141a22; --panel2:#1a212b; --raise:#1e2630;
-    --line:#242d39; --line2:#2d3745;
-    --fg:#eef2f7; --mut:#93a0b1; --mut2:#6b7686;
-    --accent:#4ea1ff; --accent-dim:#2b5c93; --gold:#ffd34e; --green:#46d19e; --red:#ff6b6b;
-    --r:14px; --r-sm:10px;
-    --sh:0 1px 3px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.25);
-    --fs: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --bg:#0a0d12; --bg2:#0d1119; --panel:rgba(22,28,38,.72); --panel-solid:#141a24;
+    --panel2:#1a212c; --raise:#202834; --line:rgba(255,255,255,.07); --line2:rgba(255,255,255,.12);
+    --fg:#f0f4f9; --mut:#9aa7b8; --mut2:#67727f;
+    --accent:#4ea1ff; --accent2:#46d19e; --grad:linear-gradient(120deg,#46d19e,#4ea1ff);
+    --gold:#ffd34e; --green:#46d19e; --red:#ff6b6b; --violet:#a78bfa;
+    --r:16px; --r-sm:11px;
+    --sh:0 2px 8px rgba(0,0,0,.35), 0 20px 50px -20px rgba(0,0,0,.6);
+    --glow:0 0 0 1px rgba(78,161,255,.2), 0 8px 30px -8px rgba(78,161,255,.35);
+    --fs:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  :root[data-theme="light"]{
+    --bg:#f4f6fa; --bg2:#eef1f6; --panel:rgba(255,255,255,.82); --panel-solid:#ffffff;
+    --panel2:#f3f5f9; --raise:#eaeef4; --line:rgba(15,25,40,.09); --line2:rgba(15,25,40,.16);
+    --fg:#121820; --mut:#5a6778; --mut2:#8a95a3;
+    --sh:0 2px 8px rgba(30,45,70,.08), 0 20px 50px -24px rgba(30,45,70,.18);
   }
   *{box-sizing:border-box}
-  html{-webkit-text-size-adjust:100%}
+  html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
   body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--fs);
-       -webkit-font-smoothing:antialiased;line-height:1.5;
-       background-image:radial-gradient(1200px 500px at 80% -10%, rgba(78,161,255,.06), transparent 60%);}
+    -webkit-font-smoothing:antialiased;line-height:1.5;overflow-x:hidden;
+    background-image:
+      radial-gradient(900px 440px at 88% -8%, rgba(78,161,255,.10), transparent 62%),
+      radial-gradient(760px 420px at 6% 2%, rgba(70,209,158,.08), transparent 58%);}
   .num{font-variant-numeric:tabular-nums}
   a{color:var(--accent);text-decoration:none}
+  ::selection{background:rgba(78,161,255,.3)}
 
-  /* ---- top bar ---- */
-  .topbar{position:sticky;top:0;z-index:20;backdrop-filter:blur(10px);
-    background:rgba(11,14,19,.82);border-bottom:1px solid var(--line)}
-  .topbar-in{max-width:1120px;margin:0 auto;padding:14px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-  .brand{display:flex;align-items:center;gap:10px;font-weight:750;font-size:18px;letter-spacing:-.02em}
-  .brand .logo{font-size:22px;filter:drop-shadow(0 2px 6px rgba(78,161,255,.4))}
-  .brand .by{color:var(--mut2);font-weight:500;font-size:12px;margin-left:2px}
-  .nav{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
-  .tab{appearance:none;border:1px solid transparent;background:transparent;color:var(--mut);
-    cursor:pointer;font-size:13.5px;font-weight:600;padding:8px 14px;border-radius:999px;
-    font-family:inherit;transition:.15s;white-space:nowrap}
-  .tab:hover{color:var(--fg);background:var(--panel)}
-  .tab.active{background:var(--accent);color:#06101f;box-shadow:0 2px 12px rgba(78,161,255,.35)}
+  /* top bar */
+  .topbar{position:sticky;top:0;z-index:40;backdrop-filter:blur(14px) saturate(140%);
+    background:color-mix(in srgb, var(--bg) 78%, transparent);border-bottom:1px solid var(--line)}
+  .topbar-in{max-width:1180px;margin:0 auto;padding:13px 22px;display:flex;align-items:center;gap:12px}
+  .brand{display:flex;align-items:center;gap:11px;font-weight:800;font-size:18px;letter-spacing:-.02em;white-space:nowrap}
+  .brand .logo{display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:var(--grad);
+    font-size:17px;box-shadow:0 4px 14px -4px rgba(78,161,255,.6)}
+  .brand .ac{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .nav{display:flex;gap:3px;margin-left:auto;overflow-x:auto;scrollbar-width:none}
+  .nav::-webkit-scrollbar{display:none}
+  .tab{appearance:none;border:1px solid transparent;background:transparent;color:var(--mut);cursor:pointer;
+    font-size:13px;font-weight:650;padding:8px 13px;border-radius:999px;font-family:inherit;
+    transition:.18s cubic-bezier(.4,0,.2,1);white-space:nowrap}
+  .tab:hover{color:var(--fg);background:var(--panel2)}
+  .tab.active{color:#06101f;background:var(--grad);box-shadow:0 3px 14px -3px rgba(78,161,255,.5)}
+  .tbtn{appearance:none;border:1px solid var(--line2);background:var(--panel2);color:var(--mut);
+    width:34px;height:34px;border-radius:10px;cursor:pointer;font-size:15px;display:grid;place-items:center;
+    margin-left:8px;transition:.15s}
+  .tbtn:hover{color:var(--fg);border-color:var(--accent)}
 
-  main{max-width:1120px;margin:0 auto;padding:26px 22px 80px}
-  .hero{margin:6px 0 22px}
-  .hero h1{font-size:26px;margin:0 0 6px;letter-spacing:-.02em;font-weight:750}
-  .hero p{margin:0;color:var(--mut);font-size:14.5px;max-width:720px}
+  main{max-width:1180px;margin:0 auto;padding:26px 22px 90px}
+  .view{animation:rise .42s cubic-bezier(.2,.7,.2,1)}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 
-  .card{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);
-    border-radius:var(--r);padding:22px;margin-bottom:18px;box-shadow:var(--sh)}
-  .card h2{margin:0 0 3px;font-size:17px;font-weight:700;letter-spacing:-.01em}
-  .card h3{margin:0 0 12px;font-size:14px;font-weight:650;color:var(--fg)}
-  .card .sub{margin:0 0 18px;color:var(--mut);font-size:13px;max-width:760px}
+  .hero{margin:4px 0 22px}
+  .hero h1{font-size:28px;margin:0 0 7px;letter-spacing:-.025em;font-weight:820;line-height:1.1}
+  .hero p{margin:0;color:var(--mut);font-size:15px;max-width:740px}
+  .eyebrow{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;letter-spacing:.09em;
+    text-transform:uppercase;color:var(--accent2);margin-bottom:12px}
+  .eyebrow::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent2);box-shadow:0 0 10px var(--accent2)}
+
+  .card{background:var(--panel);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:var(--r);
+    padding:22px;margin-bottom:18px;box-shadow:var(--sh);transition:border-color .2s,transform .2s}
+  .card h2{margin:0 0 3px;font-size:17px;font-weight:750;letter-spacing:-.01em}
+  .card h3{margin:0 0 12px;font-size:14px;font-weight:700;color:var(--fg)}
+  .card .sub{margin:0 0 18px;color:var(--mut);font-size:13px;max-width:780px}
   .hint{font-size:12.5px;color:var(--mut2);margin-top:12px}
 
   .controls{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
-  .field{display:flex;flex-direction:column;gap:7px;min-width:190px;flex:1}
-  .field label{font-size:11px;color:var(--mut2);text-transform:uppercase;letter-spacing:.07em;font-weight:650}
-  select{font-size:14px;padding:11px 12px;border-radius:var(--r-sm);background:var(--panel2);
-    color:var(--fg);border:1px solid var(--line2);font-family:inherit;transition:.15s;cursor:pointer}
-  select:hover{border-color:#3a4553}
-  select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(78,161,255,.15)}
-  button.go{background:var(--accent);color:#06101f;border:none;font-weight:700;font-size:14px;
-    cursor:pointer;padding:12px 22px;border-radius:var(--r-sm);font-family:inherit;transition:.15s}
-  button.go:hover:not(:disabled){filter:brightness(1.07);transform:translateY(-1px)}
-  button.go:disabled{opacity:.4;cursor:not-allowed}
+  .field{display:flex;flex-direction:column;gap:7px;min-width:180px;flex:1}
+  .field label{font-size:11px;color:var(--mut2);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+  select{font-size:14px;padding:11px 12px;border-radius:var(--r-sm);background:var(--panel2);color:var(--fg);
+    border:1px solid var(--line2);font-family:inherit;transition:.15s;cursor:pointer;width:100%}
+  select:hover{border-color:var(--mut2)}
+  select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(78,161,255,.16)}
+  button.go{background:var(--grad);color:#06101f;border:none;font-weight:750;font-size:14px;cursor:pointer;
+    padding:12px 22px;border-radius:var(--r-sm);font-family:inherit;transition:.16s;box-shadow:0 4px 14px -5px rgba(78,161,255,.6)}
+  button.go:hover:not(:disabled){transform:translateY(-1px);filter:brightness(1.06)}
+  button.go:active:not(:disabled){transform:translateY(0)}
+  button.go:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
 
   .report-img{width:100%;border-radius:var(--r-sm);border:1px solid var(--line);margin-top:6px;background:var(--panel2)}
 
-  /* ---- stat tiles ---- */
-  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:12px;margin-bottom:18px}
-  .stat{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:15px 16px;transition:.15s}
-  .stat:hover{border-color:var(--line2);transform:translateY(-1px)}
-  .stat .v{font-size:23px;font-weight:760;letter-spacing:-.02em}
-  .stat .l{font-size:12px;color:var(--mut);margin-top:4px;line-height:1.35}
-  .v.accent{color:var(--accent)} .v.gold{color:var(--gold)} .v.green{color:var(--green)} .v.red{color:var(--red)}
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:18px}
+  .stat{background:var(--panel2);border:1px solid var(--line);border-radius:13px;padding:16px;transition:.18s;position:relative;overflow:hidden}
+  .stat:hover{border-color:var(--line2);transform:translateY(-2px)}
+  .stat .v{font-size:24px;font-weight:800;letter-spacing:-.02em}
+  .stat .l{font-size:12px;color:var(--mut);margin-top:5px;line-height:1.35}
+  .v.accent{color:var(--accent)} .v.gold{color:var(--gold)} .v.green{color:var(--green)} .v.red{color:var(--red)} .v.violet{color:var(--violet)}
 
-  /* ---- tables ---- */
+  /* feature cards (overview) */
+  .feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+  .fcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;cursor:pointer;
+    transition:.2s;box-shadow:var(--sh)}
+  .fcard:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow:var(--glow)}
+  .fcard .ico{font-size:22px;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;
+    background:var(--panel2);margin-bottom:12px}
+  .fcard h4{margin:0 0 5px;font-size:15px;font-weight:720}
+  .fcard p{margin:0;color:var(--mut);font-size:13px;line-height:1.5}
+
   table{width:100%;border-collapse:collapse;font-size:13.5px}
-  thead th{text-align:left;color:var(--mut2);font-weight:600;padding:9px 10px;font-size:11.5px;
+  thead th{text-align:left;color:var(--mut2);font-weight:650;padding:9px 10px;font-size:11px;
     text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--line2)}
   tbody td{padding:10px;border-top:1px solid var(--line)}
   tbody tr{transition:background .12s}
-  tbody tr:hover{background:var(--panel2)}
+  tbody tr.click{cursor:pointer}
+  tbody tr.click:hover{background:var(--panel2)}
   td.a{color:var(--accent)} td.r{color:var(--red)} td.g{color:var(--green)} td.mut{color:var(--mut)}
   .pos{color:var(--mut2);font-variant-numeric:tabular-nums;width:26px}
-  .teamcell{font-weight:600}
+  .teamcell{font-weight:650}
 
-  /* form badges */
   .form{display:inline-flex;gap:3px}
-  .fb{width:19px;height:19px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;
-    font-size:10.5px;font-weight:800;color:#0a0d12}
-  .fb.W{background:var(--green)} .fb.D{background:#55606f;color:#fff} .fb.L{background:var(--red)}
+  .fb{width:19px;height:19px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#07100a}
+  .fb.W{background:var(--green)} .fb.D{background:#5b6775;color:#fff} .fb.L{background:var(--red)}
 
-  /* diff chip + mini bar */
-  .chip{display:inline-block;padding:2px 8px;border-radius:999px;font-weight:700;font-size:12px;font-variant-numeric:tabular-nums}
-  .chip.pos{background:rgba(70,209,158,.15);color:var(--green)}
-  .chip.neg{background:rgba(255,107,107,.15);color:var(--red)}
-  .chip.zero{background:#2a333f;color:var(--mut)}
+  .chip{display:inline-block;padding:2px 9px;border-radius:999px;font-weight:750;font-size:12px;font-variant-numeric:tabular-nums}
+  .chip.pos{background:rgba(70,209,158,.16);color:var(--green)}
+  .chip.neg{background:rgba(255,107,107,.16);color:var(--red)}
+  .chip.zero{background:var(--raise);color:var(--mut)}
 
-  /* probability bar (predictor) */
-  .probbar{display:flex;height:34px;border-radius:9px;overflow:hidden;border:1px solid var(--line2);margin-top:4px}
-  .probbar .seg{display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:750;color:#07101c}
-  .seg.h{background:var(--accent)} .seg.d{background:#55606f;color:#fff} .seg.a{background:var(--red)}
+  .probbar{display:flex;height:38px;border-radius:11px;overflow:hidden;border:1px solid var(--line2);margin-top:4px}
+  .probbar .seg{display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#07101c;transition:width .5s cubic-bezier(.3,.8,.3,1)}
+  .seg.h{background:var(--accent)} .seg.d{background:#5b6775;color:#fff} .seg.a{background:var(--red)}
 
   .two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
   @media(max-width:820px){.two{grid-template-columns:1fr}}
   .muted{color:var(--mut)}
+  .tag{display:inline-block;font-size:11px;color:var(--mut2);font-weight:650;background:var(--panel2);
+    border:1px solid var(--line);padding:3px 9px;border-radius:999px;margin-left:8px;vertical-align:middle}
 
-  .spinner{display:inline-block;width:18px;height:18px;border:2.5px solid #2a3340;
+  /* skeleton */
+  .sk{background:linear-gradient(90deg,var(--panel2) 25%,var(--raise) 50%,var(--panel2) 75%);
+    background-size:200% 100%;animation:shim 1.3s infinite;border-radius:8px}
+  @keyframes shim{to{background-position:-200% 0}}
+  .spinner{display:inline-block;width:18px;height:18px;border:2.5px solid var(--line2);
     border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:9px}
   @keyframes spin{to{transform:rotate(360deg)}}
-  .loading{color:var(--mut);font-size:14px;padding:34px 0;text-align:center}
+  .loading{color:var(--mut);font-size:14px;padding:30px 0;text-align:center}
   .err{color:var(--red);font-size:14px;padding:13px 16px;background:rgba(255,107,107,.08);
     border:1px solid rgba(255,107,107,.3);border-radius:var(--r-sm);margin-bottom:16px}
-  .tag{display:inline-block;font-size:11px;color:var(--mut2);font-weight:600;background:var(--panel2);
-    border:1px solid var(--line);padding:3px 9px;border-radius:999px;margin-left:8px;vertical-align:middle}
-  footer{max-width:1120px;margin:0 auto;padding:10px 22px 50px;color:var(--mut2);font-size:12px;text-align:center}
+  footer{max-width:1180px;margin:0 auto;padding:12px 22px 54px;color:var(--mut2);font-size:12px;text-align:center}
 </style>
 </head>
 <body>
 <div id="root"></div>
 
 <script type="importmap">
-{ "imports": {
-  "preact":"/app/vendor/preact.mjs",
-  "preact/hooks":"/app/vendor/hooks.mjs",
-  "htm":"/app/vendor/htm.mjs" } }
+{ "imports":{ "preact":"/app/vendor/preact.mjs","preact/hooks":"/app/vendor/hooks.mjs","htm":"/app/vendor/htm.mjs" } }
 </script>
 <script type="module">
 import { h, render } from "preact";
-import { useState, useEffect } from "preact/hooks";
+import { useState, useEffect, useRef } from "preact/hooks";
 import htm from "htm";
 const html = htm.bind(h);
 const API = "";
 
-async function get(url){
-  const r = await fetch(url);
-  if(!r.ok){ const t = await r.text(); throw new Error(t || r.statusText); }
-  return r.json();
-}
-function Stat({value,label,cls}){
-  return html`<div class="stat"><div class="v num ${cls||''}">${value}</div><div class="l">${label}</div></div>`;
-}
-function Form({form}){
-  return html`<span class="form">${(form||[]).map(f=>html`<span class="fb ${f}">${f}</span>`)}</span>`;
-}
-function Loading({label}){ return html`<div class="loading"><span class="spinner"></span>${label||'Loading…'}</div>`; }
+async function get(url){ const r=await fetch(url); if(!r.ok){const t=await r.text();throw new Error(t||r.statusText);} return r.json(); }
 
-/* ---- inline SVG: actual vs expected points scatter ---- */
+/* animated count-up */
+function useCountUp(target,dur=850){
+  const [v,setV]=useState(0); const ref=useRef(0);
+  useEffect(()=>{ let raf; const from=ref.current, start=performance.now();
+    const tick=now=>{ const p=Math.min(1,(now-start)/dur); const e=1-Math.pow(1-p,3);
+      const cur=from+(target-from)*e; ref.current=cur; setV(cur); if(p<1) raf=requestAnimationFrame(tick); };
+    raf=requestAnimationFrame(tick); return ()=>cancelAnimationFrame(raf);
+  },[target]); return v;
+}
+function Counter({value,dec=0,suffix="",prefix="",comma=false}){
+  const v=useCountUp(value); let s=dec?v.toFixed(dec):Math.round(v).toString();
+  if(comma) s=Math.round(v).toLocaleString();
+  return html`<span class="num">${prefix}${s}${suffix}</span>`;
+}
+function Stat({value,label,cls}){ return html`<div class="stat"><div class="v num ${cls||''}">${value}</div><div class="l">${label}</div></div>`; }
+function Form({form}){ return html`<span class="form">${(form||[]).map(f=>html`<span class="fb ${f}">${f}</span>`)}</span>`; }
+function Loading({label}){ return html`<div class="loading"><span class="spinner"></span>${label||'Loading…'}</div>`; }
+function Skeleton({h:ht=140}){ return html`<div class="card"><div class="sk" style="height:${ht}px"></div></div>`; }
+
+/* ---- SVG charts ---- */
 function Scatter({table,onPick}){
-  const W=640,H=430,pad=48;
-  const xs=table.map(t=>t.xpts), ys=table.map(t=>t.pts);
-  const lo=Math.min(...xs,...ys)-3, hi=Math.max(...xs,...ys)+3;
-  const sx=v=>pad+(v-lo)/(hi-lo)*(W-pad*1.4);
-  const sy=v=>H-pad-(v-lo)/(hi-lo)*(H-pad*1.6);
-  const ticks=[]; for(let v=Math.ceil(lo/10)*10; v<hi; v+=10) ticks.push(v);
+  const W=680,H=440,pad=48;
+  const xs=table.map(t=>t.xpts),ys=table.map(t=>t.pts);
+  const lo=Math.min(...xs,...ys)-3,hi=Math.max(...xs,...ys)+3;
+  const sx=v=>pad+(v-lo)/(hi-lo)*(W-pad*1.4),sy=v=>H-pad-(v-lo)/(hi-lo)*(H-pad*1.6);
+  const ticks=[];for(let v=Math.ceil(lo/10)*10;v<hi;v+=10)ticks.push(v);
   return html`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">
-    ${ticks.map(v=>html`<g>
-      <line x1=${sx(v)} y1=${sy(lo)} x2=${sx(v)} y2=${sy(hi)} stroke="#1b232e"/>
-      <line x1=${sx(lo)} y1=${sy(v)} x2=${sx(hi)} y2=${sy(v)} stroke="#1b232e"/>
-      <text x=${sx(v)} y=${H-pad+16} fill="#6b7686" font-size="10" text-anchor="middle">${v}</text>
-      <text x=${pad-10} y=${sy(v)+3} fill="#6b7686" font-size="10" text-anchor="end">${v}</text>
-    </g>`)}
-    <line x1=${sx(lo)} y1=${sy(lo)} x2=${sx(hi)} y2=${sy(hi)} stroke="#3a4553" stroke-dasharray="5 5"/>
-    <text x=${W-pad} y=${sy(hi)+14} fill="#6b7686" font-size="10" text-anchor="end">on the line = as expected</text>
-    <text x=${W/2} y=${H-10} fill="#93a0b1" font-size="11" text-anchor="middle">Expected points (xPts)</text>
-    <text x=14 y=${H/2} fill="#93a0b1" font-size="11" text-anchor="middle" transform="rotate(-90 14 ${H/2})">Actual points</text>
-    ${table.map(t=>{const over=t.pts>=t.xpts; return html`<g style="cursor:pointer" onClick=${()=>onPick&&onPick(t.team)}>
-      <title>${t.team}: ${t.pts} pts vs ${t.xpts} xPts (${t.xpts_diff>0?'+':''}${t.xpts_diff})</title>
-      <circle cx=${sx(t.xpts)} cy=${sy(t.pts)} r="5.5" fill=${over?'#46d19e':'#ff6b6b'} fill-opacity="0.85" stroke="#0b0e13" stroke-width="1"/>
-      <text x=${sx(t.xpts)+8} y=${sy(t.pts)+3} fill="#c3ccd8" font-size="9.5">${t.team.length>12?t.team.slice(0,11)+'…':t.team}</text>
-    </g>`;})}
+    ${ticks.map(v=>html`<g><line x1=${sx(v)} y1=${sy(lo)} x2=${sx(v)} y2=${sy(hi)} stroke="var(--line)"/>
+      <line x1=${sx(lo)} y1=${sy(v)} x2=${sx(hi)} y2=${sy(v)} stroke="var(--line)"/>
+      <text x=${sx(v)} y=${H-pad+16} fill="var(--mut2)" font-size="10" text-anchor="middle">${v}</text>
+      <text x=${pad-10} y=${sy(v)+3} fill="var(--mut2)" font-size="10" text-anchor="end">${v}</text></g>`)}
+    <line x1=${sx(lo)} y1=${sy(lo)} x2=${sx(hi)} y2=${sy(hi)} stroke="var(--mut2)" stroke-dasharray="5 5" opacity=".7"/>
+    <text x=${W/2} y=${H-8} fill="var(--mut)" font-size="11" text-anchor="middle">Expected points (xPts)</text>
+    <text x=14 y=${H/2} fill="var(--mut)" font-size="11" text-anchor="middle" transform="rotate(-90 14 ${H/2})">Actual points</text>
+    ${table.map(t=>{const over=t.pts>=t.xpts;return html`<g style="cursor:pointer" onClick=${()=>onPick&&onPick(t.team)}>
+      <title>${t.team}: ${t.pts} pts vs ${t.xpts} xPts</title>
+      <circle cx=${sx(t.xpts)} cy=${sy(t.pts)} r="6" fill=${over?'var(--green)':'var(--red)'} fill-opacity=".9" stroke="var(--bg)" stroke-width="1.5"/>
+      <text x=${sx(t.xpts)+9} y=${sy(t.pts)+3} fill="var(--fg)" font-size="9.5" opacity=".82">${t.team.length>12?t.team.slice(0,11)+'…':t.team}</text></g>`;})}
   </svg>`;
 }
-
-/* ---- inline SVG: cumulative points progression ---- */
 function PointsLine({log}){
-  const W=640,H=300,pad=40; const n=log.length;
-  const maxP=Math.max(log[n-1].cum_pts, log[n-1].cum_xpts||0)+2;
-  const sx=i=>pad+i/(n-1)*(W-pad*1.4);
-  const sy=v=>H-pad-v/maxP*(H-pad*1.5);
-  const path=(key)=>log.map((l,i)=>`${i?'L':'M'}${sx(i).toFixed(1)} ${sy(l[key]).toFixed(1)}`).join(' ');
+  const W=680,H=300,pad=42,n=log.length;
+  const maxP=Math.max(log[n-1].cum_pts,log[n-1].cum_xpts||0)+2;
+  const sx=i=>pad+i/(n-1)*(W-pad*1.4),sy=v=>H-pad-v/maxP*(H-pad*1.5);
+  const path=k=>log.map((l,i)=>`${i?'L':'M'}${sx(i).toFixed(1)} ${sy(l[k]).toFixed(1)}`).join(' ');
   const hasX=log[n-1].cum_xpts!=null;
   return html`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">
-    ${[0,Math.round(maxP/2),Math.round(maxP)].map(v=>html`<g>
-      <line x1=${pad} y1=${sy(v)} x2=${W-pad*0.4} y2=${sy(v)} stroke="#1b232e"/>
-      <text x=${pad-8} y=${sy(v)+3} fill="#6b7686" font-size="10" text-anchor="end">${v}</text></g>`)}
-    ${hasX?html`<path d=${path('cum_xpts')} fill="none" stroke="#ffd34e" stroke-width="2" stroke-dasharray="4 4" opacity="0.9"/>`:null}
-    <path d=${path('cum_pts')} fill="none" stroke="#4ea1ff" stroke-width="2.5"/>
-    <text x=${W-pad} y=18 fill="#4ea1ff" font-size="11" text-anchor="end">actual points</text>
-    ${hasX?html`<text x=${W-pad} y=33 fill="#ffd34e" font-size="11" text-anchor="end">expected points</text>`:null}
-    <text x=${W/2} y=${H-6} fill="#93a0b1" font-size="11" text-anchor="middle">Matchday →</text>
+    ${[0,Math.round(maxP/2),Math.round(maxP)].map(v=>html`<g><line x1=${pad} y1=${sy(v)} x2=${W-pad*0.4} y2=${sy(v)} stroke="var(--line)"/>
+      <text x=${pad-8} y=${sy(v)+3} fill="var(--mut2)" font-size="10" text-anchor="end">${v}</text></g>`)}
+    ${hasX?html`<path d=${path('cum_xpts')} fill="none" stroke="var(--gold)" stroke-width="2" stroke-dasharray="4 4" opacity=".9"/>`:null}
+    <path d=${path('cum_pts')} fill="none" stroke="var(--accent)" stroke-width="2.6"/>
+    <text x=${W-pad} y=16 fill="var(--accent)" font-size="11" text-anchor="end">actual points</text>
+    ${hasX?html`<text x=${W-pad} y=32 fill="var(--gold)" font-size="11" text-anchor="end">expected points</text>`:null}
+    <text x=${W/2} y=${H-6} fill="var(--mut)" font-size="11" text-anchor="middle">Matchday →</text>
   </svg>`;
 }
+function Radar({axes,a,b,nameA,nameB}){
+  const W=420,H=380,cx=W/2,cy=H/2+6,R=128,N=axes.length;
+  const pt=(i,val)=>{const ang=-Math.PI/2+i*2*Math.PI/N;return [cx+Math.cos(ang)*R*val,cy+Math.sin(ang)*R*val];};
+  const poly=vals=>vals.map((v,i)=>pt(i,v).join(',')).join(' ');
+  const rings=[.25,.5,.75,1];
+  return html`<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:440px;height:auto;display:block;margin:0 auto">
+    ${rings.map(r=>html`<polygon points=${axes.map((_,i)=>pt(i,r).join(',')).join(' ')} fill="none" stroke="var(--line)"/>`)}
+    ${axes.map((ax,i)=>{const[x,y]=pt(i,1.12);return html`<g>
+      <line x1=${cx} y1=${cy} x2=${pt(i,1)[0]} y2=${pt(i,1)[1]} stroke="var(--line)"/>
+      <text x=${x} y=${y} fill="var(--mut)" font-size="10.5" text-anchor="middle" dominant-baseline="middle">${ax}</text></g>`;})}
+    <polygon points=${poly(b)} fill="rgba(255,107,107,.16)" stroke="var(--red)" stroke-width="2"/>
+    <polygon points=${poly(a)} fill="rgba(78,161,255,.18)" stroke="var(--accent)" stroke-width="2"/>
+  </svg>
+  <div style="display:flex;gap:18px;justify-content:center;margin-top:6px;font-size:12.5px">
+    <span style="color:var(--accent);font-weight:700">● ${nameA}</span>
+    <span style="color:var(--red);font-weight:700">● ${nameB}</span>
+  </div>`;
+}
 
-/* ---- team profile drill-down ---- */
+/* ---------------- Overview ---------------- */
+function Overview({go}){
+  const [m,setM]=useState(null);const [n,setN]=useState(null);const [tbl,setTbl]=useState(null);
+  useEffect(()=>{ get(`${API}/api/model`).then(setM).catch(()=>{});
+    get(`${API}/api/predict/seasons`).then(s=>setN(s.length)).catch(()=>{});
+    get(`${API}/api/table?competition=Premier%20League&season=2022/2023`).then(setTbl).catch(()=>{}); },[]);
+  const over = tbl&&tbl.has_xpts? [...tbl.table].sort((a,b)=>b.xpts_diff-a.xpts_diff)[0]:null;
+  const under = tbl&&tbl.has_xpts? [...tbl.table].sort((a,b)=>a.xpts_diff-b.xpts_diff)[0]:null;
+  const feats=[
+    ["table","📊","League table","Standings beside expected points — who's over- and under-performing."],
+    ["compare","⚔️","Compare teams","Head-to-head radar across attack, defence, form and goals."],
+    ["predict","🔮","Match predictor","Win/draw/loss, expected goals and scorelines for any fixture."],
+    ["xt","🎯","Expected Threat","Value ball progression and rank the best creators."],
+    ["match","⚽","Match report","Shot maps, xG race and pass networks from event data."],
+    ["scout","🔍","Scouting","Full-season opponent profiles and tendencies."],
+  ];
+  return html`<div class="view">
+    <div class="hero">
+      <div class="eyebrow">Football intelligence</div>
+      <h1>See the game beneath the scoreline.</h1>
+      <p>An end-to-end analytics engine — expected goals, expected threat, team strength and match prediction — built from raw event data across the five major European leagues and 23 seasons.</p>
+    </div>
+    <div class="stat-grid">
+      <div class="stat"><div class="v accent">${m?html`<${Counter} value=${m.roc_auc} dec=${3}/>`:'—'}</div><div class="l">xG model ROC-AUC</div></div>
+      <div class="stat"><div class="v">${m?html`<${Counter} value=${m.n_shots} comma=${true}/>`:'—'}</div><div class="l">shots trained on</div></div>
+      <div class="stat"><div class="v gold">${n?html`<${Counter} value=${n}/>`:'—'}</div><div class="l">league-seasons</div></div>
+      <div class="stat"><div class="v green">${html`<${Counter} value=${54.9} dec=${1} suffix="%"/>`}</div><div class="l">predictor accuracy (PL 22/23)</div></div>
+    </div>
+    ${over&&under&&html`<div class="two">
+      <div class="card"><h3>Biggest over-performer · PL 2022/23</h3>
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="font-size:30px;font-weight:820">${over.team}</div>
+          <span class="chip pos">+${over.xpts_diff} vs xPts</span></div>
+        <p class="sub" style="margin-top:10px">Took ${over.pts} points from fixtures the model valued at ${over.xpts} — squeezing more from their chances than the underlying play suggested.</p></div>
+      <div class="card"><h3>Biggest under-performer · PL 2022/23</h3>
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="font-size:30px;font-weight:820">${under.team}</div>
+          <span class="chip neg">${under.xpts_diff} vs xPts</span></div>
+        <p class="sub" style="margin-top:10px">"Deserved" ${under.xpts} points on the model but took only ${under.pts} — the gap that often precedes a sacking or a relegation.</p></div>
+    </div>`}
+    <h3 style="margin:26px 0 12px;font-size:14px;color:var(--mut2);text-transform:uppercase;letter-spacing:.07em">Explore</h3>
+    <div class="feat">
+      ${feats.map(([k,ic,t,d])=>html`<div class="fcard" onClick=${()=>go(k)}>
+        <div class="ico">${ic}</div><h4>${t}</h4><p>${d}</p></div>`)}
+    </div>
+  </div>`;
+}
+
+/* ---------------- League Table + profile ---------------- */
 function TeamProfile({competition,season,team,onBack}){
-  const [d,setD]=useState(null); const [err,setErr]=useState("");
+  const [d,setD]=useState(null);const [err,setErr]=useState("");
   useEffect(()=>{ setD(null); get(`${API}/api/team?competition=${encodeURIComponent(competition)}&season=${encodeURIComponent(season)}&team=${encodeURIComponent(team)}`).then(setD).catch(e=>setErr(e.message)); },[team]);
   if(err) return html`<div class="err">${err}</div>`;
   if(!d) return html`<${Loading} label=${`Loading ${team}…`}/>`;
-  const s=d.summary, h=d.splits.home, a=d.splits.away;
-  return html`<div>
+  const s=d.summary,h=d.splits.home,a=d.splits.away;
+  return html`<div class="view">
     <div style="margin-bottom:14px"><button class="tab" onClick=${onBack}>← Back to table</button></div>
-    <div class="card">
-      <h2>${s.team} <span class="tag">${s.competition} ${s.season}</span></h2>
+    <div class="card"><h2>${s.team} <span class="tag">${s.competition} ${s.season}</span></h2>
       <div class="stat-grid">
         <${Stat} value=${s.points} label="Points" cls="accent"/>
         ${s.has_xpts?html`<${Stat} value=${s.xpts} label="Expected points" cls="gold"/>`:null}
@@ -207,305 +301,285 @@ function TeamProfile({competition,season,team,onBack}){
         <${Stat} value=${`${s.goals_for} / ${s.goals_against}`} label="Goals for / against"/>
         <${Stat} value=${`${h.pts} / ${a.pts}`} label="Points home / away"/>
       </div>
-      <h3 style="margin-top:8px">Points progression</h3>
-      <${PointsLine} log=${d.log}/>
+      <h3 style="margin-top:8px">Points progression</h3><${PointsLine} log=${d.log}/>
     </div>
     <div class="two">
       <div class="card"><h3>Home / away split</h3>
-        <table><thead><tr><th></th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>Pts</th></tr></thead>
-        <tbody>
-          <tr><td class="teamcell">Home</td><td class="num">${h.p}</td><td class="num g">${h.w}</td><td class="num mut">${h.d}</td><td class="num r">${h.l}</td><td class="num">${h.gf}</td><td class="num">${h.ga}</td><td class="num" style="font-weight:700">${h.pts}</td></tr>
-          <tr><td class="teamcell">Away</td><td class="num">${a.p}</td><td class="num g">${a.w}</td><td class="num mut">${a.d}</td><td class="num r">${a.l}</td><td class="num">${a.gf}</td><td class="num">${a.ga}</td><td class="num" style="font-weight:700">${a.pts}</td></tr>
-        </tbody></table>
-      </div>
-      <div class="card"><h3>Match log</h3>
-        <div style="max-height:300px;overflow:auto"><table>
-          <thead><tr><th>MD</th><th></th><th>Opponent</th><th>Score</th><th>R</th></tr></thead>
-          <tbody>${d.log.map(l=>html`<tr>
-            <td class="pos">${l.md}</td><td class="mut" style="font-size:11px">${l.venue}</td>
-            <td class="teamcell">${l.opponent}</td><td class="num">${l.gf}–${l.ga}</td>
-            <td><span class="fb ${l.result}" style="width:17px;height:17px">${l.result}</span></td></tr>`)}</tbody>
-        </table></div>
-      </div>
+        <table><thead><tr><th></th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>Pts</th></tr></thead><tbody>
+          <tr><td class="teamcell">Home</td><td class="num">${h.p}</td><td class="num g">${h.w}</td><td class="num mut">${h.d}</td><td class="num r">${h.l}</td><td class="num">${h.gf}</td><td class="num">${h.ga}</td><td class="num" style="font-weight:750">${h.pts}</td></tr>
+          <tr><td class="teamcell">Away</td><td class="num">${a.p}</td><td class="num g">${a.w}</td><td class="num mut">${a.d}</td><td class="num r">${a.l}</td><td class="num">${a.gf}</td><td class="num">${a.ga}</td><td class="num" style="font-weight:750">${a.pts}</td></tr>
+        </tbody></table></div>
+      <div class="card"><h3>Match log</h3><div style="max-height:300px;overflow:auto"><table>
+        <thead><tr><th>MD</th><th></th><th>Opponent</th><th>Score</th><th>R</th></tr></thead><tbody>
+        ${d.log.map(l=>html`<tr><td class="pos">${l.md}</td><td class="mut" style="font-size:11px">${l.venue}</td>
+          <td class="teamcell">${l.opponent}</td><td class="num">${l.gf}–${l.ga}</td>
+          <td><span class="fb ${l.result}" style="width:17px;height:17px">${l.result}</span></td></tr>`)}
+        </tbody></table></div></div>
     </div>
   </div>`;
 }
-
-/* ---------------- League Table ---------------- */
 function TableTab(){
-  const [seasons,setSeasons]=useState([]); const [sel,setSel]=useState("");
-  const [data,setData]=useState(null); const [loading,setLoading]=useState(false); const [err,setErr]=useState("");
-  const [team,setTeam]=useState(null);
-  useEffect(()=>{ get(`${API}/api/predict/seasons`).then(s=>{setSeasons(s); if(s.length){const d=s.find(x=>x.label.startsWith('Premier')&&x.season.includes('2022'))||s[0]; setSel(d.competition+'|'+d.season);}}).catch(e=>setErr(e.message)); },[]);
-  useEffect(()=>{ if(!sel) return; const [c,s]=sel.split("|"); setLoading(true); setErr(""); setData(null); setTeam(null);
-    get(`${API}/api/table?competition=${encodeURIComponent(c)}&season=${encodeURIComponent(s)}`).then(setData).catch(e=>setErr(e.message)).finally(()=>setLoading(false));
-  },[sel]);
+  const [seasons,setSeasons]=useState([]);const [sel,setSel]=useState("");const [data,setData]=useState(null);
+  const [loading,setLoading]=useState(false);const [err,setErr]=useState("");const [team,setTeam]=useState(null);
+  useEffect(()=>{ get(`${API}/api/predict/seasons`).then(s=>{setSeasons(s);if(s.length){const d=s.find(x=>x.label.startsWith('Premier')&&x.season.includes('2022'))||s[0];setSel(d.competition+'|'+d.season);}}).catch(e=>setErr(e.message)); },[]);
+  useEffect(()=>{ if(!sel)return;const[c,s]=sel.split("|");setLoading(true);setErr("");setData(null);setTeam(null);
+    get(`${API}/api/table?competition=${encodeURIComponent(c)}&season=${encodeURIComponent(s)}`).then(setData).catch(e=>setErr(e.message)).finally(()=>setLoading(false)); },[sel]);
   const [c,s]=(sel||"|").split("|");
-  const maxAbs = data? Math.max(1,...data.table.map(t=>Math.abs(t.xpts_diff))):1;
-  return html`
-  <div class="hero"><h1>League table</h1><p>Actual standings next to the model's <b>expected points (xPts)</b> — the gap reveals who's over- or under-performing their underlying quality, the way analytics departments read a season. Click any team for its full profile.</p></div>
-  <div class="card">
-    <div class="controls"><div class="field"><label>Competition & season</label>
-      <select value=${sel} onChange=${e=>setSel(e.target.value)}>
-        ${seasons.map(x=>html`<option value="${x.competition}|${x.season}">${x.label}</option>`)}
-      </select></div></div>
-  </div>
-  ${err&&html`<div class="err">${err}</div>`}
-  ${loading&&html`<${Loading} label="Building the table…"/>`}
-  ${data&&team&&html`<${TeamProfile} competition=${c} season=${s} team=${team} onBack=${()=>setTeam(null)}/>`}
-  ${data&&!team&&html`<div class="card">
-    <h2>${data.competition} <span class="tag">${data.season}</span></h2>
-    <p class="sub">xPts = points the model expected from the same fixtures. Diff = actual − expected (green over-performing, red under). Click a team to drill in.</p>
-    <div style="overflow:auto">
-    <table>
-      <thead><tr>
-        <th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th>
-        <th>Pts</th>${data.has_xpts?html`<th>xPts</th><th>Diff</th><th style="width:120px">Over / under</th>`:null}<th>Form</th>
-      </tr></thead>
-      <tbody>
-      ${data.table.map(t=>{
-        const cls = t.xpts_diff>0.5?'pos':(t.xpts_diff<-0.5?'neg':'zero');
-        const w = Math.round(Math.abs(t.xpts_diff)/maxAbs*100);
-        return html`<tr style="cursor:pointer" onClick=${()=>setTeam(t.team)}>
-          <td class="pos">${t.position}</td>
-          <td class="teamcell">${t.team}</td>
+  const maxAbs=data?Math.max(1,...data.table.map(t=>Math.abs(t.xpts_diff))):1;
+  return html`<div class="view">
+    <div class="hero"><h1>League table</h1><p>Actual standings beside the model's <b>expected points (xPts)</b> — the gap reveals who's over- or under-performing their underlying quality. Click any team for its full profile.</p></div>
+    <div class="card"><div class="controls"><div class="field"><label>Competition & season</label>
+      <select value=${sel} onChange=${e=>setSel(e.target.value)}>${seasons.map(x=>html`<option value="${x.competition}|${x.season}">${x.label}</option>`)}</select></div></div></div>
+    ${err&&html`<div class="err">${err}</div>`}
+    ${loading&&html`<${Skeleton} h=${420}/>`}
+    ${data&&team&&html`<${TeamProfile} competition=${c} season=${s} team=${team} onBack=${()=>setTeam(null)}/>`}
+    ${data&&!team&&html`<div class="card"><h2>${data.competition} <span class="tag">${data.season}</span></h2>
+      <p class="sub">xPts = points the model expected from the same fixtures. Diff = actual − expected (green over, red under). Click a team to drill in.</p>
+      <div style="overflow:auto"><table><thead><tr>
+        <th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th>
+        ${data.has_xpts?html`<th>xPts</th><th>Diff</th><th style="width:110px">Over / under</th>`:null}<th>Form</th></tr></thead><tbody>
+      ${data.table.map(t=>{const cls=t.xpts_diff>0.5?'pos':(t.xpts_diff<-0.5?'neg':'zero');const w=Math.round(Math.abs(t.xpts_diff)/maxAbs*100);
+        return html`<tr class="click" onClick=${()=>setTeam(t.team)}><td class="pos">${t.position}</td><td class="teamcell">${t.team}</td>
           <td class="num mut">${t.played}</td><td class="num mut">${t.won}</td><td class="num mut">${t.draw}</td><td class="num mut">${t.lost}</td>
-          <td class="num mut">${t.gf}</td><td class="num mut">${t.ga}</td><td class="num">${t.gd>0?'+':''}${t.gd}</td>
-          <td class="num" style="font-weight:750">${t.pts}</td>
-          ${data.has_xpts?html`
-            <td class="num mut">${t.xpts}</td>
-            <td><span class="chip ${cls}">${t.xpts_diff>0?'+':''}${t.xpts_diff}</span></td>
-            <td><div style="height:7px;border-radius:4px;background:#222b36;position:relative">
-              <div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:#3a4553"></div>
-              <div style="position:absolute;top:0;bottom:0;${t.xpts_diff>=0?'left:50%':'right:50%'};width:${w/2}%;border-radius:4px;background:${t.xpts_diff>=0?'var(--green)':'var(--red)'}"></div>
-            </div></td>`:null}
-          <td><${Form} form=${t.form}/></td>
-        </tr>`;})}
-      </tbody>
-    </table></div>
-  </div>`}
-  ${data&&!team&&data.has_xpts&&html`<div class="card">
-    <h2>Actual vs expected points</h2>
-    <p class="sub">Each dot is a team. Above the dashed line = over-performing the model (luck, finishing, game-management); below = under-performing (unlucky, wasteful). Click a dot for the team profile.</p>
-    <${Scatter} table=${data.table} onPick=${setTeam}/>
-  </div>`}`;
+          <td class="num mut">${t.gf}</td><td class="num mut">${t.ga}</td><td class="num">${t.gd>0?'+':''}${t.gd}</td><td class="num" style="font-weight:800">${t.pts}</td>
+          ${data.has_xpts?html`<td class="num mut">${t.xpts}</td><td><span class="chip ${cls}">${t.xpts_diff>0?'+':''}${t.xpts_diff}</span></td>
+          <td><div style="height:7px;border-radius:4px;background:var(--raise);position:relative">
+            <div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--mut2)"></div>
+            <div style="position:absolute;top:0;bottom:0;${t.xpts_diff>=0?'left:50%':'right:50%'};width:${w/2}%;border-radius:4px;background:${t.xpts_diff>=0?'var(--green)':'var(--red)'}"></div></div></td>`:null}
+          <td><${Form} form=${t.form}/></td></tr>`;})}
+      </tbody></table></div></div>
+    <div class="card"><h2>Actual vs expected points</h2>
+      <p class="sub">Each dot is a team. Above the dashed line = over-performing the model; below = under-performing. Click a dot for the profile.</p>
+      <${Scatter} table=${data.table} onPick=${setTeam}/></div>`}
+  </div>`;
+}
+
+/* ---------------- Compare ---------------- */
+function CompareTab(){
+  const [seasons,setSeasons]=useState([]);const [sel,setSel]=useState("");
+  const [tbl,setTbl]=useState(null);const [ov,setOv]=useState(null);
+  const [t1,setT1]=useState("");const [t2,setT2]=useState("");const [err,setErr]=useState("");const [loading,setLoading]=useState(false);
+  useEffect(()=>{ get(`${API}/api/predict/seasons`).then(s=>{setSeasons(s);if(s.length){const d=s.find(x=>x.label.startsWith('Premier')&&x.season.includes('2022'))||s[0];load(d.competition+'|'+d.season);}}).catch(e=>setErr(e.message)); },[]);
+  async function load(v){ setSel(v);setTbl(null);setOv(null);setT1("");setT2(""); if(!v)return; const[c,s]=v.split("|"); setLoading(true);setErr("");
+    try{ const[a,b]=await Promise.all([ get(`${API}/api/table?competition=${encodeURIComponent(c)}&season=${encodeURIComponent(s)}`), get(`${API}/api/predict/overview?competition=${encodeURIComponent(c)}&season=${encodeURIComponent(s)}`)]);
+      setTbl(a);setOv(b); const srt=[...a.table]; setT1(srt[0].team); setT2(srt[1].team);
+    }catch(e){setErr(e.message);}finally{setLoading(false);} }
+  const rows=tbl&&tbl.table; const ratings=ov&&Object.fromEntries(ov.ratings.map(r=>[r.team,r]));
+  function metrics(name){ const r=rows.find(x=>x.team===name); const rt=ratings[name]||{attack:0,defence:0};
+    return {team:name, pts:r.pts, xpts:r.xpts, gf:r.gf, ga:r.ga, attack:rt.attack, defence:rt.defence,
+      formpts:(r.form||[]).reduce((s,f)=>s+(f==='W'?3:f==='D'?1:0),0)}; }
+  let radar=null,mA,mB;
+  if(rows&&ratings&&t1&&t2&&t1!==t2){
+    mA=metrics(t1);mB=metrics(t2);
+    const all=rows.map(r=>({pts:r.pts,gf:r.gf,ga:r.ga,at:(ratings[r.team]||{}).attack||0,df:(ratings[r.team]||{}).defence||0}));
+    const rng=(arr)=>[Math.min(...arr),Math.max(...arr)];
+    const nz=(v,[lo,hi])=>hi===lo?.5:Math.max(.05,Math.min(1,(v-lo)/(hi-lo)));
+    const Rpts=rng(all.map(a=>a.pts)),Rgf=rng(all.map(a=>a.gf)),Rga=rng(all.map(a=>-a.ga)),Rat=rng(all.map(a=>a.at)),Rdf=rng(all.map(a=>-a.df));
+    const axes=["Attack","Defence","Points","Goals for","Goals prevented","Form"];
+    const vec=m=>[nz(m.attack,Rat),nz(-m.defence,Rdf),nz(m.pts,Rpts),nz(m.gf,Rgf),nz(-m.ga,Rga),Math.max(.05,m.formpts/15)];
+    radar={axes,a:vec(mA),b:vec(mB)};
+  }
+  return html`<div class="view">
+    <div class="hero"><h1>Compare teams</h1><p>Two sides, one picture — attack and defence strength, output and form on a single radar, with a head-to-head stat line and the model's prediction for the fixture both ways.</p></div>
+    <div class="card"><div class="controls">
+      <div class="field"><label>Competition & season</label><select value=${sel} onChange=${e=>load(e.target.value)}>
+        ${seasons.map(x=>html`<option value="${x.competition}|${x.season}">${x.label}</option>`)}</select></div>
+      ${rows&&html`<div class="field"><label>Team A</label><select value=${t1} onChange=${e=>setT1(e.target.value)}>
+        ${rows.map(r=>html`<option value=${r.team}>${r.team}</option>`)}</select></div>`}
+      ${rows&&html`<div class="field"><label>Team B</label><select value=${t2} onChange=${e=>setT2(e.target.value)}>
+        ${rows.map(r=>html`<option value=${r.team}>${r.team}</option>`)}</select></div>`}
+    </div></div>
+    ${err&&html`<div class="err">${err}</div>`}
+    ${loading&&html`<${Skeleton} h=${360}/>`}
+    ${radar&&html`<div class="two">
+      <div class="card"><h3>Strength radar</h3><${Radar} ...${radar} nameA=${t1} nameB=${t2}/></div>
+      <div class="card"><h3>Head to head</h3>
+        <table><tbody>
+          ${[["Points",mA.pts,mB.pts],["Expected points",mA.xpts,mB.xpts],["Goals for",mA.gf,mB.gf],["Goals against",mA.ga,mB.ga],
+             ["Attack rating",mA.attack.toFixed(2),mB.attack.toFixed(2)],["Defence rating",mA.defence.toFixed(2),mB.defence.toFixed(2)],
+             ["Form (last 5 pts)",mA.formpts,mB.formpts]].map(([k,va,vb])=>html`<tr>
+            <td class="num a" style="text-align:left;font-weight:700;width:33%">${va}</td>
+            <td class="mut" style="text-align:center;font-size:12px">${k}</td>
+            <td class="num r" style="text-align:right;font-weight:700;width:33%">${vb}</td></tr>`)}
+        </tbody></table>
+        <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:13px;font-weight:700">
+          <span style="color:var(--accent)">${t1}</span><span style="color:var(--red)">${t2}</span></div>
+      </div>
+    </div>`}
+  </div>`;
 }
 
 /* ---------------- Match report ---------------- */
 function MatchTab(){
-  const [comps,setComps]=useState([]); const [sel,setSel]=useState(""); const [matches,setMatches]=useState([]);
-  const [matchId,setMatchId]=useState(""); const [data,setData]=useState(null); const [loading,setLoading]=useState(false); const [err,setErr]=useState("");
+  const [comps,setComps]=useState([]);const [sel,setSel]=useState("");const [matches,setMatches]=useState([]);
+  const [matchId,setMatchId]=useState("");const [data,setData]=useState(null);const [loading,setLoading]=useState(false);const [err,setErr]=useState("");
   useEffect(()=>{ get(`${API}/api/competitions`).then(setComps).catch(e=>setErr(e.message)); },[]);
-  useEffect(()=>{ if(!sel){setMatches([]);return;} const [c,s]=sel.split("_"); setMatches([]);setMatchId("");setData(null);
+  useEffect(()=>{ if(!sel){setMatches([]);return;}const[c,s]=sel.split("_");setMatches([]);setMatchId("");setData(null);
     get(`${API}/api/matches?competition_id=${c}&season_id=${s}`).then(setMatches).catch(e=>setErr(e.message)); },[sel]);
-  async function run(){ if(!matchId)return; setLoading(true);setErr("");setData(null);
-    try{ setData(await get(`${API}/api/report/${matchId}`)); }catch(e){ setErr(e.message);}finally{setLoading(false);} }
-  const st=data&&data.stats, home=data&&data.home, away=data&&data.away;
-  return html`
-  <div class="hero"><h1>Post-match report</h1><p>The club review in one dashboard — shot maps, the cumulative-xG race, pass networks and the key numbers, generated from event data the moment you pick a match.</p></div>
-  <div class="card">
-    <div class="controls">
-      <div class="field"><label>Competition</label>
-        <select value=${sel} onChange=${e=>setSel(e.target.value)}><option value="">Select…</option>
-          ${comps.map(c=>html`<option value="${c.competition_id}_${c.season_id}">${c.label}</option>`)}</select></div>
-      <div class="field"><label>Match</label>
-        <select value=${matchId} onChange=${e=>setMatchId(e.target.value)} disabled=${!matches.length}>
-          <option value="">${matches.length?"Select…":"—"}</option>
-          ${matches.map(m=>html`<option value=${m.match_id}>${m.label}</option>`)}</select></div>
-      <button class="go" onClick=${run} disabled=${!matchId||loading}>${loading?"Generating…":"Generate report"}</button>
-    </div>
-    <p class="hint">First run for a match pulls full event data (~15–30s), then it's cached and instant.</p>
-  </div>
-  ${err&&html`<div class="err">${err}</div>`}
-  ${loading&&html`<${Loading} label="Crunching the match…"/>`}
-  ${data&&html`<div class="card">
-    <h2>${home} ${data.score[home]} – ${data.score[away]} ${away}</h2>
-    <p class="sub">Model xG ${st[home].xg_model} – ${st[away].xg_model}</p>
-    <div class="stat-grid">
-      <${Stat} value=${`${st[home].xg_model} / ${st[away].xg_model}`} label="Model xG (H/A)" cls="gold"/>
-      <${Stat} value=${`${st[home].shots} / ${st[away].shots}`} label="Shots"/>
-      <${Stat} value=${`${st[home].possession}% / ${st[away].possession}%`} label="Possession"/>
-      <${Stat} value=${`${st[home].pass_accuracy}% / ${st[away].pass_accuracy}%`} label="Pass accuracy"/>
-    </div>
-    <img class="report-img" src="${API}/output/${data.png}?t=${Date.now()}"/>
-  </div>`}`;
+  async function run(){ if(!matchId)return;setLoading(true);setErr("");setData(null);
+    try{ setData(await get(`${API}/api/report/${matchId}`)); }catch(e){setErr(e.message);}finally{setLoading(false);} }
+  const st=data&&data.stats,home=data&&data.home,away=data&&data.away;
+  return html`<div class="view">
+    <div class="hero"><h1>Post-match report</h1><p>The club review in one dashboard — shot maps, the cumulative-xG race, pass networks and the key numbers, generated from event data the moment you pick a match.</p></div>
+    <div class="card"><div class="controls">
+      <div class="field"><label>Competition</label><select value=${sel} onChange=${e=>setSel(e.target.value)}><option value="">Select…</option>
+        ${comps.map(c=>html`<option value="${c.competition_id}_${c.season_id}">${c.label}</option>`)}</select></div>
+      <div class="field"><label>Match</label><select value=${matchId} onChange=${e=>setMatchId(e.target.value)} disabled=${!matches.length}>
+        <option value="">${matches.length?"Select…":"—"}</option>${matches.map(m=>html`<option value=${m.match_id}>${m.label}</option>`)}</select></div>
+      <button class="go" onClick=${run} disabled=${!matchId||loading}>${loading?"Generating…":"Generate"}</button>
+    </div><p class="hint">First run for a match pulls full event data (~15–30s), then it's cached.</p></div>
+    ${err&&html`<div class="err">${err}</div>`}
+    ${loading&&html`<${Skeleton} h=${300}/>`}
+    ${data&&html`<div class="card"><h2>${home} ${data.score[home]} – ${data.score[away]} ${away}</h2>
+      <p class="sub">Model xG ${st[home].xg_model} – ${st[away].xg_model}</p>
+      <div class="stat-grid">
+        <${Stat} value=${`${st[home].xg_model} / ${st[away].xg_model}`} label="Model xG (H/A)" cls="gold"/>
+        <${Stat} value=${`${st[home].shots} / ${st[away].shots}`} label="Shots"/>
+        <${Stat} value=${`${st[home].possession}% / ${st[away].possession}%`} label="Possession"/>
+        <${Stat} value=${`${st[home].pass_accuracy}% / ${st[away].pass_accuracy}%`} label="Pass accuracy"/>
+      </div><img class="report-img" src="${API}/output/${data.png}?t=${Date.now()}"/></div>`}
+  </div>`;
 }
 
 /* ---------------- Scouting ---------------- */
 function ScoutTab(){
-  const [comps,setComps]=useState([]); const [sel,setSel]=useState(""); const [teams,setTeams]=useState([]);
-  const [team,setTeam]=useState(""); const [data,setData]=useState(null); const [loading,setLoading]=useState(false); const [err,setErr]=useState("");
+  const [comps,setComps]=useState([]);const [sel,setSel]=useState("");const [teams,setTeams]=useState([]);
+  const [team,setTeam]=useState("");const [data,setData]=useState(null);const [loading,setLoading]=useState(false);const [err,setErr]=useState("");
   useEffect(()=>{ get(`${API}/api/competitions`).then(setComps).catch(e=>setErr(e.message)); },[]);
-  useEffect(()=>{ if(!sel){setTeams([]);return;} const [c,s]=sel.split("_"); setTeams([]);setTeam("");setData(null);
+  useEffect(()=>{ if(!sel){setTeams([]);return;}const[c,s]=sel.split("_");setTeams([]);setTeam("");setData(null);
     get(`${API}/api/teams?competition_id=${c}&season_id=${s}`).then(setTeams).catch(e=>setErr(e.message)); },[sel]);
-  async function run(){ if(!sel||!team)return; const [c,s]=sel.split("_"); setLoading(true);setErr("");setData(null);
-    try{ setData(await get(`${API}/api/scout?competition_id=${c}&season_id=${s}&team=${encodeURIComponent(team)}`)); }catch(e){ setErr(e.message);}finally{setLoading(false);} }
-  return html`
-  <div class="hero"><h1>Scouting report</h1><p>A full season opponent profile — where a side creates and concedes, its set-piece reliance, attacking bias and form — the pre-match and recruitment view.</p></div>
-  <div class="card">
-    <div class="controls">
-      <div class="field"><label>Competition</label>
-        <select value=${sel} onChange=${e=>setSel(e.target.value)}><option value="">Select…</option>
-          ${comps.map(c=>html`<option value="${c.competition_id}_${c.season_id}">${c.label}</option>`)}</select></div>
-      <div class="field"><label>Team</label>
-        <select value=${team} onChange=${e=>setTeam(e.target.value)} disabled=${!teams.length}>
-          <option value="">${teams.length?"Select…":"—"}</option>${teams.map(t=>html`<option value=${t}>${t}</option>`)}</select></div>
-      <button class="go" onClick=${run} disabled=${!team||loading}>${loading?"Analysing…":"Build report"}</button>
-    </div>
-    <p class="hint">A full season is ~30–40 matches of event data, so the first build can take a minute. Cached afterwards.</p>
-  </div>
-  ${err&&html`<div class="err">${err}</div>`}
-  ${loading&&html`<${Loading} label="Aggregating the season…"/>`}
-  ${data&&html`<div class="card">
-    <h2>${data.team} <span class="tag">${data.W}W ${data.D}D ${data.L}L</span></h2>
-    <p class="sub">Played ${data.played} · GF ${data.goals_for} · GA ${data.goals_against}</p>
-    <div class="stat-grid">
-      <${Stat} value=${data.xg_for_per90} label="xG for / 90" cls="accent"/>
-      <${Stat} value=${data.xg_against_per90} label="xG against / 90" cls="red"/>
-      <${Stat} value=${data.xg_diff_per90} label="xG diff / 90" cls="gold"/>
-      <${Stat} value=${`${data.setpiece_xg_share_pct}%`} label="Set-piece xG share"/>
-      <${Stat} value=${`${data.attack_left_pct}/${data.attack_central_pct}/${data.attack_right_pct}`} label="Attack L/C/R %"/>
-    </div>
-    <img class="report-img" src="${API}/output/${data.png}?t=${Date.now()}"/>
-  </div>`}`;
+  async function run(){ if(!sel||!team)return;const[c,s]=sel.split("_");setLoading(true);setErr("");setData(null);
+    try{ setData(await get(`${API}/api/scout?competition_id=${c}&season_id=${s}&team=${encodeURIComponent(team)}`)); }catch(e){setErr(e.message);}finally{setLoading(false);} }
+  return html`<div class="view">
+    <div class="hero"><h1>Scouting report</h1><p>A full-season opponent profile — where a side creates and concedes, its set-piece reliance, attacking bias and form — the pre-match and recruitment view.</p></div>
+    <div class="card"><div class="controls">
+      <div class="field"><label>Competition</label><select value=${sel} onChange=${e=>setSel(e.target.value)}><option value="">Select…</option>
+        ${comps.map(c=>html`<option value="${c.competition_id}_${c.season_id}">${c.label}</option>`)}</select></div>
+      <div class="field"><label>Team</label><select value=${team} onChange=${e=>setTeam(e.target.value)} disabled=${!teams.length}>
+        <option value="">${teams.length?"Select…":"—"}</option>${teams.map(t=>html`<option value=${t}>${t}</option>`)}</select></div>
+      <button class="go" onClick=${run} disabled=${!team||loading}>${loading?"Analysing…":"Build"}</button>
+    </div><p class="hint">A full season is ~30–40 matches of event data, so the first build can take a minute.</p></div>
+    ${err&&html`<div class="err">${err}</div>`}
+    ${loading&&html`<${Skeleton} h=${300}/>`}
+    ${data&&html`<div class="card"><h2>${data.team} <span class="tag">${data.W}W ${data.D}D ${data.L}L</span></h2>
+      <p class="sub">Played ${data.played} · GF ${data.goals_for} · GA ${data.goals_against}</p>
+      <div class="stat-grid">
+        <${Stat} value=${data.xg_for_per90} label="xG for / 90" cls="accent"/>
+        <${Stat} value=${data.xg_against_per90} label="xG against / 90" cls="red"/>
+        <${Stat} value=${data.xg_diff_per90} label="xG diff / 90" cls="gold"/>
+        <${Stat} value=${`${data.setpiece_xg_share_pct}%`} label="Set-piece xG share"/>
+        <${Stat} value=${`${data.attack_left_pct}/${data.attack_central_pct}/${data.attack_right_pct}`} label="Attack L/C/R %"/>
+      </div><img class="report-img" src="${API}/output/${data.png}?t=${Date.now()}"/></div>`}
+  </div>`;
 }
 
 /* ---------------- Predictor ---------------- */
 function PredictTab(){
-  const [seasons,setSeasons]=useState([]); const [sel,setSel]=useState(""); const [ov,setOv]=useState(null);
-  const [home,setHome]=useState(""); const [away,setAway]=useState(""); const [pred,setPred]=useState(null);
-  const [loading,setLoading]=useState(false); const [err,setErr]=useState("");
+  const [seasons,setSeasons]=useState([]);const [sel,setSel]=useState("");const [ov,setOv]=useState(null);
+  const [home,setHome]=useState("");const [away,setAway]=useState("");const [pred,setPred]=useState(null);const [loading,setLoading]=useState(false);const [err,setErr]=useState("");
   useEffect(()=>{ get(`${API}/api/predict/seasons`).then(setSeasons).catch(e=>setErr(e.message)); },[]);
-  async function loadSeason(v){ setSel(v);setOv(null);setPred(null);setHome("");setAway(""); if(!v)return;
-    const [c,s]=v.split("|"); setLoading(true);setErr("");
+  async function loadSeason(v){ setSel(v);setOv(null);setPred(null);setHome("");setAway("");if(!v)return;const[c,s]=v.split("|");setLoading(true);setErr("");
     try{ setOv(await get(`${API}/api/predict/overview?competition=${encodeURIComponent(c)}&season=${encodeURIComponent(s)}`)); }catch(e){setErr(e.message);}finally{setLoading(false);} }
-  async function runFixture(){ if(!sel||!home||!away)return; const [c,s]=sel.split("|"); setLoading(true);setErr("");setPred(null);
+  async function runFixture(){ if(!sel||!home||!away)return;const[c,s]=sel.split("|");setLoading(true);setErr("");setPred(null);
     try{ setPred(await get(`${API}/api/predict/fixture?competition=${encodeURIComponent(c)}&season=${encodeURIComponent(s)}&home=${encodeURIComponent(home)}&away=${encodeURIComponent(away)}`)); }catch(e){setErr(e.message);}finally{setLoading(false);} }
   const m=ov&&ov.metrics;
-  return html`
-  <div class="hero"><h1>Match predictor</h1><p>A Dixon-Coles Poisson model with recency weighting fits every team's attack & defence from ${seasons.length} league-seasons, then forecasts any fixture: win/draw/loss, expected goals and the likeliest scorelines.</p></div>
-  <div class="card">
-    <div class="controls"><div class="field"><label>Competition & season</label>
+  return html`<div class="view">
+    <div class="hero"><h1>Match predictor</h1><p>A Dixon-Coles Poisson model with recency weighting fits every team's attack & defence from ${seasons.length} league-seasons, then forecasts any fixture: win/draw/loss, expected goals and likeliest scorelines.</p></div>
+    <div class="card"><div class="controls"><div class="field"><label>Competition & season</label>
       <select value=${sel} onChange=${e=>loadSeason(e.target.value)}><option value="">Select…</option>
-        ${seasons.map(s=>html`<option value="${s.competition}|${s.season}">${s.label}</option>`)}</select></div></div>
-  </div>
-  ${err&&html`<div class="err">${err}</div>`}
-  ${loading&&!ov&&html`<${Loading} label="Fitting the model…"/>`}
-  ${m&&html`<div class="card">
-    <h2>Model quality <span class="tag">${m.competition} ${m.season}</span></h2>
-    <p class="sub">Time-split: trained on the first ${m.train_matches}, tested on the next ${m.test_matches}. Lower RPS/log-loss is better.</p>
-    <div class="stat-grid">
-      <${Stat} value=${`${(m.accuracy*100).toFixed(1)}%`} label=${`Accuracy · base ${(m.baseline_accuracy*100).toFixed(1)}%`} cls="accent"/>
-      <${Stat} value=${m.rps} label=${`RPS · base ${m.baseline_rps}`} cls=${m.rps<m.baseline_rps?"green":""}/>
-      <${Stat} value=${m.log_loss} label=${`Log loss · base ${m.baseline_log_loss}`}/>
-      <${Stat} value=${m.home_advantage} label="Home advantage"/>
+        ${seasons.map(s=>html`<option value="${s.competition}|${s.season}">${s.label}</option>`)}</select></div></div></div>
+    ${err&&html`<div class="err">${err}</div>`}
+    ${loading&&!ov&&html`<${Skeleton} h=${160}/>`}
+    ${m&&html`<div class="card"><h2>Model quality <span class="tag">${m.competition} ${m.season}</span></h2>
+      <p class="sub">Time-split: trained on the first ${m.train_matches}, tested on the next ${m.test_matches}. Lower RPS/log-loss is better.</p>
+      <div class="stat-grid">
+        <${Stat} value=${`${(m.accuracy*100).toFixed(1)}%`} label=${`Accuracy · base ${(m.baseline_accuracy*100).toFixed(1)}%`} cls="accent"/>
+        <${Stat} value=${m.rps} label=${`RPS · base ${m.baseline_rps}`} cls=${m.rps<m.baseline_rps?"green":""}/>
+        <${Stat} value=${m.log_loss} label=${`Log loss · base ${m.baseline_log_loss}`}/>
+        <${Stat} value=${m.home_advantage} label="Home advantage"/>
+      </div><p class="hint">RPS near 0.19–0.21 is the professional range for 1X2.</p></div>
+    <div class="card"><h2>Predict a fixture</h2><div class="controls">
+      <div class="field"><label>Home</label><select value=${home} onChange=${e=>setHome(e.target.value)}><option value="">Select…</option>${ov.teams.map(t=>html`<option value=${t}>${t}</option>`)}</select></div>
+      <div class="field"><label>Away</label><select value=${away} onChange=${e=>setAway(e.target.value)}><option value="">Select…</option>${ov.teams.map(t=>html`<option value=${t}>${t}</option>`)}</select></div>
+      <button class="go" onClick=${runFixture} disabled=${!home||!away||home===away}>Predict</button></div>
+      ${pred&&html`<div style="margin-top:18px">
+        <div class="probbar">
+          <div class="seg h" style="width:${pred.p_home*100}%">${(pred.p_home*100).toFixed(0)}%</div>
+          <div class="seg d" style="width:${pred.p_draw*100}%">${(pred.p_draw*100).toFixed(0)}%</div>
+          <div class="seg a" style="width:${pred.p_away*100}%">${(pred.p_away*100).toFixed(0)}%</div></div>
+        <div style="display:flex;justify-content:space-between;color:var(--mut);font-size:12px;margin:6px 2px 0"><span>${pred.home} win</span><span>Draw</span><span>${pred.away} win</span></div>
+        <div class="stat-grid" style="margin-top:16px">
+          <${Stat} value=${`${pred.expected_home_goals} – ${pred.expected_away_goals}`} label="Expected goals" cls="gold"/>
+          <${Stat} value=${pred.most_likely[0].score} label="Likeliest scoreline"/>
+          <${Stat} value=${`${(pred.over_2_5*100).toFixed(0)}%`} label="Over 2.5 goals"/></div>
+        <p class="sub" style="margin-top:8px">Top scorelines: ${pred.most_likely.map(s=>`${s.score} (${(s.p*100).toFixed(0)}%)`).join("  ·  ")}</p></div>`}
     </div>
-    <p class="hint">RPS near 0.19–0.21 is the professional range for 1X2. Beating the base rate on every metric means the model is learning real team strength.</p>
-  </div>
-  <div class="card">
-    <h2>Predict a fixture</h2>
-    <div class="controls">
-      <div class="field"><label>Home</label><select value=${home} onChange=${e=>setHome(e.target.value)}>
-        <option value="">Select…</option>${ov.teams.map(t=>html`<option value=${t}>${t}</option>`)}</select></div>
-      <div class="field"><label>Away</label><select value=${away} onChange=${e=>setAway(e.target.value)}>
-        <option value="">Select…</option>${ov.teams.map(t=>html`<option value=${t}>${t}</option>`)}</select></div>
-      <button class="go" onClick=${runFixture} disabled=${!home||!away||home===away}>Predict</button>
-    </div>
-    ${pred&&html`<div style="margin-top:18px">
-      <div class="probbar">
-        <div class="seg h" style="width:${pred.p_home*100}%">${(pred.p_home*100).toFixed(0)}%</div>
-        <div class="seg d" style="width:${pred.p_draw*100}%">${(pred.p_draw*100).toFixed(0)}%</div>
-        <div class="seg a" style="width:${pred.p_away*100}%">${(pred.p_away*100).toFixed(0)}%</div>
-      </div>
-      <div style="display:flex;justify-content:space-between;color:var(--mut);font-size:12px;margin:6px 2px 0">
-        <span>${pred.home} win</span><span>Draw</span><span>${pred.away} win</span></div>
-      <div class="stat-grid" style="margin-top:16px">
-        <${Stat} value=${`${pred.expected_home_goals} – ${pred.expected_away_goals}`} label="Expected goals" cls="gold"/>
-        <${Stat} value=${pred.most_likely[0].score} label="Likeliest scoreline"/>
-        <${Stat} value=${`${(pred.over_2_5*100).toFixed(0)}%`} label="Over 2.5 goals"/>
-      </div>
-      <p class="sub" style="margin-top:8px">Top scorelines: ${pred.most_likely.map(s=>`${s.score} (${(s.p*100).toFixed(0)}%)`).join("  ·  ")}</p>
-    </div>`}
-  </div>
-  <div class="card">
-    <h2>Fitted team strengths</h2>
-    <p class="sub">Attack & defence ratings learned from results (higher attack scores more; lower/negative defence concedes less).</p>
-    <div style="max-height:340px;overflow:auto"><table>
-      <thead><tr><th>Team</th><th>Attack</th><th>Defence</th></tr></thead>
-      <tbody>${ov.ratings.map(r=>html`<tr><td class="teamcell">${r.team}</td>
-        <td class="num a">${r.attack>0?'+':''}${r.attack}</td><td class="num r">${r.defence>0?'+':''}${r.defence}</td></tr>`)}</tbody>
-    </table></div>
-  </div>`}`;
+    <div class="card"><h2>Fitted team strengths</h2><p class="sub">Attack & defence ratings learned from results.</p>
+      <div style="max-height:340px;overflow:auto"><table><thead><tr><th>Team</th><th>Attack</th><th>Defence</th></tr></thead><tbody>
+        ${ov.ratings.map(r=>html`<tr><td class="teamcell">${r.team}</td><td class="num a">${r.attack>0?'+':''}${r.attack}</td><td class="num r">${r.defence>0?'+':''}${r.defence}</td></tr>`)}
+      </tbody></table></div></div>`}
+  </div>`;
 }
 
 /* ---------------- Expected Threat ---------------- */
 function XtTab(){
-  const [sets,setSets]=useState(null); const [i,setI]=useState(0); const [err,setErr]=useState("");
+  const [sets,setSets]=useState(null);const [i,setI]=useState(0);const [err,setErr]=useState("");
   useEffect(()=>{ get(`${API}/api/xt`).then(d=>setSets(d.sets)).catch(e=>setErr(e.message)); },[]);
   if(err) return html`<div class="err">${err}</div>`;
   if(!sets) return html`<${Loading} label="Loading Expected Threat…"/>`;
   const d=sets[i];
-  return html`
-  <div class="hero"><h1>Expected Threat</h1><p>xG only rewards the shot. xT values <b>moving the ball into danger</b> — the progressive passes and carries that create chances. The surface shows each zone's threat; the table ranks the best ball progressors.</p></div>
-  <div class="card">
-    ${sets.length>1&&html`<div class="controls" style="margin-bottom:14px"><div class="field"><label>League</label>
+  return html`<div class="view">
+    <div class="hero"><h1>Expected Threat</h1><p>xG only rewards the shot. xT values <b>moving the ball into danger</b> — the progressive passes and carries that create chances. The surface shows each zone's threat; the table ranks the best ball progressors.</p></div>
+    <div class="card">${sets.length>1&&html`<div class="controls" style="margin-bottom:14px"><div class="field"><label>League</label>
       <select value=${i} onChange=${e=>setI(+e.target.value)}>${sets.map((s,idx)=>html`<option value=${idx}>${s.title}</option>`)}</select></div></div>`}
-    <img class="report-img" src="${API}/output/${d.surface}?t=${Date.now()}"/>
-  </div>
-  <div class="card">
-    <h2>Top ball progressors <span class="tag">${d.title}</span></h2>
-    <p class="sub">Total xT added through completed passes & carries (positive progressions only).</p>
-    <table><thead><tr><th>#</th><th>Player</th><th>Team</th><th>xT added</th></tr></thead>
-      <tbody>${d.leaders.map((l,idx)=>html`<tr><td class="pos">${idx+1}</td><td class="teamcell">${l.player}</td>
-        <td class="mut">${l.team}</td><td class="num a">+${l.xt_added}</td></tr>`)}</tbody></table>
+      <img class="report-img" src="${API}/output/${d.surface}?t=${Date.now()}"/></div>
+    <div class="card"><h2>Top ball progressors <span class="tag">${d.title}</span></h2>
+      <p class="sub">Total xT added through completed passes & carries (positive progressions only).</p>
+      <table><thead><tr><th>#</th><th>Player</th><th>Team</th><th>xT added</th></tr></thead><tbody>
+        ${d.leaders.map((l,idx)=>html`<tr><td class="pos">${idx+1}</td><td class="teamcell">${l.player}</td><td class="mut">${l.team}</td><td class="num a">+${l.xt_added}</td></tr>`)}
+      </tbody></table></div>
   </div>`;
 }
 
 /* ---------------- Model ---------------- */
 function ModelTab(){
-  const [m,setM]=useState(null); const [err,setErr]=useState("");
+  const [m,setM]=useState(null);const [err,setErr]=useState("");
   useEffect(()=>{ get(`${API}/api/model`).then(setM).catch(e=>setErr(e.message)); },[]);
   if(err) return html`<div class="err">${err}</div>`;
   if(!m) return html`<${Loading} label="Loading model…"/>`;
-  return html`
-  <div class="hero"><h1>The xG model</h1><p>Gradient-boosted expected goals trained on ${m.n_shots.toLocaleString()} shots — validated by ROC-AUC and a calibration curve, because a usable xG must be probabilistically honest, not just rank-ordered.</p></div>
-  <div class="card">
-    <div class="stat-grid">
+  return html`<div class="view">
+    <div class="hero"><h1>The xG model</h1><p>Gradient-boosted expected goals trained on ${m.n_shots.toLocaleString()} shots — validated by ROC-AUC and a calibration curve, because a usable xG must be probabilistically honest, not just rank-ordered.</p></div>
+    <div class="card"><div class="stat-grid">
       <${Stat} value=${m.roc_auc} label="ROC-AUC" cls="accent"/>
       <${Stat} value=${m.brier} label="Brier score"/>
       <${Stat} value=${m.log_loss} label="Log loss"/>
       <${Stat} value=${m.n_shots.toLocaleString()} label="Shots trained on"/>
       <${Stat} value=${`${m.predicted_goals_test} / ${m.actual_goals_test}`} label="Pred / actual goals" cls="gold"/>
+    </div><p class="hint">ROC-AUC ~0.78–0.82 is the professional range. "Predicted ≈ actual" is the calibration check.</p></div>
+    <div class="two">
+      <div class="card"><h3>Calibration</h3><p class="sub">Does a 0.3-xG chance really go in ~30% of the time?</p><img class="report-img" src="${API}/output/${m.calibration_png}?t=${Date.now()}"/></div>
+      <div class="card"><h3>Feature importance</h3><p class="sub">What the model leans on most.</p><img class="report-img" src="${API}/output/${m.importance_png}?t=${Date.now()}"/></div>
     </div>
-    <p class="hint">ROC-AUC ~0.78–0.82 is the professional range. "Predicted ≈ actual" on held-out shots is the calibration check.</p>
-  </div>
-  <div class="two">
-    <div class="card"><h3>Calibration</h3><p class="sub">Does a 0.3-xG chance really go in ~30% of the time?</p>
-      <img class="report-img" src="${API}/output/${m.calibration_png}?t=${Date.now()}"/></div>
-    <div class="card"><h3>Feature importance</h3><p class="sub">What the model leans on most.</p>
-      <img class="report-img" src="${API}/output/${m.importance_png}?t=${Date.now()}"/></div>
   </div>`;
 }
 
 /* ---------------- Shell ---------------- */
-const TABS=[["table","League table"],["match","Match report"],["scout","Scouting"],
-            ["predict","Predictor"],["xt","Expected Threat"],["model","xG model"]];
+const TABS=[["overview","Overview"],["table","League table"],["compare","Compare"],["predict","Predictor"],
+            ["xt","Expected Threat"],["match","Match report"],["scout","Scouting"],["model","xG model"]];
 function App(){
-  const [tab,setTab]=useState("table");
+  const [tab,setTab]=useState("overview");
+  const [theme,setTheme]=useState(()=>{try{return localStorage.getItem('fa-theme')||'dark'}catch{return 'dark'}});
+  useEffect(()=>{ document.documentElement.setAttribute('data-theme',theme); try{localStorage.setItem('fa-theme',theme)}catch{} },[theme]);
+  const View={overview:()=>html`<${Overview} go=${setTab}/>`,table:TableTab,compare:CompareTab,predict:PredictTab,
+    xt:XtTab,match:MatchTab,scout:ScoutTab,model:ModelTab}[tab];
   return html`
   <div class="topbar"><div class="topbar-in">
-    <div class="brand"><span class="logo">⚽</span>Football Analyzer<span class="by">· StatsBomb + top-5 leagues</span></div>
+    <div class="brand"><span class="logo">⚽</span><span class="ac">Football Analyzer</span></div>
     <nav class="nav">${TABS.map(([k,l])=>html`<button class=${"tab"+(tab===k?" active":"")} onClick=${()=>setTab(k)}>${l}</button>`)}</nav>
+    <button class="tbtn" title="Toggle theme" onClick=${()=>setTheme(theme==='dark'?'light':'dark')}>${theme==='dark'?'☀':'☾'}</button>
   </div></div>
-  <main>
-    ${tab==="table"&&html`<${TableTab}/>`}
-    ${tab==="match"&&html`<${MatchTab}/>`}
-    ${tab==="scout"&&html`<${ScoutTab}/>`}
-    ${tab==="predict"&&html`<${PredictTab}/>`}
-    ${tab==="xt"&&html`<${XtTab}/>`}
-    ${tab==="model"&&html`<${ModelTab}/>`}
-  </main>
-  <footer>Built on StatsBomb open data · xG, xT and predictions from this repo's own models · <a href="https://github.com/sabin901/Football-Analyzer-">source on GitHub</a></footer>`;
+  <main><div key=${tab}><${View}/></div></main>
+  <footer>Built on StatsBomb + top-5 league data · all models trained in this repo · <a href="https://github.com/sabin901/Football-Analyzer-">source on GitHub</a></footer>`;
 }
 render(html`<${App}/>`, document.getElementById("root"));
 </script>
