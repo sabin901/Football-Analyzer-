@@ -1,0 +1,52 @@
+<!doctype html><html lang=en><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1">
+<title>Football Analyzer</title>
+<style>
+:root{--bg:#0d1117;--panel:#12161c;--line:#232b35;--fg:#e8edf2;--muted:#8a97a6;--accent:#4ea1ff;--gold:#ffd34e;--red:#ff6b6b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+header{padding:40px 24px 24px;text-align:center;border-bottom:1px solid var(--line)}
+header h1{margin:0;font-size:30px}header p{color:var(--muted);margin:8px 0 0}
+main{max-width:1040px;margin:0 auto;padding:28px 20px 70px}
+h2{margin:34px 0 14px;font-size:20px}h3{margin:0 0 12px;font-size:15px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.stat .v{font-size:24px;font-weight:700;color:var(--accent)}.stat .l{color:var(--muted);font-size:12px;margin-top:4px}
+.stat .s{color:var(--muted);font-size:11px;margin-top:2px;opacity:.8}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:760px){.grid{grid-template-columns:1fr}}
+table{width:100%;border-collapse:collapse;font-size:13.5px}th{text-align:left;color:var(--muted);font-weight:500;padding:7px 8px}
+td{padding:7px 8px;border-top:1px solid var(--line)}td.a{color:var(--accent)}td.r{color:var(--red)}
+.muted{color:var(--muted);font-weight:400;font-size:13px}
+a{color:var(--accent)}footer{text-align:center;color:var(--muted);font-size:12px;padding:30px}
+.gallery{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:760px){.gallery{grid-template-columns:1fr}}
+.gallery img{width:100%;border-radius:10px;border:1px solid var(--line)}
+</style></head><body>
+<header>
+  <h1>⚽ Football Analyzer</h1>
+  <p>xG model · post-match & scouting reports · match predictor — built on StatsBomb open data</p>
+  <p class=muted><a href="https://github.com/sabin901/Football-Analyzer-">github.com/sabin901/Football-Analyzer-</a></p>
+</header>
+<main>
+  <h2>At a glance</h2>
+  <div class=stats><div class="stat"><div class="v">0.7703</div><div class="l">xG model ROC-AUC</div><div class=s>pro range 0.78–0.82</div></div><div class="stat"><div class="v">15,648</div><div class="l">xG shots trained</div></div><div class="stat"><div class="v">48.9%</div><div class="l">Predictor accuracy</div><div class=s>baseline 44.4%</div></div><div class="stat"><div class="v">0.2029</div><div class="l">Predictor RPS</div><div class=s>baseline 0.2258</div></div><div class="stat"><div class="v">0.193</div><div class="l">Home advantage</div><div class=s>Premier League 2015/2016</div></div></div>
+
+  
+
+  <h2>Predicted fixtures <span class=muted>· Premier League 2015/2016 model</span></h2>
+  <div class=card><table>
+    <thead><tr><th>Home</th><th>Away</th><th>Home win</th><th>Draw</th><th>Away win</th><th>Exp. goals</th><th>Likeliest</th></tr></thead>
+    <tbody><tr><td>AFC Bournemouth</td><td>Arsenal</td><td class=a>20%</td><td>26%</td><td class=r>54%</td><td>0.96–1.69</td><td>1-1</td></tr><tr><td>AFC Bournemouth</td><td>Aston Villa</td><td class=a>53%</td><td>27%</td><td class=r>20%</td><td>1.58–0.88</td><td>1-0</td></tr><tr><td>AFC Bournemouth</td><td>Chelsea</td><td class=a>35%</td><td>26%</td><td class=r>39%</td><td>1.42–1.51</td><td>1-1</td></tr><tr><td>AFC Bournemouth</td><td>Crystal Palace</td><td class=a>36%</td><td>30%</td><td class=r>34%</td><td>1.2–1.14</td><td>1-1</td></tr><tr><td>AFC Bournemouth</td><td>Everton</td><td class=a>25%</td><td>22%</td><td class=r>53%</td><td>1.4–2.08</td><td>1-1</td></tr><tr><td>AFC Bournemouth</td><td>Leicester City</td><td class=a>18%</td><td>22%</td><td class=r>60%</td><td>1.11–2.12</td><td>1-1</td></tr><tr><td>AFC Bournemouth</td><td>Liverpool</td><td class=a>35%</td><td>27%</td><td class=r>38%</td><td>1.36–1.43</td><td>1-1</td></tr><tr><td>AFC Bournemouth</td><td>Manchester City</td><td class=a>18%</td><td>22%</td><td class=r>60%</td><td>1.06–2.07</td><td>1-1</td></tr><tr><td>AFC Bournemouth</td><td>Manchester United</td><td class=a>23%</td><td>28%</td><td class=r>48%</td><td>0.91–1.42</td><td>1-1</td></tr><tr><td>AFC Bournemouth</td><td>Newcastle United</td><td class=a>49%</td><td>25%</td><td class=r>26%</td><td>1.74–1.2</td><td>1-1</td></tr></tbody></table></div>
+
+  <h2>Fitted team strengths</h2>
+  <div class=card><table>
+    <thead><tr><th>Team</th><th>Attack</th><th>Defence</th></tr></thead>
+    <tbody><tr><td>Leicester City</td><td class=a>+0.41</td><td class=r>-0.04</td></tr><tr><td>Everton</td><td class=a>+0.40</td><td class=r>+0.20</td></tr><tr><td>Manchester City</td><td class=a>+0.39</td><td class=r>-0.08</td></tr><tr><td>Tottenham Hotspur</td><td class=a>+0.31</td><td class=r>-0.39</td></tr><tr><td>Arsenal</td><td class=a>+0.19</td><td class=r>-0.18</td></tr><tr><td>West Ham United</td><td class=a>+0.17</td><td class=r>+0.04</td></tr><tr><td>Chelsea</td><td class=a>+0.07</td><td class=r>+0.21</td></tr><tr><td>Southampton</td><td class=a>+0.05</td><td class=r>-0.16</td></tr><tr><td>Liverpool</td><td class=a>+0.02</td><td class=r>+0.17</td></tr><tr><td>Manchester United</td><td class=a>+0.02</td><td class=r>-0.23</td></tr><tr><td>AFC Bournemouth</td><td class=a>-0.05</td><td class=r>+0.34</td></tr><tr><td>Sunderland</td><td class=a>-0.07</td><td class=r>+0.53</td></tr></tbody></table></div>
+
+  <h2>Sample outputs</h2>
+  <div class=gallery>
+    <img src="assets/report_8658.png" alt="post-match report">
+    <img src="assets/scout_2_27_Arsenal.png" alt="scouting report">
+  </div>
+</main>
+<footer>Built 2026-10-11 03:55 UTC · data: StatsBomb open data · xG & predictions from this repo's own models</footer>
+</body></html>
