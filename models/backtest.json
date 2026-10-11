@@ -1,0 +1,21 @@
+{
+  "league_seasons": 115,
+  "goals_basis": {
+    "mean_rps": 0.2093,
+    "mean_accuracy": 0.5005,
+    "seasons": 115
+  },
+  "xg_basis": {
+    "mean_rps": 0.2061,
+    "mean_accuracy": 0.5085,
+    "seasons": 115
+  },
+  "baseline": {
+    "mean_rps": 0.2275,
+    "mean_accuracy": 0.4588
+  },
+  "seasons_goals_beats_baseline": 101,
+  "seasons_xg_beats_goals": 66,
+  "xg_vs_goals_seasons_compared": 115,
+  "best_basis": "xg"
+}

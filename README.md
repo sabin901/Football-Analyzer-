@@ -21,10 +21,26 @@
 | **Predictor** (Dixon-Coles + recency) | Accuracy | **51.9%** | base rate 44.4% | 1X2 outcome, Premier League 2015/16 |
 | **Predictor** | RPS | **0.2005** | base rate 0.226 | Lower is better; pro range ~0.19–0.21 |
 
-Recency weighting (90-day half-life) lifted accuracy from 48.9% → **51.9%** and
-RPS from 0.2029 → **0.2005** — teams evolve across a season, and the model now
-reflects that. The natural next benchmark is **bookmaker closing odds** (RPS
-~0.19); the odds importer is already in the pipeline to make that comparison.
+### Backtested across **115 league-seasons** (not cherry-picked)
+
+The predictor is validated on every top-5-league season from 2002/03 to
+2024/25 — a time-split per season, scored by RPS, against the base-rate baseline:
+
+| Rating basis | Mean RPS | Mean accuracy | Seasons beating baseline |
+|---|---|---|---|
+| Baseline (base rates) | 0.2275 | 45.9% | — |
+| Goals (Dixon-Coles) | 0.2093 | 50.1% | 101 / 115 |
+| **xG (chance quality)** | **0.2061** | **50.9%** | — |
+
+Two findings, both honest: the model beats the baseline in **101 of 115**
+seasons, and rating teams by **expected goals (chance quality) rather than goals
+scored** lowers mean RPS (0.2093 → **0.2061**) and wins in **66 of 115** seasons —
+so the xG basis is the default. The improvement is modest because the xG proxy
+here is shots-on-target; true shot-location xG would widen it. Recency weighting
+(90-day half-life) is applied throughout. Run it yourself: `python src/backtest.py`.
+
+The remaining benchmark is **bookmaker closing odds** (RPS ~0.19); `src/benchmark.py`
+runs that comparison once the odds are pulled (`python src/live_api.py odds E0 2324`).
 
 ---
 

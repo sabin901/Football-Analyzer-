@@ -76,6 +76,12 @@ def import_all():
             if not need.issubset(df.columns):
                 continue
             df = df.dropna(subset=["HomeTeam", "AwayTeam", "FTHG", "FTAG"])
+            # shots / shots-on-target when present (enables xG-based ratings)
+            def _opt(r, col):
+                try:
+                    return int(r[col]) if col in df.columns and pd.notna(r[col]) else None
+                except (ValueError, TypeError):
+                    return None
             for _, r in df.iterrows():
                 try:
                     hs, as_ = int(r["FTHG"]), int(r["FTAG"])
@@ -86,6 +92,8 @@ def import_all():
                     "home_team": str(r["HomeTeam"]).strip(),
                     "away_team": str(r["AwayTeam"]).strip(),
                     "home_score": hs, "away_score": as_,
+                    "home_shots": _opt(r, "HS"), "away_shots": _opt(r, "AS"),
+                    "home_sot": _opt(r, "HST"), "away_sot": _opt(r, "AST"),
                     "date": str(r["Date"]),
                     "source": "football-datasets",
                 })
