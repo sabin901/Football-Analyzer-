@@ -332,27 +332,33 @@ function PredictTab(){
 
 // ---------- Expected Threat tab ----------
 function XtTab(){
-  const [d, setD] = useState(null);
+  const [sets, setSets] = useState(null);
+  const [i, setI] = useState(0);
   const [err, setErr] = useState("");
-  useEffect(()=>{ get(`${API}/api/xt`).then(setD).catch(e=>setErr(e.message)); },[]);
+  useEffect(()=>{ get(`${API}/api/xt`).then(d=>setSets(d.sets)).catch(e=>setErr(e.message)); },[]);
   if(err) return html`<div class="err">${err}</div>`;
-  if(!d) return html`<div class="loading"><span class="spinner"></span>Loading Expected Threat…</div>`;
+  if(!sets) return html`<div class="loading"><span class="spinner"></span>Loading Expected Threat…</div>`;
+  const d = sets[i];
   return html`
   <div class="card">
-    <h2>Expected Threat (xT) — ${d.title}</h2>
+    <h2>Expected Threat (xT)</h2>
     <p class="sub">xG rewards only the shot. xT values moving the ball into danger — the progressive passes and carries that create chances. The surface shows how much threat each pitch zone carries; the table ranks the best ball progressors.</p>
-    <img class="report-img" src="${API}/output/${d.surface}?t=${Date.now()}" alt="xT surface"/>
+    ${sets.length>1 && html`<div class="controls"><div class="field"><label>League</label>
+      <select value=${i} onChange=${e=>setI(+e.target.value)}>
+        ${sets.map((s,idx)=>html`<option value=${idx}>${s.title}</option>`)}
+      </select></div></div>`}
+    <img class="report-img" style="margin-top:12px" src="${API}/output/${d.surface}?t=${Date.now()}" alt="xT surface"/>
   </div>
   <div class="card">
-    <h2>Top ball progressors</h2>
+    <h2>Top ball progressors — ${d.title}</h2>
     <p class="sub">Total xT added through completed passes & carries (positive progressions only).</p>
     <table style="width:100%;border-collapse:collapse;font-size:14px">
       <thead><tr style="color:var(--muted);text-align:left">
         <th style="padding:6px 8px">#</th><th style="padding:6px 8px">Player</th>
         <th style="padding:6px 8px">Team</th><th style="padding:6px 8px">xT added</th></tr></thead>
       <tbody>
-        ${d.leaders.map((l,i)=>html`<tr style="border-top:1px solid var(--line)">
-          <td style="padding:6px 8px;color:var(--muted)">${i+1}</td>
+        ${d.leaders.map((l,idx)=>html`<tr style="border-top:1px solid var(--line)">
+          <td style="padding:6px 8px;color:var(--muted)">${idx+1}</td>
           <td style="padding:6px 8px">${l.player}</td>
           <td style="padding:6px 8px;color:var(--muted)">${l.team}</td>
           <td style="padding:6px 8px;color:var(--accent)">+${l.xt_added}</td></tr>`)}
