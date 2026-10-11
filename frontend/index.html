@@ -330,6 +330,37 @@ function PredictTab(){
   `;
 }
 
+// ---------- Expected Threat tab ----------
+function XtTab(){
+  const [d, setD] = useState(null);
+  const [err, setErr] = useState("");
+  useEffect(()=>{ get(`${API}/api/xt`).then(setD).catch(e=>setErr(e.message)); },[]);
+  if(err) return html`<div class="err">${err}</div>`;
+  if(!d) return html`<div class="loading"><span class="spinner"></span>Loading Expected Threat…</div>`;
+  return html`
+  <div class="card">
+    <h2>Expected Threat (xT) — ${d.title}</h2>
+    <p class="sub">xG rewards only the shot. xT values moving the ball into danger — the progressive passes and carries that create chances. The surface shows how much threat each pitch zone carries; the table ranks the best ball progressors.</p>
+    <img class="report-img" src="${API}/output/${d.surface}?t=${Date.now()}" alt="xT surface"/>
+  </div>
+  <div class="card">
+    <h2>Top ball progressors</h2>
+    <p class="sub">Total xT added through completed passes & carries (positive progressions only).</p>
+    <table style="width:100%;border-collapse:collapse;font-size:14px">
+      <thead><tr style="color:var(--muted);text-align:left">
+        <th style="padding:6px 8px">#</th><th style="padding:6px 8px">Player</th>
+        <th style="padding:6px 8px">Team</th><th style="padding:6px 8px">xT added</th></tr></thead>
+      <tbody>
+        ${d.leaders.map((l,i)=>html`<tr style="border-top:1px solid var(--line)">
+          <td style="padding:6px 8px;color:var(--muted)">${i+1}</td>
+          <td style="padding:6px 8px">${l.player}</td>
+          <td style="padding:6px 8px;color:var(--muted)">${l.team}</td>
+          <td style="padding:6px 8px;color:var(--accent)">+${l.xt_added}</td></tr>`)}
+      </tbody>
+    </table>
+  </div>`;
+}
+
 // ---------- Model tab ----------
 function ModelTab(){
   const [m, setM] = useState(null);
@@ -379,6 +410,7 @@ function App(){
     <div class=${"tab"+(tab==="match"?" active":"")} onClick=${()=>setTab("match")}>Match report</div>
     <div class=${"tab"+(tab==="scout"?" active":"")} onClick=${()=>setTab("scout")}>Scouting report</div>
     <div class=${"tab"+(tab==="predict"?" active":"")} onClick=${()=>setTab("predict")}>Predictor</div>
+    <div class=${"tab"+(tab==="xt"?" active":"")} onClick=${()=>setTab("xt")}>Expected Threat</div>
     <div class=${"tab"+(tab==="model"?" active":"")} onClick=${()=>setTab("model")}>The model</div>
   </div>
   <main>
@@ -386,6 +418,7 @@ function App(){
     ${tab==="match" && html`<${MatchTab} comps=${comps}/>`}
     ${tab==="scout" && html`<${ScoutTab} comps=${comps}/>`}
     ${tab==="predict" && html`<${PredictTab}/>`}
+    ${tab==="xt" && html`<${XtTab}/>`}
     ${tab==="model" && html`<${ModelTab}/>`}
   </main>`;
 }
