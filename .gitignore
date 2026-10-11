@@ -1,10 +1,15 @@
 __pycache__/
 *.pyc
+.DS_Store
+# generated per-request reports (keep the curated samples)
 output/report_*.png
 output/report_*.json
 output/scout_*.png
 output/scout_*.json
 !output/report_8658.*
 !output/scout_2_27_Arsenal.*
-.DS_Store
-data/
+output/live_*.png
+output/ui_*.png
+# ingested data: ship the small match catalogue, not the big shot corpus
+data/*
+!data/matches.parquet

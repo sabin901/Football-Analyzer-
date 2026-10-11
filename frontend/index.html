@@ -225,6 +225,111 @@ function ScoutTab({comps}){
   `;
 }
 
+// ---------- Predictor tab ----------
+function PredictTab(){
+  const [seasons, setSeasons] = useState([]);
+  const [sel, setSel] = useState("");
+  const [overview, setOverview] = useState(null);
+  const [home, setHome] = useState(""); const [away, setAway] = useState("");
+  const [pred, setPred] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+
+  useEffect(()=>{ get(`${API}/api/predict/seasons`).then(setSeasons).catch(e=>setErr(e.message)); },[]);
+
+  async function loadSeason(v){
+    setSel(v); setOverview(null); setPred(null); setHome(""); setAway("");
+    if(!v) return;
+    const [c,s] = v.split("|");
+    setLoading(true); setErr("");
+    try{ setOverview(await get(`${API}/api/predict/overview?competition=${encodeURIComponent(c)}&season=${encodeURIComponent(s)}`)); }
+    catch(e){ setErr(e.message); }
+    finally{ setLoading(false); }
+  }
+  async function runFixture(){
+    if(!sel||!home||!away) return;
+    const [c,s] = sel.split("|");
+    setLoading(true); setErr(""); setPred(null);
+    try{ setPred(await get(`${API}/api/predict/fixture?competition=${encodeURIComponent(c)}&season=${encodeURIComponent(s)}&home=${encodeURIComponent(home)}&away=${encodeURIComponent(away)}`)); }
+    catch(e){ setErr(e.message); }
+    finally{ setLoading(false); }
+  }
+
+  const m = overview && overview.metrics;
+  return html`
+  <div class="card">
+    <h2>Match predictor</h2>
+    <p class="sub">A Dixon-Coles Poisson model: fits each team's attack & defence from results, then predicts any fixture. Pick a league season to fit and validate it.</p>
+    <div class="controls">
+      <div class="field"><label>Competition & season</label>
+        <select value=${sel} onChange=${e=>loadSeason(e.target.value)}>
+          <option value="">Select…</option>
+          ${seasons.map(s=>html`<option value="${s.competition}|${s.season}">${s.label} (${s.matches})</option>`)}
+        </select></div>
+    </div>
+  </div>
+
+  ${err && html`<div class="err">${err}</div>`}
+  ${loading && html`<div class="loading"><span class="spinner"></span>Fitting the model…</div>`}
+
+  ${m && html`<div class="card">
+    <h2>Model quality — ${m.competition} ${m.season}</h2>
+    <p class="sub">Time-split validation: trained on the first ${m.train_matches} matches, tested on the next ${m.test_matches}. Lower RPS / log-loss is better.</p>
+    <div class="stat-grid">
+      <${Stat} value=${`${(m.accuracy*100).toFixed(1)}%`} label=${`Accuracy (base ${(m.baseline_accuracy*100).toFixed(1)}%)`} cls="accent"/>
+      <${Stat} value=${m.rps} label=${`RPS (base ${m.baseline_rps})`} cls=${m.rps<m.baseline_rps?"gold":""}/>
+      <${Stat} value=${m.log_loss} label=${`Log loss (base ${m.baseline_log_loss})`}/>
+      <${Stat} value=${m.home_advantage} label="Home advantage"/>
+    </div>
+    <p class="hint">An RPS near 0.19–0.21 is the professional range for 1X2 prediction. Beating the base-rate baseline on every metric means the model is genuinely learning team strength.</p>
+  </div>
+
+  <div class="card">
+    <h2>Predict a fixture</h2>
+    <div class="controls">
+      <div class="field"><label>Home</label>
+        <select value=${home} onChange=${e=>setHome(e.target.value)}>
+          <option value="">Select…</option>
+          ${overview.teams.map(t=>html`<option value=${t}>${t}</option>`)}
+        </select></div>
+      <div class="field"><label>Away</label>
+        <select value=${away} onChange=${e=>setAway(e.target.value)}>
+          <option value="">Select…</option>
+          ${overview.teams.map(t=>html`<option value=${t}>${t}</option>`)}
+        </select></div>
+      <button class="go" onClick=${runFixture} disabled=${!home||!away||home===away}>Predict</button>
+    </div>
+    ${pred && html`<div style="margin-top:18px">
+      <div class="stat-grid">
+        <${Stat} value=${`${(pred.p_home*100).toFixed(0)}%`} label=${`${pred.home} win`} cls="accent"/>
+        <${Stat} value=${`${(pred.p_draw*100).toFixed(0)}%`} label="Draw"/>
+        <${Stat} value=${`${(pred.p_away*100).toFixed(0)}%`} label=${`${pred.away} win`} cls="red"/>
+        <${Stat} value=${`${pred.expected_home_goals} – ${pred.expected_away_goals}`} label="Expected goals" cls="gold"/>
+        <${Stat} value=${`${(pred.over_2_5*100).toFixed(0)}%`} label="Over 2.5 goals"/>
+      </div>
+      <p class="sub" style="margin-top:6px">Most likely scorelines: ${pred.most_likely.map(s=>`${s.score} (${(s.p*100).toFixed(0)}%)`).join("  ·  ")}</p>
+    </div>`}
+  </div>
+
+  <div class="card">
+    <h2>Fitted team strengths</h2>
+    <p class="sub">Attack & defence ratings the model learned (higher attack = scores more; lower/negative defence = concedes less).</p>
+    <div style="max-height:320px;overflow:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:14px">
+        <thead><tr style="color:var(--muted);text-align:left">
+          <th style="padding:6px 8px">Team</th><th style="padding:6px 8px">Attack</th><th style="padding:6px 8px">Defence</th></tr></thead>
+        <tbody>
+          ${overview.ratings.map(r=>html`<tr style="border-top:1px solid var(--line)">
+            <td style="padding:6px 8px">${r.team}</td>
+            <td style="padding:6px 8px;color:var(--accent)">${r.attack>0?'+':''}${r.attack}</td>
+            <td style="padding:6px 8px;color:var(--red)">${r.defence>0?'+':''}${r.defence}</td></tr>`)}
+        </tbody>
+      </table>
+    </div>
+  </div>`}
+  `;
+}
+
 // ---------- Model tab ----------
 function ModelTab(){
   const [m, setM] = useState(null);
@@ -273,12 +378,14 @@ function App(){
   <div class="tabs">
     <div class=${"tab"+(tab==="match"?" active":"")} onClick=${()=>setTab("match")}>Match report</div>
     <div class=${"tab"+(tab==="scout"?" active":"")} onClick=${()=>setTab("scout")}>Scouting report</div>
+    <div class=${"tab"+(tab==="predict"?" active":"")} onClick=${()=>setTab("predict")}>Predictor</div>
     <div class=${"tab"+(tab==="model"?" active":"")} onClick=${()=>setTab("model")}>The model</div>
   </div>
   <main>
     ${err && html`<div class="err">Couldn't reach the backend: ${err}</div>`}
     ${tab==="match" && html`<${MatchTab} comps=${comps}/>`}
     ${tab==="scout" && html`<${ScoutTab} comps=${comps}/>`}
+    ${tab==="predict" && html`<${PredictTab}/>`}
     ${tab==="model" && html`<${ModelTab}/>`}
   </main>`;
 }

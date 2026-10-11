@@ -26,9 +26,51 @@ opponent profile: record, xG for/against per 90, chance-creation and
 vulnerability heatmaps, set-piece dependence, attacking-side bias, and a form
 timeline.
 
-**4. Serves it all in a web app** — a clean single-page UI (FastAPI + Preact)
-with three tabs: Match report, Scouting report, and The model. Reports are
-generated on demand and cached, so repeat views are instant.
+**4. Predicts matches** — a Dixon-Coles Poisson model fits every team's attack
+and defence strength (plus home advantage) from results, then predicts any
+fixture: 1X2 probabilities, expected goals, most-likely scorelines, and
+over/under 2.5. Validated with a proper time-split and scored against the
+base-rate baseline (see numbers below).
+
+**5. Serves it all in a web app** — a clean single-page UI (FastAPI + Preact)
+with four tabs: Match report, Scouting report, Predictor, and The model. Reports
+are generated on demand and cached, so repeat views are instant.
+
+---
+
+## 🔮 The match predictor
+
+A **Dixon-Coles Poisson model** — the classic, genuinely strong approach to
+football prediction. Each team gets an attack and a defence rating fitted by
+maximum likelihood from match results; goals are Poisson with a home-advantage
+term and the Dixon-Coles low-score correction.
+
+Validated with a **time-split** (train on the earlier matches of a season,
+predict the later ones) and scored with the **Ranked Probability Score (RPS)** —
+the standard metric for ordered 1X2 outcomes:
+
+| League 2015/16 | Accuracy | Baseline | RPS | Baseline RPS |
+|---|---|---|---|---|
+| Premier League | **48.9%** | 44.4% | **0.203** | 0.226 |
+| La Liga | **49.6%** | 46.6% | **0.215** | 0.233 |
+
+It beats the base-rate baseline on every metric, and an RPS near 0.19–0.21 is
+the professional range for 1X2 prediction. A sanity check that it's learning
+real football: it rated **Leicester City** the strongest attack of 2015/16 —
+the season they won the title — and recovered La Liga's higher home advantage
+(0.39) vs the Premier League's (0.19).
+
+```bash
+python src/predict.py "Premier League" "2015/2016"                       # validate
+python src/predict.py "La Liga" "2015/2016" --fixture "Barcelona" "Sevilla"
+```
+
+> **Making it a true "prediction champion."** The ceiling for this kind of model
+> is set by **betting odds** — the market is the hardest baseline to beat. To go
+> further, train on **football-data.co.uk** (free results + odds, ~22 leagues,
+> decades of history), add **Understat** xG form and **API-Football** player/
+> injury/lineup data, and benchmark the model's RPS against the bookmakers'
+> closing odds. See *Importing data* below for how to pull those.
 
 ---
 

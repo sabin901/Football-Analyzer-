@@ -27,6 +27,7 @@ sys.path.insert(0, os.path.join(HERE, "src"))
 from statsbombpy import sb
 import report as match_report
 import scouting as scout
+import predict as predictor
 
 OUTPUT_DIR = os.path.join(HERE, "output")
 MODELS_DIR = os.path.join(HERE, "models")
@@ -124,6 +125,56 @@ def scout_report(competition_id: int, season_id: int, team: str):
     except Exception as e:
         raise HTTPException(500, f"Scouting failed: {e}")
     return summary
+
+
+# Cache fitted prediction models per competition-season (fitting takes a few s)
+_PRED_CACHE = {}
+
+
+def _get_predictor(competition, season):
+    key = (competition, season)
+    if key not in _PRED_CACHE:
+        model, metrics = predictor.validate(competition, season)
+        _PRED_CACHE[key] = (model, metrics)
+    return _PRED_CACHE[key]
+
+
+@app.get("/api/predict/seasons")
+def predict_seasons():
+    """Competition-seasons with enough matches to fit a predictor (league round-robins)."""
+    import pandas as pd
+    m = pd.read_parquet(predictor.MATCHES_PATH)
+    g = m.groupby(["competition", "season"]).size().reset_index(name="n")
+    g = g[g["n"] >= 180].sort_values("n", ascending=False)   # ~full league seasons
+    return [{"competition": r["competition"], "season": r["season"],
+             "matches": int(r["n"]),
+             "label": f"{r['competition']} — {r['season']}"} for _, r in g.iterrows()]
+
+
+@app.get("/api/predict/overview")
+def predict_overview(competition: str, season: str):
+    """Validation metrics + fitted team strengths + the season's teams."""
+    try:
+        model, metrics = _get_predictor(competition, season)
+    except Exception as e:
+        raise HTTPException(500, f"Fit failed: {e}")
+    ratings = [{"team": t, "attack": round(float(a), 3), "defence": round(float(d), 3)}
+               for t, a, d in predictor.team_ratings(model)]
+    return {"metrics": metrics, "ratings": ratings,
+            "teams": model["teams"]}
+
+
+@app.get("/api/predict/fixture")
+def predict_fixture(competition: str, season: str, home: str, away: str):
+    """Predict a single fixture."""
+    try:
+        model, _ = _get_predictor(competition, season)
+    except Exception as e:
+        raise HTTPException(500, f"Fit failed: {e}")
+    pred = predictor.predict(model, home, away)
+    if pred is None:
+        raise HTTPException(400, "One of the teams isn't in this competition/season.")
+    return pred
 
 
 @app.get("/api/model")
