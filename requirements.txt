@@ -6,3 +6,5 @@ matplotlib>=3.7
 mplsoccer>=1.2
 fastapi>=0.110
 uvicorn[standard]>=0.27
+pyarrow>=14.0
+

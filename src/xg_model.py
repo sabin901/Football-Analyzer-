@@ -169,14 +169,27 @@ def _importance_plot(model, X_test, y_test, path):
 # ---------------------------------------------------------------------------
 # Train
 # ---------------------------------------------------------------------------
-def train(competitions):
+INGESTED_SHOTS = os.path.join(_HERE, "..", "data", "shots.parquet")
+
+
+def train(competitions, use_ingested=True):
     os.makedirs(MODEL_DIR, exist_ok=True)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    print("Building shot dataset from StatsBomb open data...")
-    df = build_shot_dataset(competitions)
-    print(f"  collected {len(df):,} shots, {df['is_goal'].sum():,} goals "
-          f"({df['is_goal'].mean()*100:.1f}% conversion)")
+    # Prefer the big locally-ingested corpus (src/ingest.py) when available —
+    # it's far larger than pulling a handful of competitions over the API.
+    if use_ingested and os.path.exists(INGESTED_SHOTS):
+        import pandas as _pd
+        df = _pd.read_parquet(INGESTED_SHOTS)
+        print(f"Training from ingested dataset ({os.path.basename(INGESTED_SHOTS)})...")
+        print(f"  {len(df):,} shots, {int(df['is_goal'].sum()):,} goals "
+              f"({df['is_goal'].mean()*100:.1f}% conversion), "
+              f"{df['match_id'].nunique():,} matches")
+    else:
+        print("Building shot dataset from StatsBomb open data (API)...")
+        df = build_shot_dataset(competitions)
+        print(f"  collected {len(df):,} shots, {df['is_goal'].sum():,} goals "
+              f"({df['is_goal'].mean()*100:.1f}% conversion)")
 
     X = df[FEATURES].values
     y = df["is_goal"].values

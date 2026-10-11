@@ -7,3 +7,4 @@ output/scout_*.json
 !output/report_8658.*
 !output/scout_2_27_Arsenal.*
 .DS_Store
+data/
