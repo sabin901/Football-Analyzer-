@@ -1,0 +1,11 @@
+# One command to run the whole dashboard:  docker compose up
+# Then open http://localhost:8000
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      # Optional: set a free football-data.org key to enable live data imports
+      - FOOTBALL_DATA_API_KEY=${FOOTBALL_DATA_API_KEY:-}
+    restart: unless-stopped

@@ -1,0 +1,8 @@
+.git
+__pycache__/
+*.pyc
+output/live_*.png
+output/ui_*.png
+site/
+.github/
+*.zip
