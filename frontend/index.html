@@ -176,6 +176,18 @@ function Counter({value,dec=0,suffix="",prefix="",comma=false}){
   return html`<span class="num">${prefix}${s}${suffix}</span>`;
 }
 function Stat({value,label,cls}){ return html`<div class="stat"><div class="v num ${cls||''}">${value}</div><div class="l">${label}</div></div>`; }
+/* season <option>s grouped by league (newest first within each) */
+function SeasonOptions({seasons}){
+  const by={}; seasons.forEach(s=>{(by[s.competition]=by[s.competition]||[]).push(s);});
+  return Object.keys(by).map(comp=>html`<optgroup label=${comp}>
+    ${by[comp].map(s=>html`<option value="${s.competition}|${s.season}">${s.season}${s.matches?` (${s.matches})`:''}</option>`)}
+  </optgroup>`);
+}
+function latestSeason(seasons){ // newest Premier League season, else first
+  const pl=seasons.filter(s=>s.competition==='Premier League');
+  const pick=(pl.length?pl:seasons).slice().sort((a,b)=>b.season.localeCompare(a.season))[0];
+  return pick?pick.competition+'|'+pick.season:'';
+}
 function Form({form}){ return html`<span class="form">${(form||[]).map(f=>html`<span class="fb ${f}">${f}</span>`)}</span>`; }
 function Loading({label}){ return html`<div class="loading"><span class="spinner"></span>${label||'Loading…'}</div>`; }
 function Skeleton({h:ht=140}){ return html`<div class="card"><div class="sk" style="height:${ht}px"></div></div>`; }
@@ -241,7 +253,7 @@ function Overview({go}){
   const [m,setM]=useState(null);const [n,setN]=useState(null);const [tbl,setTbl]=useState(null);
   useEffect(()=>{ get(`${API}/api/model`).then(setM).catch(()=>{});
     get(`${API}/api/predict/seasons`).then(s=>setN(s.length)).catch(()=>{});
-    get(`${API}/api/table?competition=Premier%20League&season=2022/2023`).then(setTbl).catch(()=>{}); },[]);
+    get(`${API}/api/table?competition=Premier%20League&season=2025/2026`).then(setTbl).catch(()=>{}); },[]);
   const over = tbl&&tbl.has_xpts? [...tbl.table].sort((a,b)=>b.xpts_diff-a.xpts_diff)[0]:null;
   const under = tbl&&tbl.has_xpts? [...tbl.table].sort((a,b)=>a.xpts_diff-b.xpts_diff)[0]:null;
   const feats=[
@@ -257,21 +269,21 @@ function Overview({go}){
     <div class="hero">
       <div class="eyebrow">Football intelligence</div>
       <h1>See the game beneath the scoreline.</h1>
-      <p>An end-to-end analytics engine — expected goals, expected threat, team strength and match prediction — built from raw event data across the five major European leagues and 23 seasons.</p>
+      <p>An end-to-end analytics engine — expected goals, expected threat, team strength and match prediction — spanning the five major European leagues across 24 seasons (2002/03–2025/26).</p>
     </div>
     <div class="stat-grid">
       <div class="stat"><div class="v accent">${m?html`<${Counter} value=${m.roc_auc} dec=${3}/>`:'—'}</div><div class="l">xG model ROC-AUC</div></div>
       <div class="stat"><div class="v">${m?html`<${Counter} value=${m.n_shots} comma=${true}/>`:'—'}</div><div class="l">shots trained on</div></div>
       <div class="stat"><div class="v gold">${n?html`<${Counter} value=${n}/>`:'—'}</div><div class="l">league-seasons</div></div>
-      <div class="stat"><div class="v green">${html`<${Counter} value=${54.9} dec=${1} suffix="%"/>`}</div><div class="l">predictor accuracy (PL 22/23)</div></div>
+      <div class="stat"><div class="v green">${html`<${Counter} value=${54.9} dec=${1} suffix="%"/>`}</div><div class="l">predictor accuracy (PL)</div></div>
     </div>
     ${over&&under&&html`<div class="two">
-      <div class="card"><h3>Biggest over-performer · PL 2022/23</h3>
+      <div class="card"><h3>Biggest over-performer · PL 2025/26</h3>
         <div style="display:flex;align-items:center;gap:14px">
           <div style="font-size:30px;font-weight:820">${over.team}</div>
           <span class="chip pos">+${over.xpts_diff} vs xPts</span></div>
         <p class="sub" style="margin-top:10px">Took ${over.pts} points from fixtures the model valued at ${over.xpts} — squeezing more from their chances than the underlying play suggested.</p></div>
-      <div class="card"><h3>Biggest under-performer · PL 2022/23</h3>
+      <div class="card"><h3>Biggest under-performer · PL 2025/26</h3>
         <div style="display:flex;align-items:center;gap:14px">
           <div style="font-size:30px;font-weight:820">${under.team}</div>
           <span class="chip neg">${under.xpts_diff} vs xPts</span></div>
@@ -322,15 +334,15 @@ function TeamProfile({competition,season,team,onBack}){
 function TableTab(){
   const [seasons,setSeasons]=useState([]);const [sel,setSel]=useState("");const [data,setData]=useState(null);
   const [loading,setLoading]=useState(false);const [err,setErr]=useState("");const [team,setTeam]=useState(null);
-  useEffect(()=>{ get(`${API}/api/predict/seasons`).then(s=>{setSeasons(s);if(s.length){const d=s.find(x=>x.label.startsWith('Premier')&&x.season.includes('2022'))||s[0];setSel(d.competition+'|'+d.season);}}).catch(e=>setErr(e.message)); },[]);
+  useEffect(()=>{ get(`${API}/api/predict/seasons`).then(s=>{setSeasons(s);if(s.length)setSel(latestSeason(s));}).catch(e=>setErr(e.message)); },[]);
   useEffect(()=>{ if(!sel)return;const[c,s]=sel.split("|");setLoading(true);setErr("");setData(null);setTeam(null);
     get(`${API}/api/table?competition=${encodeURIComponent(c)}&season=${encodeURIComponent(s)}`).then(setData).catch(e=>setErr(e.message)).finally(()=>setLoading(false)); },[sel]);
   const [c,s]=(sel||"|").split("|");
   const maxAbs=data?Math.max(1,...data.table.map(t=>Math.abs(t.xpts_diff))):1;
   return html`<div class="view">
-    <div class="hero"><h1>League table</h1><p>Actual standings beside the model's <b>expected points (xPts)</b> — the gap reveals who's over- or under-performing their underlying quality. Click any team for its full profile.</p></div>
-    <div class="card"><div class="controls"><div class="field"><label>Competition & season</label>
-      <select value=${sel} onChange=${e=>setSel(e.target.value)}>${seasons.map(x=>html`<option value="${x.competition}|${x.season}">${x.label}</option>`)}</select></div></div></div>
+    <div class="hero"><h1>League table</h1><p>Actual standings beside the model's <b>expected points (xPts)</b> — the gap reveals who's over- or under-performing their underlying quality. Five major leagues, 2002/03–2025/26. Click any team for its full profile.</p></div>
+    <div class="card"><div class="controls"><div class="field"><label>League & season</label>
+      <select value=${sel} onChange=${e=>setSel(e.target.value)}><${SeasonOptions} seasons=${seasons}/></select></div></div></div>
     ${err&&html`<div class="err">${err}</div>`}
     ${loading&&html`<${Skeleton} h=${420}/>`}
     ${data&&team&&html`<${TeamProfile} competition=${c} season=${s} team=${team} onBack=${()=>setTeam(null)}/>`}
@@ -360,7 +372,7 @@ function CompareTab(){
   const [seasons,setSeasons]=useState([]);const [sel,setSel]=useState("");
   const [tbl,setTbl]=useState(null);const [ov,setOv]=useState(null);
   const [t1,setT1]=useState("");const [t2,setT2]=useState("");const [err,setErr]=useState("");const [loading,setLoading]=useState(false);
-  useEffect(()=>{ get(`${API}/api/predict/seasons`).then(s=>{setSeasons(s);if(s.length){const d=s.find(x=>x.label.startsWith('Premier')&&x.season.includes('2022'))||s[0];load(d.competition+'|'+d.season);}}).catch(e=>setErr(e.message)); },[]);
+  useEffect(()=>{ get(`${API}/api/predict/seasons`).then(s=>{setSeasons(s);if(s.length)load(latestSeason(s));}).catch(e=>setErr(e.message)); },[]);
   async function load(v){ setSel(v);setTbl(null);setOv(null);setT1("");setT2(""); if(!v)return; const[c,s]=v.split("|"); setLoading(true);setErr("");
     try{ const[a,b]=await Promise.all([ get(`${API}/api/table?competition=${encodeURIComponent(c)}&season=${encodeURIComponent(s)}`), get(`${API}/api/predict/overview?competition=${encodeURIComponent(c)}&season=${encodeURIComponent(s)}`)]);
       setTbl(a);setOv(b); const srt=[...a.table]; setT1(srt[0].team); setT2(srt[1].team);
@@ -383,8 +395,8 @@ function CompareTab(){
   return html`<div class="view">
     <div class="hero"><h1>Compare teams</h1><p>Two sides, one picture — attack and defence strength, output and form on a single radar, with a head-to-head stat line and the model's prediction for the fixture both ways.</p></div>
     <div class="card"><div class="controls">
-      <div class="field"><label>Competition & season</label><select value=${sel} onChange=${e=>load(e.target.value)}>
-        ${seasons.map(x=>html`<option value="${x.competition}|${x.season}">${x.label}</option>`)}</select></div>
+      <div class="field"><label>League & season</label><select value=${sel} onChange=${e=>load(e.target.value)}>
+        <${SeasonOptions} seasons=${seasons}/></select></div>
       ${rows&&html`<div class="field"><label>Team A</label><select value=${t1} onChange=${e=>setT1(e.target.value)}>
         ${rows.map(r=>html`<option value=${r.team}>${r.team}</option>`)}</select></div>`}
       ${rows&&html`<div class="field"><label>Team B</label><select value=${t2} onChange=${e=>setT2(e.target.value)}>
@@ -545,9 +557,9 @@ function PredictTab(){
   const m=ov&&ov.metrics;
   return html`<div class="view">
     <div class="hero"><h1>Match predictor</h1><p>A Dixon-Coles Poisson model with recency weighting fits every team's attack & defence from ${seasons.length} league-seasons, then forecasts any fixture: win/draw/loss, expected goals and likeliest scorelines.</p></div>
-    <div class="card"><div class="controls"><div class="field"><label>Competition & season</label>
+    <div class="card"><div class="controls"><div class="field"><label>League & season</label>
       <select value=${sel} onChange=${e=>loadSeason(e.target.value)}><option value="">Select…</option>
-        ${seasons.map(s=>html`<option value="${s.competition}|${s.season}">${s.label}</option>`)}</select></div></div></div>
+        <${SeasonOptions} seasons=${seasons}/></select></div></div></div>
     ${err&&html`<div class="err">${err}</div>`}
     ${loading&&!ov&&html`<${Skeleton} h=${160}/>`}
     ${m&&html`<div class="card"><h2>Model quality <span class="tag">${m.competition} ${m.season}</span></h2>
