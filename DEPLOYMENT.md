@@ -16,7 +16,7 @@ GitHub's GITHUB_TOKEN commits do not normally trigger another push workflow. Dep
 
 Source failures appear as workflow warnings and snapshot status. Failed HTTP requests do not overwrite verified scores or move their individual verification timestamps. Current results are supplemented from ESPN for scheduled dates in the last 14 days. An older source gap remains visible rather than silently fabricated. League and season source files are independently validated.
 
-The public Refresh button reloads the published snapshot; it does not trigger provider ingestion. To request immediate ingestion, run the workflow manually or run `python src/dashboard_data.py` and then `python src/build_site.py` locally.
+The public Refresh button reloads the published snapshot; it does not trigger provider ingestion. To request immediate ingestion, run the workflow manually or run the complete refresh sequence in the README locally (results, squads, forecasts, then the build).
 
 ## Backend endpoints
 
@@ -29,6 +29,6 @@ League IDs: PL, PD, SA, BL1, FL1. Season IDs: `2026-27` etc. Invalid IDs return 
 
 ## Verification and rollback
 
-Build with `python src/build_site.py`; run `python -m unittest discover -s tests -v` and `node --check frontend/dashboard.js`. Check the deployed manifest and at least one league after the Pages deployment succeeds.
+Build with `python src/build_site.py`; run `python -m unittest discover -s tests -v` followed by `npm test`, `npm run format:check` and `python -m black --check .`. Check all five league logos, all 12 workspaces, mobile layouts, browser history and downloads after deployment. Publication tests verify every entry point script and bundled league asset.
 
 To roll back code, revert the release commit and run the deployment workflow. Snapshots and their provenance are versioned in Git. For an upstream outage, keep the last successful snapshots and inspect the coverage warnings; do not reset freshness timestamps to conceal the outage.

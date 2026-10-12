@@ -31,6 +31,8 @@ jobs:
           node-version: '22'
       - name: Install backend and test dependencies
         run: pip install -r requirements.txt -r requirements-dev.txt
+      - name: Install frontend development tools
+        run: npm ci
       - name: Test data integrity and backend
         run: |
           python -m unittest discover -s tests -v
@@ -38,7 +40,9 @@ jobs:
           node --check frontend/workbench.js
           node --check frontend/spatial.js
           node --check frontend/icons.js
-          node --test tests/spatial.test.cjs
+          npm test
+          npm run format:check
+          python -m black --check .
       - name: Refresh current season (keep last good snapshots on failure)
         if: github.event_name != 'pull_request'
         id: refresh

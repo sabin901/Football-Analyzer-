@@ -1,5 +1,6 @@
 __pycache__/
 .venv/
+node_modules/
 .artifacts/
 # Rebuilt by src/build_site.py; do not duplicate the research warehouse in Git.
 /site/data/workbench/

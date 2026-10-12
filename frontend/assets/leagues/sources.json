@@ -1,0 +1,37 @@
+[
+  {
+    "league": "PL",
+    "file": "PL.png",
+    "source": "https://a.espncdn.com/i/leaguelogos/soccer/500/23.png",
+    "retrieved": "2026-10-12",
+    "note": "Competition identity artwork supplied by ESPN; trademarks belong to their respective owners. No affiliation implied."
+  },
+  {
+    "league": "PD",
+    "file": "PD.png",
+    "source": "https://a.espncdn.com/i/leaguelogos/soccer/500/15.png",
+    "retrieved": "2026-10-12",
+    "note": "Competition identity artwork supplied by ESPN; trademarks belong to their respective owners. No affiliation implied."
+  },
+  {
+    "league": "SA",
+    "file": "SA.png",
+    "source": "https://images.legaseriea.it/image/private/t_w_480/v1764689566/prd/assets/mobileapp/logos/seriea-enilive-logo_jssflz.png",
+    "retrieved": "2026-10-12",
+    "note": "Competition identity from the official league website. Trademarks belong to their owners; no affiliation is implied."
+  },
+  {
+    "league": "BL1",
+    "file": "BL1.png",
+    "source": "https://a.espncdn.com/i/leaguelogos/soccer/500/10.png",
+    "retrieved": "2026-10-12",
+    "note": "Competition identity artwork supplied by ESPN; trademarks belong to their respective owners. No affiliation implied."
+  },
+  {
+    "league": "FL1",
+    "file": "FL1.png",
+    "source": "https://www.lfp.fr/assets/LFP_LOGOTYPE_L1_MCDONALDS_MASTER_WHITE_RVB_2abe51b6ce.png",
+    "retrieved": "2026-10-12",
+    "note": "Official LFP competition mark. White artwork displayed on a dark background; trademarks belong to the owner."
+  }
+]
