@@ -1,4 +1,6 @@
 __pycache__/
+.venv/
+.artifacts/
 *.pyc
 .DS_Store
 # generated per-request reports (keep the curated samples)

@@ -14,6 +14,7 @@ import os
 import sys
 import json
 import warnings
+from pathlib import Path
 
 warnings.filterwarnings("ignore")
 
@@ -29,6 +30,7 @@ import report as match_report
 import scouting as scout
 import predict as predictor
 import players as players_mod
+import dashboard_data
 
 OUTPUT_DIR = os.path.join(HERE, "output")
 MODELS_DIR = os.path.join(HERE, "models")
@@ -36,6 +38,41 @@ FRONTEND_DIR = os.path.join(HERE, "frontend")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 app = FastAPI(title="Soccer Analytics", version="1.0")
+
+
+@app.get("/api/health")
+def health():
+    return {"status": "ok", "current_season": dashboard_data.current_season(),
+            "dashboard_ready": (Path(HERE) / "site/data/manifest.json").exists()}
+
+
+@app.get("/api/dashboard/{league}/{season}")
+def dashboard_snapshot(league: str, season: str):
+    try:
+        return dashboard_data.snapshot(league, season)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+    except FileNotFoundError as exc:
+        raise HTTPException(404, str(exc))
+
+
+@app.get("/api/dashboard/{league}/{season}/predict")
+def dashboard_prediction(league: str, season: str, home: str, away: str):
+    snapshot = dashboard_snapshot(league, season)
+    try:
+        result = dashboard_data.baseline_prediction(snapshot["matches"], home, away)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+    if result is None:
+        raise HTTPException(422, "Insufficient recorded results for this matchup")
+    return result
+
+
+def _dataset_key(key):
+    import re
+    if not re.fullmatch(r"[A-Za-z0-9_-]{1,100}", key):
+        raise HTTPException(400, "Invalid dataset key")
+    return key
 
 # Serve generated images and the frontend
 app.mount("/output", StaticFiles(directory=OUTPUT_DIR), name="output")
@@ -113,6 +150,8 @@ def report(match_id: int):
 @app.get("/api/scout")
 def scout_report(competition_id: int, season_id: int, team: str):
     """Generate (or return cached) season scouting report for a team."""
+    if len(team) > 100 or any(part in team for part in ("/", "\\", "..")):
+        raise HTTPException(400, "Invalid team name")
     safe = team.replace(" ", "_").replace("/", "-")
     png = f"scout_{competition_id}_{season_id}_{safe}.png"
     cached = os.path.join(OUTPUT_DIR, png.replace(".png", ".json"))
@@ -133,12 +172,22 @@ _PRED_CACHE = {}
 
 
 def _get_predictor(competition, season):
-    key = (competition, season)
+    # Invalidate fitted results when the underlying catalogue changes.
+    version = tuple(os.stat(p).st_mtime_ns for p in
+                    (predictor.MATCHES_PATH, predictor.RESULTS_HISTORY) if os.path.exists(p))
+    key = (competition, season, version)
     if key not in _PRED_CACHE:
         # xG basis (chance quality) + 90-day recency weighting — the combination
         # the 115-season backtest found best.
-        model, metrics = predictor.validate(competition, season,
-                                            half_life_days=90, basis="xg")
+        _, metrics = predictor.validate(competition, season,
+                                         half_life_days=90, basis="xg")
+        catalogue = predictor.load_catalogue()
+        selected = catalogue[(catalogue["competition"] == competition) & (catalogue["season"] == season)]
+        # Validation uses a held-out split. Exploratory scenarios use ALL known
+        # results, not the training-only model returned by validation.
+        model = predictor.fit(selected, half_life_days=90, basis="xg")
+        if len(_PRED_CACHE) >= 32:
+            _PRED_CACHE.clear()
         _PRED_CACHE[key] = (model, metrics)
     return _PRED_CACHE[key]
 
@@ -303,6 +352,8 @@ def team_profile(competition: str, season: str, team: str):
 @app.get("/api/predict/fixture")
 def predict_fixture(competition: str, season: str, home: str, away: str):
     """Predict a single fixture."""
+    if home == away:
+        raise HTTPException(400, "Select two different teams")
     try:
         model, _ = _get_predictor(competition, season)
     except Exception as e:
@@ -339,6 +390,7 @@ _PLAYERS_CACHE = {}
 
 def _players_df(key):
     import pandas as pd
+    key = _dataset_key(key)
     if key not in _PLAYERS_CACHE:
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", f"players_{key}.parquet")
         if not os.path.exists(path):
@@ -365,6 +417,7 @@ def vaep_leaderboard(key: str):
     """VAEP leaderboard for a league-season, if src/vaep_socceraction.py has
     produced it. 404 (handled quietly by the UI) when it hasn't."""
     import pandas as pd
+    key = _dataset_key(key)
     base = os.path.dirname(os.path.abspath(__file__))
     pq = os.path.join(base, "data", f"vaep_{key}.parquet")
     meta_p = os.path.join(base, "models", f"vaep_{key}.json")
@@ -409,9 +462,17 @@ def model_metrics():
 # ---------------------------------------------------------------------------
 @app.get("/")
 def index():
+    return FileResponse(os.path.join(HERE, "site", "index.html"))
+
+
+@app.get("/research")
+def research_index():
     return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
 
 
 # Mount the rest of the frontend (css/js) if present
 if os.path.isdir(FRONTEND_DIR):
     app.mount("/app", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
+
+# Identical dashboard and snapshot files on FastAPI and GitHub Pages.
+app.mount("/", StaticFiles(directory=os.path.join(HERE, "site"), html=True), name="dashboard")
