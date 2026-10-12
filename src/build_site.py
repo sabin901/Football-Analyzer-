@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def build():
     site = ROOT / 'site'
     site.mkdir(exist_ok=True)
-    for source, target in [('dashboard.html', 'index.html'), ('dashboard.css', 'dashboard.css'), ('dashboard.js', 'dashboard.js'), ('workbench.js','workbench.js'), ('workbench.css','workbench.css')]:
+    for source, target in [('dashboard.html', 'index.html'), ('dashboard.css', 'dashboard.css'), ('dashboard.js', 'dashboard.js'), ('workbench.js','workbench.js'), ('workbench.css','workbench.css'), ('icons.js','icons.js'), ('spatial.js','spatial.js')]:
         shutil.copyfile(ROOT / 'frontend' / source, site / target)
     (site / '.nojekyll').touch()
     manifest = {'schema_version': 2, 'built_at': data.utc_now(), 'current_season': data.current_season(), 'leagues': []}
@@ -59,6 +59,10 @@ def build():
         source = ROOT / 'output' / name
         if source.exists():
             shutil.copyfile(source, assets / name)
+    base = 'https://sabin901.github.io/Football-Analyzer-/'
+    pages = [''] + ['docs/' + p.with_suffix('.html').name for p in (ROOT/'docs').glob('*.md')]
+    (site/'sitemap.xml').write_text('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + ''.join(f'<url><loc>{base}{p}</loc></url>' for p in pages) + '</urlset>', encoding='utf8')
+    (site/'robots.txt').write_text('User-agent: *\nAllow: /\nSitemap: '+base+'sitemap.xml\n', encoding='utf8')
     print(f"Built dashboard: {sum(len(l['seasons']) for l in manifest['leagues'])} league-seasons")
 
 

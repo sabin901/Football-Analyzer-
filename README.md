@@ -82,3 +82,20 @@ Historical imports are explicit; the six-hour workflow refreshes current results
 Read the [data dictionary](docs/DATA_DICTIONARY.md), [model card](docs/MODEL_CARD.md), [club-role research](docs/CAREER_RESEARCH.md) and [portfolio playbook](docs/PORTFOLIO_PLAYBOOK.md). The frontend uses vanilla JavaScript, functional club imagery, responsive navigation and lazy dataset loading; it is not a React portfolio claim. Current player minutes are unavailable, so per-90 metrics are restricted to the historical event lab and labeled as clock estimates.
 
 FastAPI also provides `/api/workbench/catalogue`, `/api/workbench/players/{league}` (bounded pagination), `/api/workbench/current/{league}`, `/api/workbench/forecast/{league}`, `/api/workbench/events/{competition_season}`, `/api/workbench/event-match/{id}` and `/api/workbench/backtest/{league}`. GitHub Pages serves equivalent static snapshots; it does not host a Python process.
+
+
+## Spatial analysis release
+
+The Player & team heatmaps workspace uses real StatsBomb historical event start locations. Explore whole teams or individual players by match, imported season sample, period and action type. Shared count or percentage scales, accessible numeric grids, CSV downloads and SVG exports retain the analysis context. Current free match summaries do not provide spatial coordinates.
+
+Rebuild spatial snapshots after refreshing the event archive:
+
+```powershell
+python src/event_workbench.py
+python src/spatial_workbench.py
+python src/build_site.py
+python -m unittest discover -s tests -v
+node --test tests/spatial.test.cjs
+```
+
+See [spatial methods](docs/SPATIAL_METHOD.md), [project comparison](docs/PROJECT_REVIEW.md) and [application guide](docs/APPLICATION_GUIDE.md). The current public match event view also includes cumulative xG. Lucide icons are bundled locally with their license. SEO titles and descriptions use no hyphens; canonical documentation pages, robots.txt and sitemap.xml are generated during the site build.
