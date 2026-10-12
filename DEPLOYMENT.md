@@ -32,3 +32,7 @@ League IDs: PL, PD, SA, BL1, FL1. Season IDs: `2026-27` etc. Invalid IDs return 
 Build with `python src/build_site.py`; run `python -m unittest discover -s tests -v` followed by `npm test`, `npm run format:check` and `python -m black --check .`. Check all five league logos, all 12 workspaces, mobile layouts, browser history and downloads after deployment. Publication tests verify every entry point script and bundled league asset.
 
 To roll back code, revert the release commit and run the deployment workflow. Snapshots and their provenance are versioned in Git. For an upstream outage, keep the last successful snapshots and inspect the coverage warnings; do not reset freshness timestamps to conceal the outage.
+
+## Browser cache consistency
+
+The build writes scripts and stylesheets under `site/assets/app/` with content hashes in their filenames, then rewrites the entry point to those exact URLs. Changed code gets a new URL automatically. Previous fingerprints are retained so an older cached page can still load its matching files. This prevents new HTML from accidentally executing an older cached controller after a deployment. No manual version number is required.

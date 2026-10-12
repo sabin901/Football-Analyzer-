@@ -1,5 +1,7 @@
 from pathlib import Path
 import json
+import re
+import hashlib
 import unittest
 
 SITE = Path(__file__).resolve().parents[1] / "site"
@@ -31,10 +33,22 @@ class PublishedTests(unittest.TestCase):
 
     def test_frontend_matches_the_packaged_version(self):
         root = SITE.parent / "frontend"
-        assets = [("dashboard.html", "index.html")]
-        assets += [(p.name, p.name) for p in root.iterdir() if p.suffix in {".js", ".css"}]
+        html = (SITE / "index.html").read_text(encoding="utf-8")
+        unversioned = re.sub(r"assets/app/([\w-]+)\.[a-f0-9]{12}\.(js|css)", r"\1.\2", html)
+        self.assertEqual((root / "dashboard.html").read_text(encoding="utf-8"), unversioned)
+        assets = [(p.name, p.name) for p in root.iterdir() if p.suffix in {".js", ".css"}]
         for source, target in assets:
             self.assertEqual((root / source).read_bytes(), (SITE / target).read_bytes())
+
+    def test_scripts_and_styles_have_content_versioned_urls(self):
+        html = (SITE / "index.html").read_text(encoding="utf-8")
+        assets = re.findall(r'(?:src|href)="([^"]+\.(?:js|css))"', html)
+        self.assertGreaterEqual(len(assets), 10)
+        for asset in assets:
+            match = re.fullmatch(r"assets/app/([\w-]+)\.([a-f0-9]{12})\.(js|css)", asset)
+            self.assertIsNotNone(match, asset)
+            digest = hashlib.sha256((SITE / asset).read_bytes()).hexdigest()[:12]
+            self.assertEqual(match[2], digest)
 
     def test_entrypoint_scripts_and_league_assets_exist(self):
         import re

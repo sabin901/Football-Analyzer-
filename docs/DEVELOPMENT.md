@@ -58,3 +58,7 @@ Build before publication tests: they compare source and packaged files. Commit s
 If a new script returns 404, inspect its relative URL and rebuild. If a workspace stays on Loading, inspect the browser console and matching JSON request. If data looks old, compare source fetch time, latest recorded match and import failures before assuming a UI error.
 
 The research archive is historical. Experimental xG, expected threat, valuation and Dixon–Coles modules are not substitutes for maintained forecast evaluation. Promote output to a validated claim only after a separate reproducible evaluation.
+
+## Versioned browser assets
+
+`package_frontend()` in `src/build_site.py` gives every script and stylesheet a filename containing a hash of its content. The generated entry point references those files. This prevents a returning visitor from combining new HTML with old cached JavaScript. Unchanged content retains its URL; earlier fingerprints remain available for older cached pages. Source HTML stays readable, and publication tests verify the generated URLs and file contents.

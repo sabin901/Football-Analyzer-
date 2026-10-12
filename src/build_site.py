@@ -1,6 +1,8 @@
 """Package the shared interactive dashboard and data for GitHub Pages."""
 
 from pathlib import Path
+import hashlib
+import re
 import shutil
 import dashboard_data as data
 import build_docs
@@ -10,15 +12,36 @@ from workbench_data import OUT
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def package_frontend(frontend, site):
+    """Give each script and stylesheet a URL tied to its actual content."""
+    versioned = site / "assets/app"
+    versioned.mkdir(parents=True, exist_ok=True)
+    urls = {}
+    for pattern in ("*.js", "*.css"):
+        for source in frontend.glob(pattern):
+            # Normalize checkout line endings so Windows and CI produce the same URL.
+            content = source.read_text(encoding="utf-8").encode("utf-8")
+            digest = hashlib.sha256(content).hexdigest()[:12]
+            name = f"{source.stem}.{digest}{source.suffix}"
+            (versioned / name).write_bytes(content)
+            urls[source.name] = f"assets/app/{name}"
+            shutil.copyfile(source, site / source.name)
+    html = (frontend / "dashboard.html").read_text(encoding="utf-8")
+    html = re.sub(
+        r'(src|href)="([^"/]+\.(?:js|css))"',
+        lambda match: f'{match[1]}="{urls[match[2]]}"',
+        html,
+    )
+    (site / "index.html").write_text(html, encoding="utf-8", newline="\n")
+    # Keep previous fingerprints: a cached HTML page can still request its own bundle.
+    shutil.copytree(frontend / "assets", site / "assets", dirs_exist_ok=True)
+
+
 def build():
     site = ROOT / "site"
     site.mkdir(exist_ok=True)
     # dashboard.html is the entry point; index.html is the legacy research UI.
-    shutil.copyfile(ROOT / "frontend/dashboard.html", site / "index.html")
-    for pattern in ("*.js", "*.css"):
-        for source in (ROOT / "frontend").glob(pattern):
-            shutil.copyfile(source, site / source.name)
-    shutil.copytree(ROOT / "frontend/assets", site / "assets", dirs_exist_ok=True)
+    package_frontend(ROOT / "frontend", site)
     (site / ".nojekyll").touch()
     manifest = {
         "schema_version": 2,
