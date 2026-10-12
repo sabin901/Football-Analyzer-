@@ -133,7 +133,7 @@ document.addEventListener('input',event=>{
   if(event.target.id==='team-search'){query=event.target.value;$('#standings-body').innerHTML=standingsRows()}
   if(event.target.id==='match-search'){query=event.target.value;page=1;const pos=event.target.selectionStart;render();$('#match-search').focus();$('#match-search').setSelectionRange(pos,pos)}
 });
-$('#refresh').addEventListener('click',async()=>{const b=$('#refresh');b.disabled=true;try{await start()}finally{b.disabled=false}});
+$('#refresh').addEventListener('click',async()=>{const b=$('#refresh');b.disabled=true;wbCache.clear();try{await start()}finally{b.disabled=false}});
 $('#export').addEventListener('click',()=>{
   if(!data)return;
   const cell=v=>'"'+String(v??'').replace(/^[=+@\-]/,"'$&").replaceAll('"','""')+'"';
