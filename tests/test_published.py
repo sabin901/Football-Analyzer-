@@ -15,7 +15,8 @@ class PublishedTests(unittest.TestCase):
                 data = json.loads((SITE / season["file"]).read_text(encoding="utf-8"))
                 self.assertEqual(data["league"], league["id"])
                 self.assertEqual(data["season"], season["id"])
-                self.assertEqual(len(data["table"]), league["teams"])
+                expected = 20 if league['id'] == 'FL1' and int(season['id'][:4]) < 2023 else league['teams']
+                self.assertEqual(len(data["table"]), expected)
                 self.assertEqual(sum(r["p"] for r in data["table"]), data["completed"]*2)
                 self.assertEqual(sum(r["gf"] for r in data["table"]), sum(r["ga"] for r in data["table"]))
                 for p in data["predictions"]:
@@ -24,5 +25,5 @@ class PublishedTests(unittest.TestCase):
 
     def test_frontend_matches_the_packaged_version(self):
         root = SITE.parent / "frontend"
-        for a,b in [("dashboard.html","index.html"),("dashboard.js","dashboard.js"),("dashboard.css","dashboard.css")]:
+        for a,b in [("dashboard.html","index.html"),("dashboard.js","dashboard.js"),("dashboard.css","dashboard.css"),("workbench.js","workbench.js"),("workbench.css","workbench.css")]:
             self.assertEqual((root/a).read_bytes(), (SITE/b).read_bytes())
