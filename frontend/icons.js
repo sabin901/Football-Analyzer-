@@ -1,14 +1,77 @@
 // Lucide icons, vendored from commit 440a1e1dfb1e712505308da46bead3c28b1f1398. See docs/LUCIDE_LICENSE.txt.
 'use strict';
-const iconPaths={"layout-dashboard": "<rect width=\"7\" height=\"9\" x=\"3\" y=\"3\" rx=\"1\" />\n  <rect width=\"7\" height=\"5\" x=\"14\" y=\"3\" rx=\"1\" />\n  <rect width=\"7\" height=\"9\" x=\"14\" y=\"12\" rx=\"1\" />\n  <rect width=\"7\" height=\"5\" x=\"3\" y=\"16\" rx=\"1\" />", "calendar-days": "<path d=\"M8 2v3\" />\n  <path d=\"M16 2v3\" />\n  <rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\" />\n  <path d=\"M3 9h18\" />\n  <path d=\"M8 13h.01\" />\n  <path d=\"M12 13h.01\" />\n  <path d=\"M16 13h.01\" />\n  <path d=\"M8 17h.01\" />\n  <path d=\"M12 17h.01\" />\n  <path d=\"M16 17h.01\" />", "git-compare-arrows": "<circle cx=\"5\" cy=\"6\" r=\"3\" />\n  <path d=\"M12 6h5a2 2 0 0 1 2 2v7\" />\n  <path d=\"m15 9-3-3 3-3\" />\n  <circle cx=\"19\" cy=\"18\" r=\"3\" />\n  <path d=\"M12 18H7a2 2 0 0 1-2-2V9\" />\n  <path d=\"m9 15 3 3-3 3\" />", "users": "<path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\" />\n  <path d=\"M16 3.128a4 4 0 0 1 0 7.744\" />\n  <path d=\"M22 21v-2a4 4 0 0 0-3-3.87\" />\n  <circle cx=\"9\" cy=\"7\" r=\"4\" />", "clipboard-list": "<rect width=\"8\" height=\"4\" x=\"8\" y=\"2\" rx=\"1\" ry=\"1\" />\n  <path d=\"M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2\" />\n  <path d=\"M12 11h4\" />\n  <path d=\"M12 16h4\" />\n  <path d=\"M8 11h.01\" />\n  <path d=\"M8 16h.01\" />", "crosshair": "<circle cx=\"12\" cy=\"12\" r=\"10\" />\n  <line x1=\"22\" x2=\"18\" y1=\"12\" y2=\"12\" />\n  <line x1=\"6\" x2=\"2\" y1=\"12\" y2=\"12\" />\n  <line x1=\"12\" x2=\"12\" y1=\"6\" y2=\"2\" />\n  <line x1=\"12\" x2=\"12\" y1=\"22\" y2=\"18\" />", "chart-no-axes-combined": "<path d=\"M12 16v5\" />\n  <path d=\"M16 14.639V21\" />\n  <path d=\"M20 10.656V21\" />\n  <path d=\"m22 3-8.646 8.646a.5.5 0 0 1-.708 0L9.354 8.354a.5.5 0 0 0-.707 0L2 15\" />\n  <path d=\"M4 18.463V21\" />\n  <path d=\"M8 14.656V21\" />", "sliders-horizontal": "<path d=\"M10 5H3\" />\n  <path d=\"M12 19H3\" />\n  <path d=\"M14 3v4\" />\n  <path d=\"M16 17v4\" />\n  <path d=\"M21 12h-9\" />\n  <path d=\"M21 19h-5\" />\n  <path d=\"M21 5h-7\" />\n  <path d=\"M8 10v4\" />\n  <path d=\"M8 12H3\" />", "book-open": "<path d=\"M12 5v16\" />\n  <path d=\"M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z\" />", "database": "<ellipse cx=\"12\" cy=\"5\" rx=\"9\" ry=\"3\" />\n  <path d=\"M3 5V19A9 3 0 0 0 21 19V5\" />\n  <path d=\"M3 12A9 3 0 0 0 21 12\" />", "briefcase-business": "<path d=\"M12 12h.01\" />\n  <path d=\"M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2\" />\n  <path d=\"M22 13a18.15 18.15 0 0 1-20 0\" />\n  <rect width=\"20\" height=\"14\" x=\"2\" y=\"6\" rx=\"2\" />", "scan-line": "<path d=\"M3 7V5a2 2 0 0 1 2-2h2\" />\n  <path d=\"M17 3h2a2 2 0 0 1 2 2v2\" />\n  <path d=\"M21 17v2a2 2 0 0 1-2 2h-2\" />\n  <path d=\"M7 21H5a2 2 0 0 1-2-2v-2\" />\n  <path d=\"M7 12h10\" />", "download": "<path d=\"M12 15V3\" />\n  <path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" />\n  <path d=\"m7 10 5 5 5-5\" />", "arrow-up-right": "<path d=\"M7 7h10v10\" />\n  <path d=\"M7 17 17 7\" />", "arrow-right": "<path d=\"M5 12h14\" />\n  <path d=\"m12 5 7 7-7 7\" />", "arrow-left": "<path d=\"m12 19-7-7 7-7\" />\n  <path d=\"M19 12H5\" />", "refresh-cw": "<path d=\"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8\" />\n  <path d=\"M21 3v5h-5\" />\n  <path d=\"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16\" />\n  <path d=\"M8 16H3v5\" />", "image": "<rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\" ry=\"2\" />\n  <circle cx=\"9\" cy=\"9\" r=\"2\" />\n  <path d=\"m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21\" />", "chevron-right": "<path d=\"m9 18 6-6-6-6\" />"};
-function icon(name){return `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${iconPaths[name]||iconPaths['chevron-right']}</svg>`}
-function decorateIcons(root){
-  root.querySelectorAll('[data-icon]').forEach(el=>{el.innerHTML=icon(el.dataset.icon);el.removeAttribute('data-icon')});
-  const glyphs={'↗':'arrow-up-right','↓':'download','→':'arrow-right','←':'arrow-left','↻':'refresh-cw'};
-  root.querySelectorAll('button,a').forEach(el=>{
-    const walker=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);const nodes=[];
-    while(walker.nextNode())if(!walker.currentNode.parentElement.closest('svg,.mark')&&/[↗↓→←↻]/.test(walker.currentNode.textContent))nodes.push(walker.currentNode);
-    nodes.forEach(node=>{const frag=document.createDocumentFragment();for(const part of node.textContent.split(/([↗↓→←↻])/)){if(glyphs[part]){const span=document.createElement('span');span.className='inline-icon';span.innerHTML=icon(glyphs[part]);frag.append(span)}else frag.append(document.createTextNode(part))}node.replaceWith(frag)});
+const iconPaths = {
+  'layout-dashboard':
+    '<rect width="7" height="9" x="3" y="3" rx="1" />\n  <rect width="7" height="5" x="14" y="3" rx="1" />\n  <rect width="7" height="9" x="14" y="12" rx="1" />\n  <rect width="7" height="5" x="3" y="16" rx="1" />',
+  'calendar-days':
+    '<path d="M8 2v3" />\n  <path d="M16 2v3" />\n  <rect x="3" y="3" width="18" height="18" rx="2" />\n  <path d="M3 9h18" />\n  <path d="M8 13h.01" />\n  <path d="M12 13h.01" />\n  <path d="M16 13h.01" />\n  <path d="M8 17h.01" />\n  <path d="M12 17h.01" />\n  <path d="M16 17h.01" />',
+  'git-compare-arrows':
+    '<circle cx="5" cy="6" r="3" />\n  <path d="M12 6h5a2 2 0 0 1 2 2v7" />\n  <path d="m15 9-3-3 3-3" />\n  <circle cx="19" cy="18" r="3" />\n  <path d="M12 18H7a2 2 0 0 1-2-2V9" />\n  <path d="m9 15 3 3-3 3" />',
+  users:
+    '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />\n  <path d="M16 3.128a4 4 0 0 1 0 7.744" />\n  <path d="M22 21v-2a4 4 0 0 0-3-3.87" />\n  <circle cx="9" cy="7" r="4" />',
+  'clipboard-list':
+    '<rect width="8" height="4" x="8" y="2" rx="1" ry="1" />\n  <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />\n  <path d="M12 11h4" />\n  <path d="M12 16h4" />\n  <path d="M8 11h.01" />\n  <path d="M8 16h.01" />',
+  crosshair:
+    '<circle cx="12" cy="12" r="10" />\n  <line x1="22" x2="18" y1="12" y2="12" />\n  <line x1="6" x2="2" y1="12" y2="12" />\n  <line x1="12" x2="12" y1="6" y2="2" />\n  <line x1="12" x2="12" y1="22" y2="18" />',
+  'chart-no-axes-combined':
+    '<path d="M12 16v5" />\n  <path d="M16 14.639V21" />\n  <path d="M20 10.656V21" />\n  <path d="m22 3-8.646 8.646a.5.5 0 0 1-.708 0L9.354 8.354a.5.5 0 0 0-.707 0L2 15" />\n  <path d="M4 18.463V21" />\n  <path d="M8 14.656V21" />',
+  'sliders-horizontal':
+    '<path d="M10 5H3" />\n  <path d="M12 19H3" />\n  <path d="M14 3v4" />\n  <path d="M16 17v4" />\n  <path d="M21 12h-9" />\n  <path d="M21 19h-5" />\n  <path d="M21 5h-7" />\n  <path d="M8 10v4" />\n  <path d="M8 12H3" />',
+  'book-open':
+    '<path d="M12 5v16" />\n  <path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z" />',
+  database:
+    '<ellipse cx="12" cy="5" rx="9" ry="3" />\n  <path d="M3 5V19A9 3 0 0 0 21 19V5" />\n  <path d="M3 12A9 3 0 0 0 21 12" />',
+  'briefcase-business':
+    '<path d="M12 12h.01" />\n  <path d="M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />\n  <path d="M22 13a18.15 18.15 0 0 1-20 0" />\n  <rect width="20" height="14" x="2" y="6" rx="2" />',
+  'scan-line':
+    '<path d="M3 7V5a2 2 0 0 1 2-2h2" />\n  <path d="M17 3h2a2 2 0 0 1 2 2v2" />\n  <path d="M21 17v2a2 2 0 0 1-2 2h-2" />\n  <path d="M7 21H5a2 2 0 0 1-2-2v-2" />\n  <path d="M7 12h10" />',
+  download:
+    '<path d="M12 15V3" />\n  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />\n  <path d="m7 10 5 5 5-5" />',
+  'arrow-up-right': '<path d="M7 7h10v10" />\n  <path d="M7 17 17 7" />',
+  'arrow-right': '<path d="M5 12h14" />\n  <path d="m12 5 7 7-7 7" />',
+  'arrow-left': '<path d="m12 19-7-7 7-7" />\n  <path d="M19 12H5" />',
+  'refresh-cw':
+    '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />\n  <path d="M21 3v5h-5" />\n  <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />\n  <path d="M8 16H3v5" />',
+  image:
+    '<rect width="18" height="18" x="3" y="3" rx="2" ry="2" />\n  <circle cx="9" cy="9" r="2" />\n  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />',
+  'chevron-right': '<path d="m9 18 6-6-6-6" />',
+};
+function icon(name) {
+  return `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${iconPaths[name] || iconPaths['chevron-right']}</svg>`;
+}
+function decorateIcons(root) {
+  root.querySelectorAll('[data-icon]').forEach((el) => {
+    el.innerHTML = icon(el.dataset.icon);
+    el.removeAttribute('data-icon');
+  });
+  const glyphs = {
+    '↗': 'arrow-up-right',
+    '↓': 'download',
+    '→': 'arrow-right',
+    '←': 'arrow-left',
+    '↻': 'refresh-cw',
+  };
+  root.querySelectorAll('button,a').forEach((el) => {
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    while (walker.nextNode())
+      if (
+        !walker.currentNode.parentElement.closest('svg,.mark') &&
+        /[↗↓→←↻]/.test(walker.currentNode.textContent)
+      )
+        nodes.push(walker.currentNode);
+    nodes.forEach((node) => {
+      const frag = document.createDocumentFragment();
+      for (const part of node.textContent.split(/([↗↓→←↻])/)) {
+        if (glyphs[part]) {
+          const span = document.createElement('span');
+          span.className = 'inline-icon';
+          span.innerHTML = icon(glyphs[part]);
+          frag.append(span);
+        } else frag.append(document.createTextNode(part));
+      }
+      node.replaceWith(frag);
+    });
   });
 }
-document.addEventListener('DOMContentLoaded',()=>decorateIcons(document.body));
+document.addEventListener('DOMContentLoaded', () => decorateIcons(document.body));
