@@ -147,7 +147,9 @@ def parse_openfootball(payload, season, today=None):
         if day:
             parsed = date.fromisoformat(day)
             start = int(season[:4])
-            if not date(start, 7, 1) <= parsed < date(start + 1, 7, 1):
+            # COVID-delayed 2019/20 league fixtures extended into summer 2020.
+            end = date(2020, 9, 1) if start == 2019 else date(start + 1, 7, 1)
+            if not date(start, 7, 1) <= parsed < end:
                 raise ValueError("Match date outside requested season")
         raw_score = m.get("score", {})
         score = raw_score if isinstance(raw_score, list) else raw_score.get("ft")

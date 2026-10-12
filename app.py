@@ -18,7 +18,7 @@ from pathlib import Path
 
 warnings.filterwarnings("ignore")
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -38,6 +38,47 @@ FRONTEND_DIR = os.path.join(HERE, "frontend")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 app = FastAPI(title="Soccer Analytics", version="1.0")
+
+
+def workbench_file(kind, key):
+    import re
+    patterns = {'current': r'(PL|PD|SA|BL1|FL1)', 'forecast': r'(PL|PD|SA|BL1|FL1)',
+                'events': r'\d{1,5}_\d{1,5}', 'backtest': r'(PL|PD|SA|BL1|FL1)'}
+    if kind not in patterns or not re.fullmatch(patterns[kind], key):
+        raise HTTPException(400, 'Invalid workbench dataset')
+    path = Path(HERE) / 'data' / 'workbench' / f'{kind}_{key}.json'
+    if not path.exists(): raise HTTPException(404, 'Dataset has not been imported')
+    return dashboard_data.read_json(path)
+
+
+@app.get('/api/workbench/catalogue')
+def workbench_catalogue():
+    path = Path(HERE) / 'data/workbench/catalogue.json'
+    if not path.exists(): raise HTTPException(404, 'Build the workbench first')
+    return dashboard_data.read_json(path)
+
+
+@app.get('/api/workbench/players/{league}')
+def workbench_players(league: str, team_id: str = '', name: str = Query('', max_length=100),
+                      min_appearances: int = Query(0, ge=0), offset: int = Query(0, ge=0), limit: int = Query(50, ge=1, le=200)):
+    dataset = workbench_file('current', league)
+    rows = [p for p in dataset['players'] if (not team_id or p['team_id'] == team_id)
+            and name.casefold() in p['name'].casefold() and p['matches'] >= min_appearances]
+    return {'league': league, 'season': dataset['season'], 'fetched_at': dataset['fetched_at'],
+            'total': len(rows), 'offset': offset, 'players': rows[offset:offset+limit], 'coverage': dataset['coverage']}
+
+
+@app.get('/api/workbench/event-match/{match_id}')
+def workbench_event_match(match_id: int):
+    if not 0 < match_id < 10**10: raise HTTPException(400, 'Invalid match ID')
+    path = Path(HERE) / 'data/workbench/event_matches' / f'{match_id}.json'
+    if not path.exists(): raise HTTPException(404, 'Event match not imported')
+    return dashboard_data.read_json(path)
+
+
+@app.get('/api/workbench/{kind}/{key}')
+def workbench_dataset(kind: str, key: str):
+    return workbench_file(kind, key)
 
 
 @app.get("/api/health")
