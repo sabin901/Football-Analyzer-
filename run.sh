@@ -9,12 +9,8 @@ cd "$(dirname "$0")"
 echo "==> Installing dependencies (first run only)…"
 pip install -q -r requirements.txt
 
-if [ ! -f models/xg_model.pkl ]; then
-  echo "==> Training the xG model (one-time, ~2-4 min)…"
-  python src/xg_model.py
-else
-  echo "==> xG model already trained — skipping."
-fi
+echo "==> Building the five-league dashboard from saved snapshots…"
+python src/build_site.py
 
 echo "==> Starting the web app at http://localhost:8000"
 echo "    (Ctrl+C to stop)"

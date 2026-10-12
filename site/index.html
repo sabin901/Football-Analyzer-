@@ -1,76 +1,41 @@
-<!doctype html><html lang=en><head><meta charset=utf-8>
-<meta name=viewport content="width=device-width, initial-scale=1">
-<title>Football Analyzer</title>
-<style>
-:root{--bg:#0d1117;--panel:#12161c;--line:#232b35;--fg:#e8edf2;--muted:#8a97a6;--accent:#4ea1ff;--gold:#ffd34e;--red:#ff6b6b}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
-header{padding:40px 24px 24px;text-align:center;border-bottom:1px solid var(--line)}
-header h1{margin:0;font-size:30px}header p{color:var(--muted);margin:8px 0 0}
-main{max-width:1040px;margin:0 auto;padding:28px 20px 70px}
-h2{margin:34px 0 14px;font-size:20px}h3{margin:0 0 12px;font-size:15px}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
-.stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
-.stat .v{font-size:24px;font-weight:700;color:var(--accent)}.stat .l{color:var(--muted);font-size:12px;margin-top:4px}
-.stat .s{color:var(--muted);font-size:11px;margin-top:2px;opacity:.8}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:760px){.grid{grid-template-columns:1fr}}
-table{width:100%;border-collapse:collapse;font-size:13.5px}th{text-align:left;color:var(--muted);font-weight:500;padding:7px 8px}
-td{padding:7px 8px;border-top:1px solid var(--line)}td.a{color:var(--accent)}td.r{color:var(--red)}
-.muted{color:var(--muted);font-weight:400;font-size:13px}
-td.mut{color:var(--muted)}td.pts{font-weight:700}td.tm{font-weight:600}td.pos{color:#6b7686;width:24px}
-tbody tr:hover{background:#171d26}
-a{color:var(--accent)}footer{text-align:center;color:var(--muted);font-size:12px;padding:30px}
-.gallery{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:760px){.gallery{grid-template-columns:1fr}}
-.gallery img{width:100%;border-radius:10px;border:1px solid var(--line)}
-.form{display:inline-flex;gap:3px}.fb{width:18px;height:18px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#0a0d12}
-.fb.W{background:#46d19e}.fb.D{background:#55606f;color:#fff}.fb.L{background:#ff6b6b}
-.chip{display:inline-block;padding:2px 8px;border-radius:999px;font-weight:700;font-size:12px}
-.chip.pos{background:rgba(70,209,158,.15);color:#46d19e}.chip.neg{background:rgba(255,107,107,.15);color:#ff6b6b}.chip.zero{background:#2a333f;color:var(--muted)}
-</style></head><body>
-<header>
-  <h1>⚽ Football Analyzer</h1>
-  <p>xG model · post-match & scouting reports · match predictor — built on StatsBomb open data</p>
-  <p class=muted><a href="https://github.com/sabin901/Football-Analyzer-">github.com/sabin901/Football-Analyzer-</a></p>
-</header>
-<main>
-  <h2>At a glance</h2>
-  <div class=stats><div class="stat"><div class="v">0.7948</div><div class="l">xG model ROC-AUC</div><div class=s>pro range 0.78–0.82</div></div><div class="stat"><div class="v">100,379</div><div class="l">xG shots trained</div></div><div class="stat"><div class="v">41.4%</div><div class="l">Predictor accuracy</div><div class=s>baseline 39.1%</div></div><div class="stat"><div class="v">0.214</div><div class="l">Predictor RPS</div><div class=s>baseline 0.2289</div></div><div class="stat"><div class="v">0.219</div><div class="l">Home advantage</div><div class=s>Premier League 2025/2026</div></div></div>
-
-  
-
-  <h2>League table — actual vs expected points <span class=muted>· Premier League 2025/2026</span></h2>
-  <div class=card><div style="overflow:auto"><table>
-    <thead><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th><th>xPts</th><th>Diff</th><th>Form</th></tr></thead>
-    <tbody><tr><td class=pos>1</td><td class=tm>Arsenal</td><td>38</td><td class=mut>26</td><td class=mut>7</td><td class=mut>5</td><td>+44</td><td class=pts>85</td><td class=mut>82.9</td><td><span class="chip pos">+2.1</span></td><td><span class=form><span class="fb W">W</span><span class="fb W">W</span><span class="fb W">W</span><span class="fb W">W</span><span class="fb W">W</span></span></td></tr><tr><td class=pos>2</td><td class=tm>Man City</td><td>38</td><td class=mut>23</td><td class=mut>9</td><td class=mut>6</td><td>+42</td><td class=pts>78</td><td class=mut>73.3</td><td><span class="chip pos">+4.7</span></td><td><span class=form><span class="fb D">D</span><span class="fb W">W</span><span class="fb W">W</span><span class="fb D">D</span><span class="fb L">L</span></span></td></tr><tr><td class=pos>3</td><td class=tm>Man United</td><td>38</td><td class=mut>20</td><td class=mut>11</td><td class=mut>7</td><td>+19</td><td class=pts>71</td><td class=mut>63.0</td><td><span class="chip pos">+8.0</span></td><td><span class=form><span class="fb W">W</span><span class="fb W">W</span><span class="fb D">D</span><span class="fb W">W</span><span class="fb W">W</span></span></td></tr><tr><td class=pos>4</td><td class=tm>Aston Villa</td><td>38</td><td class=mut>19</td><td class=mut>8</td><td class=mut>11</td><td>+7</td><td class=pts>65</td><td class=mut>62.0</td><td><span class="chip pos">+3.0</span></td><td><span class=form><span class="fb L">L</span><span class="fb L">L</span><span class="fb D">D</span><span class="fb W">W</span><span class="fb W">W</span></span></td></tr><tr><td class=pos>5</td><td class=tm>Liverpool</td><td>38</td><td class=mut>17</td><td class=mut>9</td><td class=mut>12</td><td>+10</td><td class=pts>60</td><td class=mut>57.6</td><td><span class="chip pos">+2.4</span></td><td><span class=form><span class="fb W">W</span><span class="fb L">L</span><span class="fb D">D</span><span class="fb L">L</span><span class="fb D">D</span></span></td></tr><tr><td class=pos>6</td><td class=tm>Bournemouth</td><td>38</td><td class=mut>13</td><td class=mut>18</td><td class=mut>7</td><td>+4</td><td class=pts>57</td><td class=mut>50.7</td><td><span class="chip pos">+6.3</span></td><td><span class=form><span class="fb D">D</span><span class="fb W">W</span><span class="fb W">W</span><span class="fb D">D</span><span class="fb D">D</span></span></td></tr><tr><td class=pos>7</td><td class=tm>Sunderland</td><td>38</td><td class=mut>14</td><td class=mut>12</td><td class=mut>12</td><td>-6</td><td class=pts>54</td><td class=mut>46.7</td><td><span class="chip pos">+7.3</span></td><td><span class=form><span class="fb L">L</span><span class="fb D">D</span><span class="fb D">D</span><span class="fb W">W</span><span class="fb W">W</span></span></td></tr><tr><td class=pos>8</td><td class=tm>Brighton</td><td>38</td><td class=mut>14</td><td class=mut>11</td><td class=mut>13</td><td>+6</td><td class=pts>53</td><td class=mut>53.0</td><td><span class="chip zero">0.0</span></td><td><span class=form><span class="fb W">W</span><span class="fb L">L</span><span class="fb W">W</span><span class="fb L">L</span><span class="fb L">L</span></span></td></tr><tr><td class=pos>9</td><td class=tm>Brentford</td><td>38</td><td class=mut>14</td><td class=mut>11</td><td class=mut>13</td><td>+3</td><td class=pts>53</td><td class=mut>58.5</td><td><span class="chip neg">-5.5</span></td><td><span class=form><span class="fb L">L</span><span class="fb W">W</span><span class="fb L">L</span><span class="fb D">D</span><span class="fb D">D</span></span></td></tr><tr><td class=pos>10</td><td class=tm>Chelsea</td><td>38</td><td class=mut>14</td><td class=mut>10</td><td class=mut>14</td><td>+6</td><td class=pts>52</td><td class=mut>66.7</td><td><span class="chip neg">-14.7</span></td><td><span class=form><span class="fb L">L</span><span class="fb L">L</span><span class="fb D">D</span><span class="fb W">W</span><span class="fb L">L</span></span></td></tr><tr><td class=pos>11</td><td class=tm>Fulham</td><td>38</td><td class=mut>15</td><td class=mut>7</td><td class=mut>16</td><td>-4</td><td class=pts>52</td><td class=mut>51.0</td><td><span class="chip pos">+1.0</span></td><td><span class=form><span class="fb W">W</span><span class="fb L">L</span><span class="fb L">L</span><span class="fb D">D</span><span class="fb W">W</span></span></td></tr><tr><td class=pos>12</td><td class=tm>Newcastle</td><td>38</td><td class=mut>14</td><td class=mut>7</td><td class=mut>17</td><td>-2</td><td class=pts>49</td><td class=mut>47.2</td><td><span class="chip pos">+1.8</span></td><td><span class=form><span class="fb L">L</span><span class="fb W">W</span><span class="fb D">D</span><span class="fb W">W</span><span class="fb L">L</span></span></td></tr><tr><td class=pos>13</td><td class=tm>Everton</td><td>38</td><td class=mut>13</td><td class=mut>10</td><td class=mut>15</td><td>-3</td><td class=pts>49</td><td class=mut>52.9</td><td><span class="chip neg">-3.9</span></td><td><span class=form><span class="fb L">L</span><span class="fb D">D</span><span class="fb D">D</span><span class="fb L">L</span><span class="fb L">L</span></span></td></tr><tr><td class=pos>14</td><td class=tm>Leeds</td><td>38</td><td class=mut>11</td><td class=mut>14</td><td class=mut>13</td><td>-7</td><td class=pts>47</td><td class=mut>48.6</td><td><span class="chip neg">-1.6</span></td><td><span class=form><span class="fb D">D</span><span class="fb W">W</span><span class="fb D">D</span><span class="fb W">W</span><span class="fb L">L</span></span></td></tr><tr><td class=pos>15</td><td class=tm>Crystal Palace</td><td>38</td><td class=mut>11</td><td class=mut>12</td><td class=mut>15</td><td>-10</td><td class=pts>45</td><td class=mut>39.7</td><td><span class="chip pos">+5.3</span></td><td><span class=form><span class="fb L">L</span><span class="fb D">D</span><span class="fb L">L</span><span class="fb D">D</span><span class="fb L">L</span></span></td></tr><tr><td class=pos>16</td><td class=tm>Nott&#x27;m Forest</td><td>38</td><td class=mut>11</td><td class=mut>11</td><td class=mut>16</td><td>-3</td><td class=pts>44</td><td class=mut>41.2</td><td><span class="chip pos">+2.8</span></td><td><span class=form><span class="fb W">W</span><span class="fb W">W</span><span class="fb D">D</span><span class="fb L">L</span><span class="fb D">D</span></span></td></tr><tr><td class=pos>17</td><td class=tm>Tottenham</td><td>38</td><td class=mut>10</td><td class=mut>11</td><td class=mut>17</td><td>-9</td><td class=pts>41</td><td class=mut>45.9</td><td><span class="chip neg">-4.9</span></td><td><span class=form><span class="fb W">W</span><span class="fb W">W</span><span class="fb D">D</span><span class="fb L">L</span><span class="fb W">W</span></span></td></tr><tr><td class=pos>18</td><td class=tm>West Ham</td><td>38</td><td class=mut>10</td><td class=mut>9</td><td class=mut>19</td><td>-19</td><td class=pts>39</td><td class=mut>39.3</td><td><span class="chip zero">-0.3</span></td><td><span class=form><span class="fb W">W</span><span class="fb L">L</span><span class="fb L">L</span><span class="fb L">L</span><span class="fb W">W</span></span></td></tr><tr><td class=pos>19</td><td class=tm>Burnley</td><td>38</td><td class=mut>4</td><td class=mut>10</td><td class=mut>24</td><td>-37</td><td class=pts>22</td><td class=mut>26.7</td><td><span class="chip neg">-4.7</span></td><td><span class=form><span class="fb L">L</span><span class="fb L">L</span><span class="fb D">D</span><span class="fb L">L</span><span class="fb D">D</span></span></td></tr><tr><td class=pos>20</td><td class=tm>Wolves</td><td>38</td><td class=mut>3</td><td class=mut>11</td><td class=mut>24</td><td>-41</td><td class=pts>20</td><td class=mut>23.8</td><td><span class="chip neg">-3.8</span></td><td><span class=form><span class="fb L">L</span><span class="fb D">D</span><span class="fb L">L</span><span class="fb D">D</span><span class="fb D">D</span></span></td></tr></tbody></table></div>
-    <p class=muted style="margin-top:12px">xPts = points the model expected from the same fixtures. Diff = actual − expected: green teams over-perform their underlying quality, red under-perform.</p>
-  </div>
-  <div class=card><img src="assets/xpts_scatter.png" alt="actual vs expected points" style="width:100%;border-radius:8px"></div>
-
-  <h2>Predicted fixtures <span class=muted>· Premier League 2025/2026 model</span></h2>
-  <div class=card><table>
-    <thead><tr><th>Home</th><th>Away</th><th>Home win</th><th>Draw</th><th>Away win</th><th>Exp. goals</th><th>Likeliest</th></tr></thead>
-    <tbody><tr><td>Arsenal</td><td>Aston Villa</td><td class=a>58%</td><td>29%</td><td class=r>13%</td><td>1.67–0.7</td><td>1-1</td></tr><tr><td>Arsenal</td><td>Bournemouth</td><td class=a>78%</td><td>16%</td><td class=r>6%</td><td>2.9–0.84</td><td>2-0</td></tr><tr><td>Arsenal</td><td>Brentford</td><td class=a>64%</td><td>25%</td><td class=r>10%</td><td>1.97–0.73</td><td>2-0</td></tr><tr><td>Arsenal</td><td>Brighton</td><td class=a>68%</td><td>24%</td><td class=r>8%</td><td>2.07–0.66</td><td>2-0</td></tr><tr><td>Arsenal</td><td>Burnley</td><td class=a>88%</td><td>10%</td><td class=r>2%</td><td>3.14–0.44</td><td>3-0</td></tr><tr><td>Arsenal</td><td>Chelsea</td><td class=a>60%</td><td>27%</td><td class=r>14%</td><td>1.94–0.88</td><td>1-1</td></tr><tr><td>Arsenal</td><td>Crystal Palace</td><td class=a>76%</td><td>20%</td><td class=r>5%</td><td>2.2–0.47</td><td>2-0</td></tr><tr><td>Arsenal</td><td>Everton</td><td class=a>62%</td><td>28%</td><td class=r>9%</td><td>1.66–0.54</td><td>1-0</td></tr><tr><td>Arsenal</td><td>Fulham</td><td class=a>72%</td><td>21%</td><td class=r>7%</td><td>2.32–0.69</td><td>2-0</td></tr><tr><td>Arsenal</td><td>Leeds</td><td class=a>77%</td><td>17%</td><td class=r>6%</td><td>2.7–0.74</td><td>2-0</td></tr></tbody></table></div>
-
-  <h2>Fitted team strengths</h2>
-  <div class=card><table>
-    <thead><tr><th>Team</th><th>Attack</th><th>Defence</th></tr></thead>
-    <tbody><tr><td>Arsenal</td><td class=a>+0.40</td><td class=r>-0.43</td></tr><tr><td>Man City</td><td class=a>+0.35</td><td class=r>-0.12</td></tr><tr><td>Man United</td><td class=a>+0.32</td><td class=r>+0.18</td></tr><tr><td>Chelsea</td><td class=a>+0.30</td><td class=r>+0.04</td></tr><tr><td>Bournemouth</td><td class=a>+0.26</td><td class=r>+0.45</td></tr><tr><td>Liverpool</td><td class=a>+0.16</td><td class=r>+0.14</td></tr><tr><td>Leeds</td><td class=a>+0.13</td><td class=r>+0.37</td></tr><tr><td>Brentford</td><td class=a>+0.11</td><td class=r>+0.06</td></tr><tr><td>Aston Villa</td><td class=a>+0.08</td><td class=r>-0.10</td></tr><tr><td>Fulham</td><td class=a>+0.06</td><td class=r>+0.22</td></tr><tr><td>Newcastle</td><td class=a>+0.05</td><td class=r>+0.32</td></tr><tr><td>Brighton</td><td class=a>+0.01</td><td class=r>+0.11</td></tr></tbody></table></div>
-
-  
-  <h2>Expected Threat — ball progression</h2>
-  <div class=grid>
-    <div class=card><h3>xT surface</h3>
-      <img style="width:100%;border-radius:8px" src="assets/xt_surface_La_Liga_2015-2016.png" alt="xT surface"></div>
-    <div class=card><h3>Top ball progressors (total xT added)</h3>
-      <table><thead><tr><th>Player</th><th>Team</th><th>xT</th></tr></thead>
-      <tbody><tr><td>Jorge Resurrección Merodio</td><td>Atlético Madrid</td><td class=a>+3.49</td></tr><tr><td>Gonzalo Castro Irizábal</td><td>Málaga</td><td class=a>+2.77</td></tr><tr><td>José Luis Morales Nogales</td><td>Levante UD</td><td class=a>+2.60</td></tr><tr><td>Pablo Sarabia García</td><td>Getafe</td><td class=a>+2.44</td></tr><tr><td>Toni Kroos</td><td>Real Madrid</td><td class=a>+2.43</td></tr><tr><td>Jonathan Viera Ramos</td><td>Las Palmas</td><td class=a>+2.36</td></tr><tr><td>José Antonio García Rabasco</td><td>Levante UD</td><td class=a>+2.32</td></tr><tr><td>Roberto Trashorras Gayoso</td><td>Rayo Vallecano</td><td class=a>+2.28</td></tr><tr><td>Éver Maximiliano David Banega</td><td>Sevilla</td><td class=a>+2.26</td></tr><tr><td>Filipe Luís Kasmirski</td><td>Atlético Madrid</td><td class=a>+2.22</td></tr></tbody></table></div>
-  </div>
-
-  <h2>Sample outputs</h2>
-  <div class=gallery>
-    <img src="assets/report_8658.png" alt="post-match report">
-    <img src="assets/scout_2_27_Arsenal.png" alt="scouting report">
-  </div>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Explore Europe's top five football leagues. Results, fixtures, form, team comparisons and transparent model estimates with visible data coverage.">
+<meta name="theme-color" content="#101b18">
+<title>Footlyzer — Football intelligence</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='10' fill='%23c6f36b'/%3E%3Cpath d='M12 30V10h18v5H18v4h10v5H18v6' fill='%23101b18'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="dashboard.css">
+<script defer src="dashboard.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to analysis</a>
+<aside class="sidebar">
+<a class="brand" href="#overview" aria-label="Footlyzer home"><span class="mark">F<span>↗</span></span><span>footlyzer<span class="brand-sub">THE FOOTBALL INTELLIGENCE DESK</span></span></a>
+<div class="nav-caption">WORKSPACE</div>
+<nav aria-label="Analysis views" id="navigation">
+<button data-view="overview" class="nav-item active"><span aria-hidden="true">◫</span>League overview</button>
+<button data-view="matches" class="nav-item"><span aria-hidden="true">▤</span>Matches & results</button>
+<button data-view="compare" class="nav-item"><span aria-hidden="true">⇄</span>Team comparison</button>
+<button data-view="predict" class="nav-item"><span aria-hidden="true">⌁</span>Match simulator</button>
+<button data-view="research" class="nav-item"><span aria-hidden="true">▥</span>Research archive</button>
+<button data-view="coverage" class="nav-item"><span aria-hidden="true">◎</span>Data & methodology</button>
+</nav>
+<div class="sidebar-note"><span class="small-dot"></span> Better context. Better analysis.<p>Five leagues. One workspace.<br>Know what the numbers can tell you.</p><a href="https://github.com/sabin901/Football-Analyzer-">View the project ↗</a></div>
+</aside>
+<div class="workspace">
+<header class="topbar"><span>Football intelligence <span class="slash">/</span> <strong id="breadcrumb">League overview</strong></span><span class="top-tag">EUROPE · TOP 5</span></header>
+<main id="main" tabindex="-1">
+<section class="heading"><div><p class="eyebrow">THE BIG PICTURE</p><h1 id="page-title">Every league. A clearer picture.</h1><p id="page-description">Follow the table, read the form, and find the story behind the score.</p></div><button class="secondary" id="export" disabled>Export results ↓</button></section>
+<div id="league-tabs" class="league-tabs" role="group" aria-label="Choose league"></div>
+<section class="context-bar"><div class="context-title"><span class="league-symbol" id="league-symbol">EN</span><div><h2 id="league-title">Loading leagues…</h2><span id="season-caption" class="muted">Fetching the latest published snapshot</span></div></div><div class="context-controls"><label for="season">Season<select id="season" disabled></select></label><button class="secondary" id="refresh" aria-label="Reload published data">↻ Refresh</button></div></section>
+<div id="data-status" role="status" class="data-status">Loading data coverage…</div>
+<div id="content" aria-busy="true"><div class="empty">Loading the football desk…</div></div>
+<footer><span>Footlyzer · Evidence before opinion.</span><span>Schedule: <a href="https://github.com/openfootball/football.json">OpenFootball · CC0</a> · Recent results: <a href="https://www.espn.com/soccer/scoreboard">ESPN</a><br>Scheduled snapshots. Source updates may lag.</span></footer>
 </main>
-<footer>Built 2026-10-12 16:33 UTC · data: StatsBomb open data · xG & predictions from this repo's own models</footer>
-</body></html>
+</div>
+<noscript><p>This interactive dashboard requires JavaScript. The match data remains available in <a href="data/manifest.json">the data manifest</a>.</p></noscript>
+</body>
+</html>

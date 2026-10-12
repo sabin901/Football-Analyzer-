@@ -147,6 +147,7 @@
 </style>
 </head>
 <body>
+<div style="padding:12px 22px;background:#263829;color:#e6f2d5;font-size:14px">Historical research workspace. Coverage varies by competition and season. <a href="/" style="color:#c6f36b">Open the current five-league dashboard →</a></div>
 <div id="root"></div>
 
 <script type="importmap">
@@ -629,15 +630,15 @@ function ModelTab(){
       <${Stat} value=${m.log_loss} label="Log loss"/>
       <${Stat} value=${m.n_shots.toLocaleString()} label="Shots trained on"/>
       <${Stat} value=${`${m.predicted_goals_test} / ${m.actual_goals_test}`} label="Pred / actual goals" cls="gold"/>
-    </div><p class="hint">ROC-AUC ~0.78–0.82 is the professional range. "Predicted ≈ actual" is the calibration check.</p></div>
+    </div><p class="hint">ROC-AUC measures discrimination on the historical held-out set. Similar total predicted and actual goals alone does not establish calibration; inspect the reliability curve.</p></div>
     ${bt&&html`<div class="card"><h2>Predictor backtest <span class="tag">${bt.league_seasons} league-seasons</span></h2>
-      <p class="sub">Every top-5-league season (2002–2025), time-split and scored by RPS. Two rating bases compared, both against the base-rate baseline. The xG basis (chance quality) is the default because it won here.</p>
+      <p class="sub">Every top-5-league season (2002–2025), time-split and scored by RPS. Two rating bases compared, both against the base-rate baseline. The shots-on-target proxy basis is the default because it won here.</p>
       <div class="stat-grid">
-        <${Stat} value=${bt.xg_basis.mean_rps} label="xG-basis mean RPS" cls="green"/>
+        <${Stat} value=${bt.xg_basis.mean_rps} label="Shot-proxy mean RPS" cls="green"/>
         <${Stat} value=${bt.goals_basis.mean_rps} label="Goals-basis mean RPS"/>
         <${Stat} value=${bt.baseline.mean_rps} label="Baseline mean RPS" cls="red"/>
         <${Stat} value=${`${bt.seasons_goals_beats_baseline}/${bt.league_seasons}`} label="Seasons beating baseline" cls="accent"/>
-        <${Stat} value=${`${bt.seasons_xg_beats_goals}/${bt.league_seasons}`} label="Seasons xG beats goals" cls="gold"/>
+        <${Stat} value=${`${bt.seasons_xg_beats_goals}/${bt.league_seasons}`} label="Seasons proxy beats goals" cls="gold"/>
       </div>
       <img class="report-img" src="${API}/output/${bt.plot}?t=${Date.now()}"/></div>`}
     <div class="two">
