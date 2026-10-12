@@ -10,6 +10,7 @@ import json
 import math
 import os
 import re
+import time
 import unicodedata
 
 ESPN_CODES = {"PL": "eng.1", "PD": "esp.1", "SA": "ita.1", "BL1": "ger.1", "FL1": "fra.1"}
@@ -132,7 +133,15 @@ def write_json(path, payload):
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(payload, ensure_ascii=False, allow_nan=False, separators=(",", ":")), encoding="utf-8")
-    os.replace(tmp, path)
+    # Windows sync/indexing can briefly lock the destination. Preserve atomic
+    # replacement and surface persistent permission failures after bounded retries.
+    for attempt in range(6):
+        try:
+            os.replace(tmp, path)
+            break
+        except PermissionError:
+            if attempt == 5: raise
+            time.sleep(.1 * 2**attempt)
 
 
 def parse_openfootball(payload, season, today=None):

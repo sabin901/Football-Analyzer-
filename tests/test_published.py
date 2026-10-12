@@ -25,5 +25,5 @@ class PublishedTests(unittest.TestCase):
 
     def test_frontend_matches_the_packaged_version(self):
         root = SITE.parent / "frontend"
-        for a,b in [("dashboard.html","index.html"),("dashboard.js","dashboard.js"),("dashboard.css","dashboard.css"),("workbench.js","workbench.js"),("workbench.css","workbench.css")]:
+        for a,b in [("dashboard.html","index.html"),("dashboard.js","dashboard.js"),("dashboard.css","dashboard.css"),("workbench.js","workbench.js"),("workbench.css","workbench.css"),("spatial.js","spatial.js"),("icons.js","icons.js")]:
             self.assertEqual((root/a).read_bytes(), (SITE/b).read_bytes())
