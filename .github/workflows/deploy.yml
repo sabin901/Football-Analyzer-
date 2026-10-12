@@ -35,6 +35,7 @@ jobs:
         run: |
           python -m unittest discover -s tests -v
           node --check frontend/dashboard.js
+          node --check frontend/workbench.js
       - name: Refresh current season (keep last good snapshots on failure)
         if: github.event_name != 'pull_request'
         id: refresh
@@ -43,16 +44,29 @@ jobs:
       - name: Surface source failure
         if: steps.refresh.outcome == 'failure'
         run: echo '::warning::Some data sources failed. Existing snapshots are retained and marked in the dashboard.'
+      - name: Restore public API response cache
+        if: github.event_name != 'pull_request'
+        uses: actions/cache@v4
+        with:
+          path: data/api_cache
+          key: football-api-${{ github.run_id }}
+          restore-keys: football-api-
+      - name: Refresh squads and match reports
+        if: github.event_name != 'pull_request'
+        continue-on-error: true
+        run: python src/workbench_data.py
+      - name: Rebuild auditable forecasts
+        run: python src/forecast_lab.py
       - name: Build the shared dashboard
         run: python src/build_site.py
       - name: Verify published data contracts
-        run: python -m unittest discover -s tests -p 'test_published.py' -v
+        run: python -m unittest discover -s tests -v
       - name: Save refreshed snapshots
         if: github.event_name != 'pull_request'
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-          git add data/live site
+          git add data/live data/workbench site
           if ! git diff --cached --quiet; then
             git commit -m 'chore: update league snapshots [skip ci]'
             git push

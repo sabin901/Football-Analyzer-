@@ -8,6 +8,8 @@
 <title>Footlyzer — Football intelligence</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='10' fill='%23c6f36b'/%3E%3Cpath d='M12 30V10h18v5H18v4h10v5H18v6' fill='%23101b18'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="dashboard.css">
+<link rel="stylesheet" href="workbench.css">
+<script defer src="workbench.js"></script>
 <script defer src="dashboard.js"></script>
 </head>
 <body>
@@ -19,10 +21,16 @@
 <button data-view="overview" class="nav-item active"><span aria-hidden="true">◫</span>League overview</button>
 <button data-view="matches" class="nav-item"><span aria-hidden="true">▤</span>Matches & results</button>
 <button data-view="compare" class="nav-item"><span aria-hidden="true">⇄</span>Team comparison</button>
+<button data-view="players" class="nav-item"><span aria-hidden="true">♙</span>Players & squads</button>
+<button data-view="matchlab" class="nav-item"><span aria-hidden="true">◈</span>Match centre</button>
+<button data-view="events" class="nav-item"><span aria-hidden="true">⌖</span>Event & scouting lab</button>
+<button data-view="forecast" class="nav-item"><span aria-hidden="true">↗</span>Forecast lab</button>
 <button data-view="predict" class="nav-item"><span aria-hidden="true">⌁</span>Match simulator</button>
 <button data-view="research" class="nav-item"><span aria-hidden="true">▥</span>Research archive</button>
 <button data-view="coverage" class="nav-item"><span aria-hidden="true">◎</span>Data & methodology</button>
+<button data-view="portfolio" class="nav-item"><span aria-hidden="true">▣</span>Portfolio & careers</button>
 </nav>
+<label class="mobile-view" for="view-select">Workspace<select id="view-select" aria-label="Choose workspace"></select></label>
 <div class="sidebar-note"><span class="small-dot"></span> Better context. Better analysis.<p>Five leagues. One workspace.<br>Know what the numbers can tell you.</p><a href="https://github.com/sabin901/Football-Analyzer-">View the project ↗</a></div>
 </aside>
 <div class="workspace">

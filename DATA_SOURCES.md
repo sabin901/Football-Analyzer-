@@ -27,3 +27,10 @@ football-data.co.uk: https://www.football-data.co.uk/data.php — the source's p
 ## Historical research
 
 StatsBomb open data: https://github.com/statsbomb/open-data . Historical event reports retain their competition/season context. Follow StatsBomb's attribution and use terms for those assets. Current event-level xG, tracking, injuries and player scouting are not supplied by the results feed.
+
+
+## Expanded analyst workbench (12 October 2026)
+
+See [the full dictionary](docs/DATA_DICTIONARY.md) for grains, sources, caching, missing values and metric definitions. ESPN public API squad/summary endpoints now support current player appearance totals, lineups, team box scores and goal/dismissal moments. These do not include reliable minutes or current shot-based xG. Provider terms remain distinct from OpenFootball's CC0 license.
+
+The historical event importer processes all available men's top-five league match selections in StatsBomb's open catalogue, including the provider's own shot xG. Historical datasets may follow one team or player; an imported match count is not evidence of representative league coverage. Attribution and the provider logo are displayed in the event lab. API player IDs are never joined across providers by name.

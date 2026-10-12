@@ -1,6 +1,10 @@
 __pycache__/
 .venv/
 .artifacts/
+# Rebuilt by src/build_site.py; do not duplicate the research warehouse in Git.
+/site/data/workbench/
+/site/data/football.sqlite
+/site/docs/
 *.pyc
 .DS_Store
 # generated per-request reports (keep the curated samples)
@@ -19,6 +23,8 @@ data/*
 !data/players_*.parquet
 !data/live/
 !data/live/**
+!data/workbench/
+!data/workbench/**
 # experimental VAEP outputs (not production-ready)
 data/vaep_*.parquet
 models/vaep_*.json
