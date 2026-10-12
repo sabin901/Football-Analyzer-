@@ -1,103 +1,52 @@
 # Footlyzer
 
-A football analysis workspace for the Premier League, La Liga, Serie A, Bundesliga and Ligue 1. Built with Python, SQL and plain JavaScript, with a public dashboard that needs no API credentials.
+Explore football results, compare teams and players, and build an analysis with the evidence in view.
 
-[Open the dashboard](https://sabin901.github.io/Football-Analyzer-/) · [Data dictionary](docs/DATA_DICTIONARY.md) · [Developer guide](docs/DEVELOPMENT.md) · [Model card](docs/MODEL_CARD.md)
+Footlyzer brings together **Premier League, La Liga, Serie A, Bundesliga and Ligue 1** results with current squad summaries and a separate archive of historical match events.
 
-## What you can do
+**[Open Footlyzer](https://sabin901.github.io/Football-Analyzer-/)** · [Report an issue](https://github.com/sabin901/Football-Analyzer-/issues)
 
-- Compare teams using results, venue splits, recent form and sample sizes.
-- Explore current squads, imported player appearances, lineups and match statistics.
-- Export an opposition briefing with source evidence and questions to verify on video.
-- Inspect historical player and team heatmaps, shot maps, cumulative xG and positional profiles.
-- Evaluate a goals model against simple baselines using chronological backtests and downloadable prediction audits.
-- Export CSV tables, SVG maps and an indexed SQLite warehouse for independent analysis.
+Use it in your browser on desktop or mobile. No installation, account or API key is required.
 
-There are 12 workspaces. Current match summaries and historical events stay separate throughout the interface. Data & methodology shows coverage and freshness; a fetch timestamp does not guarantee that all results are present.
+## What you can explore
 
-## A five minute review
+- **Leagues and matches:** recorded results, schedules, calculated standings, recent form and home or away performance.
+- **Teams and players:** team comparisons, current squads, imported appearances, available lineups and match statistics.
+- **Match analysis:** opposition briefings, historical shot maps, expected goals charts and player profiles.
+- **Heatmaps:** historical player and team action locations, with match, period and action filters and a shared comparison scale.
+- **Forecasts:** experimental match probabilities and season scenarios, alongside historical evaluation and baseline comparisons.
+- **Exports:** tables, heatmaps, reports and prediction records for your own analysis.
 
-1. Open **League overview**, change league and inspect a team's venue splits.
-2. In **Player & team heatmaps**, choose a historical dataset, player and action. Compare distributions using the shared colour scale, export the map and inspect its numeric grid.
-3. Open **Forecast lab** and compare the rolling evaluation with its baselines before looking at future scenarios.
-4. Download the SQL warehouse from **Data & methodology**. Reproduce a finding using the [portfolio playbook](docs/PORTFOLIO_PLAYBOOK.md).
-5. Read the [spatial method](docs/SPATIAL_METHOD.md) and [model card](docs/MODEL_CARD.md), then inspect the corresponding tests.
+## Get started
 
-These demonstrate data engineering, statistical evaluation, visual communication and frontend development. This is a portfolio application; it does not claim professional club deployment or proven recruitment outcomes.
+1. Open **League overview** and choose a league and season.
+2. Use **Matches & results**, **Team comparison** or **Players & squads** to explore your question.
+3. For spatial analysis, open **Player & team heatmaps** or **Event & scouting lab** and select a historical dataset. These have their own competition and season coverage.
+4. Check **Data & methodology** for sources, sample sizes, missing data and freshness before drawing conclusions.
+5. Use the export controls in each workspace to save the available results.
 
-## Run locally
+The **Research archive** contains fixed examples from the 2018 World Cup final and Arsenal's 2015/16 season. They remain historical reports when you change the current league.
 
-Python 3.12 is used in CI. Node 22 is needed only for frontend tests and formatting. The browser has no npm runtime dependencies.
+## Where the data comes from
 
-```bash
-python -m venv .venv
-```
-
-Activate with `.venv\Scripts\Activate.ps1` in PowerShell, or `source .venv/bin/activate` on macOS/Linux. Then:
-
-```bash
-python -m pip install -r requirements.txt -r requirements-dev.txt
-npm ci
-python src/build_site.py
-uvicorn app:app --host 127.0.0.1 --port 8000
-```
-
-Open <http://127.0.0.1:8000>. The shared dashboard is at `/`, the older experimental app at `/research`, and API documentation at `/docs`. `docker compose up --build` is also available. Existing snapshots are committed, so building the dashboard does not fetch new football data. The checkout contains a substantial historical archive.
-
-For a static preview after building, run `python -m http.server 8000 --directory site` instead of Uvicorn. Historical research endpoints may require their own data downloads and trained models.
-
-## Data and limits
-
-| Source | Used for | Important boundary |
-| --- | --- | --- |
-| OpenFootball | Schedules and archived results | CC0; coverage varies by season and league |
-| ESPN public endpoints | Current results, squads and match summaries | Unofficial, no service guarantee; not covered by OpenFootball's license |
-| StatsBomb Open Data | Historical event locations, shots and player profiles | Selected competitions and seasons; attribution and source terms apply |
-
-Current reliable player minutes, shot xG, injuries and continuous tracking are unavailable. Heatmaps show historical action locations, not distance covered or time spent in a zone. Some event seasons include only selected teams. Missing values stay missing.
-
-Calculated standings omit administrative deductions and some competition specific tie breakers. Forecasts are experimental probabilities from goals data, with documented assumptions. The matchup simulator and older research models are separate from the evaluated forecast pipeline. See [data sources](DATA_SOURCES.md) and [asset credits](docs/ASSET_CREDITS.md).
-
-## Code map
-
-| Location | Responsibility |
+| Source | What it provides |
 | --- | --- |
-| `frontend/dashboard.js` | Navigation, league loading and result views |
-| `frontend/workbench.js` | Analyst controls and snapshot loading |
-| `frontend/workbench-views.js` | Player, match, event, forecast and portfolio views |
-| `frontend/research.js` | Fixed historical reports and explicit archive links |
-| `frontend/spatial.js` | Heatmap filters, SVG rendering and spatial exports |
-| `frontend/ui.js`, `snapshot-store.js` | Shared formatting, safe CSV exports and request caching |
-| `src/dashboard_data.py`, `workbench_data.py` | Current data ingestion and validation |
-| `src/event_workbench.py`, `spatial_workbench.py` | Historical event processing and aggregation |
-| `src/forecast_lab.py`, `warehouse.py` | Forecast evaluation and SQL warehouse |
-| `src/build_site.py`, `build_docs.py` | Static deployment and documentation pages |
-| `app.py` | FastAPI endpoints and local hosting |
-| `tests/` | Data contracts, API validation and frontend calculation tests |
+| OpenFootball | Schedules and archived results |
+| ESPN public endpoints | Current results, squads and available match summaries |
+| StatsBomb Open Data | Historical match events, shot locations and expected goals |
 
-Edit `frontend/` and `src/`, then rebuild. `site/` is generated output. The [developer guide](docs/DEVELOPMENT.md) explains the data flow and design choices.
+Coverage varies by league, season and provider. Some historical datasets cover selected teams rather than a full league. OpenFootball data is CC0; ESPN and StatsBomb have separate terms. See [data sources and attribution](DATA_SOURCES.md) and [asset credits](docs/ASSET_CREDITS.md).
 
-## Checks
+Current data is scheduled to refresh every six hours. The dashboard's **Refresh** button reloads the latest published snapshot. Check the latest recorded result as well as the fetch time: a recent fetch does not guarantee complete results. If a source fails, the last available snapshot is retained with a warning.
 
-```bash
-python src/build_site.py
-python -m unittest discover -s tests -v
-npm test
-npm run format:check
-python -m black --check .
-```
+## Reading the analysis
 
-Use `npm run format` and `python -m black .` to format the maintained frontend and pipeline. Tests cover source failures, fixture identity, standings arithmetic, strict prediction cutoffs, spatial coordinates, API inputs, published files, stale requests and exports. Browser release checks also cover all workspaces, the five leagues and mobile layouts.
+Heatmaps show recorded historical actions, not continuous player movement or time spent in an area. Comprehensive current match events, reliable current player minutes, injuries and tracking data are not available.
 
-## Refresh and deploy
+Calculated standings may differ from official tables because administrative deductions and some competition tie breakers are omitted. Forecasts use recorded goals and express uncertain outcomes; they do not account for every factor affecting a match.
 
-```bash
-python src/dashboard_data.py
-python src/workbench_data.py
-python src/forecast_lab.py
-python src/build_site.py
-```
+For metric definitions and assumptions, read the [data dictionary](docs/DATA_DICTIONARY.md), [heatmap method](docs/SPATIAL_METHOD.md) and [forecast model card](docs/MODEL_CARD.md).
 
-GitHub Actions runs checks, refreshes current data every six hours, builds the site and deploys that same artifact. Failed source requests retain the last good snapshot with a visible warning. Historical imports are explicit operations rather than repeated scheduled downloads. See [deployment](DEPLOYMENT.md) for the full procedure.
+## Feedback
 
-For portfolio presentation and relevant roles, see the [application guide](docs/APPLICATION_GUIDE.md). Pair the software with an original match analysis and a reproducible notebook or SQL investigation that you can explain in an interview.
+Found a missing result, an unexpected calculation or a display problem? [Open an issue](https://github.com/sabin901/Football-Analyzer-/issues) with the workspace, league, season and steps needed to reproduce it. Include the source or fixture when reporting a data discrepancy.

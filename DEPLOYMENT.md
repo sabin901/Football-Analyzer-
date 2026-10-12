@@ -16,7 +16,7 @@ GitHub's GITHUB_TOKEN commits do not normally trigger another push workflow. Dep
 
 Source failures appear as workflow warnings and snapshot status. Failed HTTP requests do not overwrite verified scores or move their individual verification timestamps. Current results are supplemented from ESPN for scheduled dates in the last 14 days. An older source gap remains visible rather than silently fabricated. League and season source files are independently validated.
 
-The public Refresh button reloads the published snapshot; it does not trigger provider ingestion. To request immediate ingestion, run the workflow manually or run the complete refresh sequence in the README locally (results, squads, forecasts, then the build).
+The public Refresh button reloads the published snapshot; it does not trigger provider ingestion. To request immediate ingestion, run the workflow manually or run the complete refresh sequence in the [developer guide](docs/DEVELOPMENT.md#refresh-and-deploy) locally (results, squads, forecasts, then the build).
 
 ## Backend endpoints
 
