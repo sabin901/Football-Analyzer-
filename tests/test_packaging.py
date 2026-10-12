@@ -33,3 +33,8 @@ class PackagingTests(unittest.TestCase):
             # A rebuild with unchanged content must not invalidate browser caches.
             package_frontend(frontend, site)
             self.assertEqual(new_html, (site / "index.html").read_text())
+
+            # Windows checkout endings must not change content identity.
+            (frontend / "app.js").write_bytes(b"const version = 2;\r\n")
+            package_frontend(frontend, site)
+            self.assertEqual(new_html, (site / "index.html").read_text())

@@ -1,0 +1,6 @@
+# Keep formatter output and fingerprinted asset bytes stable across checkouts.
+*.js text eol=lf
+*.cjs text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.py text eol=lf
