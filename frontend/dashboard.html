@@ -1,60 +1,156 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Football analytics across five European leagues with current results, historical player and team heatmaps, scouting profiles and tested match forecasts.">
-<link rel="canonical" href="https://sabin901.github.io/Football-Analyzer-/">
-<meta property="og:type" content="website">
-<meta property="og:title" content="Footlyzer | Football Analytics and Player Heatmaps">
-<meta property="og:description" content="Explore five leagues with current results, historical event heatmaps, player profiles and transparent forecasts.">
-<meta property="og:url" content="https://sabin901.github.io/Football-Analyzer-/">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Footlyzer | Football Analytics and Player Heatmaps">
-<meta name="twitter:description" content="Football analysis with historical spatial data, scouting profiles and tested match forecasts.">
-<meta name="theme-color" content="#101b18">
-<title>Footlyzer | Football Analytics and Player Heatmaps</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='10' fill='%23c6f36b'/%3E%3Cpath d='M12 30V10h18v5H18v4h10v5H18v6' fill='%23101b18'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="dashboard.css">
-<link rel="stylesheet" href="workbench.css">
-<script defer src="icons.js"></script>
-<script defer src="spatial.js"></script>
-<script defer src="workbench.js"></script>
-<script defer src="dashboard.js"></script>
-</head>
-<body>
-<a class="skip" href="#main">Skip to analysis</a>
-<aside class="sidebar">
-<a class="brand" href="#overview" aria-label="Footlyzer home"><span class="mark">F<span>↗</span></span><span>footlyzer<span class="brand-sub">THE FOOTBALL INTELLIGENCE DESK</span></span></a>
-<div class="nav-caption">WORKSPACE</div>
-<nav aria-label="Analysis views" id="navigation">
-<button data-view="overview" class="nav-item active"><span data-icon="layout-dashboard"></span>League overview</button>
-<button data-view="matches" class="nav-item"><span data-icon="calendar-days"></span>Matches & results</button>
-<button data-view="compare" class="nav-item"><span data-icon="git-compare-arrows"></span>Team comparison</button>
-<button data-view="players" class="nav-item"><span data-icon="users"></span>Players & squads</button>
-<button data-view="matchlab" class="nav-item"><span data-icon="clipboard-list"></span>Match centre</button>
-<button data-view="heatmap" class="nav-item"><span data-icon="scan-line"></span>Player & team heatmaps</button>
-<button data-view="events" class="nav-item"><span data-icon="crosshair"></span>Event & scouting lab</button>
-<button data-view="forecast" class="nav-item"><span data-icon="chart-no-axes-combined"></span>Forecast lab</button>
-<button data-view="predict" class="nav-item"><span data-icon="sliders-horizontal"></span>Match simulator</button>
-<button data-view="research" class="nav-item"><span data-icon="book-open"></span>Research archive</button>
-<button data-view="coverage" class="nav-item"><span data-icon="database"></span>Data & methodology</button>
-<button data-view="portfolio" class="nav-item"><span data-icon="briefcase-business"></span>Portfolio & careers</button>
-</nav>
-<label class="mobile-view" for="view-select">Workspace<select id="view-select" aria-label="Choose workspace"></select></label>
-<div class="sidebar-note"><span class="small-dot"></span> Better context. Better analysis.<p>Five leagues. One workspace.<br>Know what the numbers can tell you.</p><a href="https://github.com/sabin901/Football-Analyzer-">View the project ↗</a><a class="sidebar-method" href="docs/PROJECT_REVIEW.html">Project review ↗</a></div>
-</aside>
-<div class="workspace">
-<header class="topbar"><span>Football intelligence <span class="slash">/</span> <strong id="breadcrumb">League overview</strong></span><span class="top-tag">EUROPE · TOP 5</span></header>
-<main id="main" tabindex="-1">
-<section class="heading"><div><p class="eyebrow">THE BIG PICTURE</p><h1 id="page-title">Every league. A clearer picture.</h1><p id="page-description">Follow the table, read the form, and find the story behind the score.</p></div><button class="secondary" id="export" disabled>Export results ↓</button></section>
-<div id="league-tabs" class="league-tabs" role="group" aria-label="Choose league"></div>
-<section class="context-bar"><div class="context-title"><span class="league-symbol" id="league-symbol">EN</span><div><h2 id="league-title">Loading leagues…</h2><span id="season-caption" class="muted">Fetching the latest published snapshot</span></div></div><div class="context-controls"><label for="season">Season<select id="season" disabled></select></label><button class="secondary" id="refresh" aria-label="Reload published data">↻ Refresh</button></div></section>
-<div id="data-status" role="status" class="data-status">Loading data coverage…</div>
-<div id="content" aria-busy="true"><div class="empty">Loading the football desk…</div></div>
-<footer><span>Footlyzer · Evidence before opinion.</span><span>Schedule: <a href="https://github.com/openfootball/football.json">OpenFootball · CC0</a> · Recent results: <a href="https://www.espn.com/soccer/scoreboard">ESPN</a><br>Scheduled snapshots. Source updates may lag.</span></footer>
-</main>
-</div>
-<noscript><p>This interactive dashboard requires JavaScript. The match data remains available in <a href="data/manifest.json">the data manifest</a>.</p></noscript>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Football analytics across five European leagues with current results, historical player and team heatmaps, scouting profiles and tested match forecasts."
+    />
+    <link rel="canonical" href="https://sabin901.github.io/Football-Analyzer-/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Footlyzer | Football Analytics and Player Heatmaps" />
+    <meta
+      property="og:description"
+      content="Explore five leagues with current results, historical event heatmaps, player profiles and transparent forecasts."
+    />
+    <meta property="og:url" content="https://sabin901.github.io/Football-Analyzer-/" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Footlyzer | Football Analytics and Player Heatmaps" />
+    <meta
+      name="twitter:description"
+      content="Football analysis with historical spatial data, scouting profiles and tested match forecasts."
+    />
+    <meta name="theme-color" content="#101b18" />
+    <title>Footlyzer | Football Analytics and Player Heatmaps</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='10' fill='%23c6f36b'/%3E%3Cpath d='M12 30V10h18v5H18v4h10v5H18v6' fill='%23101b18'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="dashboard.css" />
+    <link rel="stylesheet" href="workbench.css" />
+    <script defer src="ui.js"></script>
+    <script defer src="snapshot-store.js"></script>
+    <script defer src="league-branding.js"></script>
+    <script defer src="icons.js"></script>
+    <script defer src="spatial.js"></script>
+    <script defer src="workbench.js"></script>
+    <script defer src="workbench-views.js"></script>
+    <script defer src="research.js"></script>
+    <script defer src="dashboard.js"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to analysis</a>
+    <aside class="sidebar">
+      <a class="brand" href="#overview" aria-label="Footlyzer home"
+        ><span class="mark">F<span>↗</span></span
+        ><span>footlyzer<span class="brand-sub">THE FOOTBALL INTELLIGENCE DESK</span></span></a
+      >
+      <div class="nav-caption">WORKSPACE</div>
+      <nav aria-label="Analysis views" id="navigation">
+        <button data-view="overview" class="nav-item active">
+          <span data-icon="layout-dashboard"></span>League overview
+        </button>
+        <button data-view="matches" class="nav-item">
+          <span data-icon="calendar-days"></span>Matches & results
+        </button>
+        <button data-view="compare" class="nav-item">
+          <span data-icon="git-compare-arrows"></span>Team comparison
+        </button>
+        <button data-view="players" class="nav-item">
+          <span data-icon="users"></span>Players & squads
+        </button>
+        <button data-view="matchlab" class="nav-item">
+          <span data-icon="clipboard-list"></span>Match centre
+        </button>
+        <button data-view="heatmap" class="nav-item">
+          <span data-icon="scan-line"></span>Player & team heatmaps
+        </button>
+        <button data-view="events" class="nav-item">
+          <span data-icon="crosshair"></span>Event & scouting lab
+        </button>
+        <button data-view="forecast" class="nav-item">
+          <span data-icon="chart-no-axes-combined"></span>Forecast lab
+        </button>
+        <button data-view="predict" class="nav-item">
+          <span data-icon="sliders-horizontal"></span>Match simulator
+        </button>
+        <button data-view="research" class="nav-item">
+          <span data-icon="book-open"></span>Research archive
+        </button>
+        <button data-view="coverage" class="nav-item">
+          <span data-icon="database"></span>Data & methodology
+        </button>
+        <button data-view="portfolio" class="nav-item">
+          <span data-icon="briefcase-business"></span>Portfolio & careers
+        </button>
+      </nav>
+      <label class="mobile-view" for="view-select"
+        >Workspace<select id="view-select" aria-label="Choose workspace"></select
+      ></label>
+      <div class="sidebar-note">
+        <span class="small-dot"></span> Better context. Better analysis.
+        <p>Five leagues. One workspace.<br />Know what the numbers can tell you.</p>
+        <a href="https://github.com/sabin901/Football-Analyzer-">View the project ↗</a
+        ><a class="sidebar-method" href="docs/PROJECT_REVIEW.html">Project review ↗</a>
+      </div>
+    </aside>
+    <div class="workspace">
+      <header class="topbar">
+        <span
+          >Football intelligence <span class="slash">/</span>
+          <strong id="breadcrumb">League overview</strong></span
+        ><span class="top-tag">EUROPE · TOP 5</span>
+      </header>
+      <main id="main" tabindex="-1">
+        <section class="heading">
+          <div>
+            <p class="eyebrow">THE BIG PICTURE</p>
+            <h1 id="page-title">Every league. A clearer picture.</h1>
+            <p id="page-description">
+              Follow the table, read the form, and find the story behind the score.
+            </p>
+          </div>
+          <button class="secondary" id="export" disabled>Export results ↓</button>
+        </section>
+        <div id="league-tabs" class="league-tabs" role="group" aria-label="Choose league"></div>
+        <section class="context-bar">
+          <div class="context-title">
+            <span class="league-symbol" id="league-symbol">EN</span>
+            <div>
+              <h2 id="league-title">Loading leagues…</h2>
+              <span id="season-caption" class="muted">Fetching the latest published snapshot</span>
+            </div>
+          </div>
+          <div class="context-controls">
+            <label for="season">Season<select id="season" disabled></select></label
+            ><button class="secondary" id="refresh" aria-label="Reload published data">
+              ↻ Refresh
+            </button>
+          </div>
+        </section>
+        <div id="data-status" role="status" class="data-status">Loading data coverage…</div>
+        <div id="content" aria-busy="true"><div class="empty">Loading the football desk…</div></div>
+        <footer>
+          <span>Footlyzer · Evidence before opinion.</span
+          ><span
+            >Schedule:
+            <a href="https://github.com/openfootball/football.json">OpenFootball · CC0</a> · Recent
+            results: <a href="https://www.espn.com/soccer/scoreboard">ESPN</a><br />Scheduled
+            snapshots. Source updates may lag.</span
+          >
+          <span
+            ><a href="docs/DEVELOPMENT.html">Developer guide</a> ·
+            <a href="docs/ASSET_CREDITS.html">Asset credits</a></span
+          >
+        </footer>
+      </main>
+    </div>
+    <noscript
+      ><p>
+        This interactive dashboard requires JavaScript. The match data remains available in
+        <a href="data/manifest.json">the data manifest</a>.
+      </p></noscript
+    >
+  </body>
 </html>
