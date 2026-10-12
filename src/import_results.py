@@ -40,10 +40,12 @@ LEAGUES = {
     "ligue-1": "Ligue 1",
 }
 
-# season codes: 0910 … 2425  (start/end two-digit years)
+# season codes: 0203 … latest available (start/end two-digit years).
+# Range runs ahead of "now" so a re-run auto-picks up each new season the
+# source publishes; missing ones 404 and are skipped.
 def _season_codes():
     codes = []
-    for start in range(2, 25):            # 2002/03 … 2024/25
+    for start in range(2, 28):            # 2002/03 … 2027/28 (skips any not yet published)
         codes.append(f"{start:02d}{(start + 1) % 100:02d}")
     return codes
 

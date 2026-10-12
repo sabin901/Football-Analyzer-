@@ -323,5 +323,5 @@ a{{color:var(--accent)}}footer{{text-align:center;color:var(--muted);font-size:1
 
 if __name__ == "__main__":
     comp = sys.argv[1] if len(sys.argv) > 1 else "Premier League"
-    season = sys.argv[2] if len(sys.argv) > 2 else "2022/2023"
+    season = sys.argv[2] if len(sys.argv) > 2 else "2025/2026"
     build(comp, season)
