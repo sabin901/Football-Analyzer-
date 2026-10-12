@@ -12,6 +12,24 @@ import dashboard_data as d
 
 
 class DataTests(unittest.TestCase):
+    def test_atomic_write_retries_temporary_lock_but_surfaces_persistent_failure(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'snapshot.json'
+            d.write_json(path, {'version':1})
+            original=d.os.replace
+            calls=[]
+            def locked_once(source,target):
+                calls.append(1)
+                if len(calls)==1:raise PermissionError('temporary lock')
+                original(source,target)
+            with patch.object(d.os,'replace',side_effect=locked_once),patch.object(d.time,'sleep'):
+                d.write_json(path,{'version':2})
+            self.assertEqual(d.read_json(path),{'version':2})
+            with patch.object(d.os,'replace',side_effect=PermissionError('persistent lock')) as replace,patch.object(d.time,'sleep'):
+                with self.assertRaises(PermissionError):d.write_json(path,{'version':3})
+                self.assertEqual(replace.call_count,6)
+            self.assertEqual(d.read_json(path),{'version':2})
+
     def test_season_rollover(self):
         self.assertEqual(d.current_season(date(2026, 6, 30)), "2025-26")
         self.assertEqual(d.current_season(date(2026, 7, 1)), "2026-27")

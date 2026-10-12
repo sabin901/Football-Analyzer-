@@ -43,7 +43,7 @@ app = FastAPI(title="Soccer Analytics", version="1.0")
 def workbench_file(kind, key):
     import re
     patterns = {'current': r'(PL|PD|SA|BL1|FL1)', 'forecast': r'(PL|PD|SA|BL1|FL1)',
-                'events': r'\d{1,5}_\d{1,5}', 'backtest': r'(PL|PD|SA|BL1|FL1)'}
+                'events': r'\d{1,5}_\d{1,5}', 'spatial': r'(\d{1,5}_\d{1,5}|manifest)', 'backtest': r'(PL|PD|SA|BL1|FL1)'}
     if kind not in patterns or not re.fullmatch(patterns[kind], key):
         raise HTTPException(400, 'Invalid workbench dataset')
     path = Path(HERE) / 'data' / 'workbench' / f'{kind}_{key}.json'
@@ -78,6 +78,12 @@ def workbench_event_match(match_id: int):
 
 @app.get('/api/workbench/{kind}/{key}')
 def workbench_dataset(kind: str, key: str):
+    if kind == 'spatial-match':
+        if not key.isascii() or not key.isdigit() or len(key) > 10 or not 0 < int(key) < 10**10:
+            raise HTTPException(400, 'Invalid spatial match ID')
+        path = Path(HERE) / 'data/workbench/spatial_matches' / f'{int(key)}.json'
+        if not path.exists(): raise HTTPException(404, 'Spatial match not imported')
+        return dashboard_data.read_json(path)
     return workbench_file(kind, key)
 
 

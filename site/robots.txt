@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://sabin901.github.io/Football-Analyzer-/sitemap.xml

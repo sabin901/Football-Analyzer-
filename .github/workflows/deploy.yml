@@ -36,6 +36,9 @@ jobs:
           python -m unittest discover -s tests -v
           node --check frontend/dashboard.js
           node --check frontend/workbench.js
+          node --check frontend/spatial.js
+          node --check frontend/icons.js
+          node --test tests/spatial.test.cjs
       - name: Refresh current season (keep last good snapshots on failure)
         if: github.event_name != 'pull_request'
         id: refresh
