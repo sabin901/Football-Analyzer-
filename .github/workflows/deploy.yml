@@ -1,51 +1,78 @@
-name: Build & deploy site to GitHub Pages
-
-# Builds the static dashboard from committed data and publishes it to Pages.
-# Runs on every push to main, and whenever the data-refresh workflow commits
-# new data. No secrets required — it builds from what's in the repo.
+name: Validate, refresh and deploy
 
 on:
   push:
     branches: [main]
+  pull_request:
+  schedule:
+    - cron: '17 */6 * * *'
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: football-${{ github.event.pull_request.number || 'production' }}
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Build static site
+          python-version: '3.12'
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install backend and test dependencies
+        run: pip install -r requirements.txt -r requirements-dev.txt
+      - name: Test data integrity and backend
+        run: |
+          python -m unittest discover -s tests -v
+          node --check frontend/dashboard.js
+      - name: Refresh current season (keep last good snapshots on failure)
+        if: github.event_name != 'pull_request'
+        id: refresh
+        continue-on-error: true
+        run: python src/dashboard_data.py
+      - name: Surface source failure
+        if: steps.refresh.outcome == 'failure'
+        run: echo '::warning::Some data sources failed. Existing snapshots are retained and marked in the dashboard.'
+      - name: Build the shared dashboard
         run: python src/build_site.py
-
+      - name: Verify published data contracts
+        run: python -m unittest discover -s tests -p 'test_published.py' -v
+      - name: Save refreshed snapshots
+        if: github.event_name != 'pull_request'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add data/live site
+          if ! git diff --cached --quiet; then
+            git commit -m 'chore: update league snapshots [skip ci]'
+            git push
+          fi
       - name: Upload Pages artifact
+        if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3
         with:
           path: site
-
   deploy:
+    if: github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Deploy to GitHub Pages
+      - name: Deploy the artifact built in this run
         id: deployment
         uses: actions/deploy-pages@v4
