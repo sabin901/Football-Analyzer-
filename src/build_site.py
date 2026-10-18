@@ -33,7 +33,21 @@ def package_frontend(frontend, site):
         html,
     )
     (site / "index.html").write_text(html, encoding="utf-8", newline="\n")
-    # Keep previous fingerprints: a cached HTML page can still request its own bundle.
+    # Retire bundles containing the removed personal section, including old fingerprints.
+    # Other cached releases retain their assets. Privacy cleanup takes precedence here.
+    for asset in [*versioned.glob("*.js"), *versioned.glob("*.css")]:
+        if any(
+            token in asset.read_text(encoding="utf-8")
+            for token in (
+                "portfolioView",
+                "'portfolio'",
+                "PROJECT_REVIEW.html",
+                "portfolio-hero",
+                "PORTFOLIO_PLAYBOOK.html",
+            )
+        ):
+            asset.unlink()
+    # Keep other previous fingerprints for cached HTML pages.
     shutil.copytree(frontend / "assets", site / "assets", dirs_exist_ok=True)
 
 
@@ -107,8 +121,7 @@ def build():
     shutil.copytree(OUT, site / "data" / "workbench", dirs_exist_ok=True)
     shutil.copyfile(build_warehouse(), site / "data" / "football.sqlite")
     if (ROOT / "docs").exists():
-        shutil.copytree(ROOT / "docs", site / "docs", dirs_exist_ok=True)
-        build_docs.build(ROOT, site)
+        build_docs.package_docs(ROOT, site)
     assets = site / "assets"
     assets.mkdir(exist_ok=True)
     for name in [
@@ -121,7 +134,9 @@ def build():
         if source.exists():
             shutil.copyfile(source, assets / name)
     base = "https://sabin901.github.io/Football-Analyzer-/"
-    pages = [""] + ["docs/" + p.with_suffix(".html").name for p in (ROOT / "docs").glob("*.md")]
+    pages = [""] + [
+        "docs/" + name.replace(".md", ".html") for name in sorted(build_docs.PUBLIC_DOCS)
+    ]
     (site / "sitemap.xml").write_text(
         '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
         + "".join(f"<url><loc>{base}{p}</loc></url>" for p in pages)

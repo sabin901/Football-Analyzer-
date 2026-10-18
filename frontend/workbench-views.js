@@ -468,81 +468,70 @@ function eventView() {
     </div>
     ${eventMatchView(match)}`;
 }
+function forecastFixture(p) {
+  const limited = Math.min(p.home_sample, p.away_sample) < 5;
+  return `<article class="forecast-fixture"><div><span class="eyebrow">${day(p.date)}</span><h3>${esc(short(p.home))} <span class="muted">vs</span> ${esc(short(p.away))}</h3><small>${p.home_sample} home / ${p.away_sample} away venue matches · ${p.sample} league results</small>${limited ? '<div><span class="forecast-quality">Limited team sample · stronger reliance on league averages</span></div>' : ''}<details><summary>Model inputs & sample</summary><p>Training: ${day(p.training_start)}–${day(p.training_end)}. Cut-off: ${day(p.cutoff_exclusive)}, exclusive. Goal rates: ${p.home_rate.toFixed(2)} home / ${p.away_rate.toFixed(2)} away. These rates are based on results, not shot xG.</p><p>The eight-game prior contributes ${Math.round(800 / (p.home_sample + 8))}% of the home venue rate and ${Math.round(800 / (p.away_sample + 8))}% of the away venue rate. A larger prior share means less team-specific evidence.</p></details></div><div class="forecast-distribution"><div class="forecast-chances">${['Home win', 'Draw', 'Away win'].map((n, i) => `<div><strong>${pct(p.probabilities[i])}</strong><span>${n}</span></div>`).join('')}</div><div class="prob-bar" aria-hidden="true">${p.probabilities.map((p) => `<span style="width:${p * 100}%"></span>`).join('')}</div></div></article>`;
+}
 function forecastView(d) {
   const e = d.by_season[wb.evalSeason] || d.evaluation;
-  return /* HTML */ `<div class="notice">
-      <strong>Forecast cut-off: ${day(d.as_of)} · ${esc(d.season)}.</strong> Results on or after the
-      cut-off date are excluded. Early-season or promoted teams may fall back toward league
-      averages. These are experimental probabilities, not certain outcomes.
-    </div>
-    <div class="metrics">
-      ${metric('Historical results', d.history_matches.toLocaleString(), 'Imported for this league')}${metric('Unseen-date tests', e.n.toLocaleString(), 'Rolling evaluation from July 2024')}${metric('Model log loss', decimal(e.metrics.probabilities.log_loss), 'Lower is better')}${metric('Frequency baseline', decimal(e.metrics.baseline.log_loss), 'Same fixtures, same training window')}
-    </div>
-    ${wbPanel('Upcoming · next 14 days', d.upcoming.length ? d.upcoming.map((p) => `<div class="forecast-fixture"><div><span class="muted">${day(p.date)}</span><h3>${esc(short(p.home))} <span class="muted">vs</span> ${esc(short(p.away))}</h3><small>${p.sample} prior results · ${p.home_sample} home / ${p.away_sample} away samples</small></div><div class="forecast-chances">${['Home', 'Draw', 'Away'].map((n, i) => `<div><strong>${pct(p.probabilities[i])}</strong><span>${n}</span></div>`).join('')}</div></div>`).join('') : empty('No scheduled fixtures within the next 14 days.'), 'Schedule changes and team news are not modeled')}
-    <div class="toolbar">
-      ${wbSelect('wb-eval-season', 'Evaluation period', [['', 'All evaluation seasons'], ...Object.keys(d.by_season).map((s) => [s, s])], wb.evalSeason)}
-    </div>
-    <div class="method-grid">
-      ${wbPanel(
-        'Does the model improve on simple baselines?',
-        wbTable(
-          ['Model', 'Log loss', 'Brier', 'RPS'],
-          [
-            ['probabilities', 'Venue Poisson'],
-            ['baseline', 'League frequency'],
-            ['uniform', 'Equal probabilities'],
-          ].map(
-            ([key, name]) =>
-              `<tr><td>${name}</td><td>${e.metrics[key].log_loss.toFixed(3)}</td><td>${e.metrics[key].brier.toFixed(3)}</td><td>${e.metrics[key].rps.toFixed(3)}</td></tr>`,
-          ),
-          'Forecast validation metrics',
-        ) +
-          `<p>Model minus frequency log-loss difference, 95% date-block bootstrap interval: <strong>${e.log_loss_delta_95ci.map((n) => n.toFixed(3)).join(' to ')}</strong>.</p><p class="muted">${esc(e.note)} Brier uses the sum across three outcomes (range 0–2). RPS order: home, draw, away. Lower scores are better.</p>`,
-      )}${wbPanel(
-        'Calibration · predicted versus observed',
-        `<svg class="calibration-chart" viewBox="0 0 310 250" role="img" aria-label="Calibration chart comparing forecast probabilities to observed outcome rates"><path d="M35 15V215H285M35 215L275 25" stroke="#a4b2a3" fill="none" stroke-dasharray="4 4"/>${e.calibration.map((b) => `<circle cx="${35 + 240 * b.predicted}" cy="${215 - 190 * b.observed}" r="${3 + Math.min(7, Math.sqrt(b.n) / 8)}" fill="#256345"><title>${pct(b.predicted)} predicted; ${pct(b.observed)} observed; ${b.n} outcome probabilities</title></circle>`).join('')}<text x="35" y="235">0%</text><text x="240" y="235">100%</text><text x="95" y="248">Predicted probability</text><text x="0" y="20">100%</text></svg><p class="muted">Pooled home/draw/away probabilities in ten bins. Points near the diagonal agree with observed rates. This is a diagnostic, not post-hoc calibration.</p><details><summary>Calibration values</summary>${wbTable(
-          ['Predicted', 'Observed', 'Count'],
-          e.calibration.map(
-            (b) =>
-              `<tr><td>${pct(b.predicted)}</td><td>${pct(b.observed)}</td><td>${b.n}</td></tr>`,
-          ),
-          'Calibration bins',
-        )}</details>`,
-      )}
-    </div>
+  const improvement = e.n
+    ? (100 * (e.metrics.baseline.log_loss - e.metrics.probabilities.log_loss)) /
+      e.metrics.baseline.log_loss
+    : null;
+  const complete = d.scenarios.omitted_fixtures === 0;
+  return `<div class="notice"><strong>Forecasts as of ${day(d.as_of)} · ${esc(d.season)}.</strong> Training excludes results on or after this date. ${Date.now() - Date.parse(d.built_at) > 36 * 3600000 ? '<strong>This forecast snapshot is older than 36 hours.</strong> ' : ''}Lineups, injuries and team news are not included.</div>
+    <div class="metrics">${metric('Results in the archive', d.history_matches.toLocaleString(), 'Training uses the preceding 365 days')}${metric('Evaluation matches', e.n.toLocaleString(), e.n ? `${day(e.first_date)} – ${day(e.last_date)}` : 'No evaluation available')}${metric('Model log loss', e.n ? e.metrics.probabilities.log_loss.toFixed(3) : '—', 'Lower is better')}${metric('Frequency baseline', e.n ? e.metrics.baseline.log_loss.toFixed(3) : '—', 'Same fixtures, same training window')}</div>
+    ${e.n ? `<div class="forecast-evidence"><div><strong>${improvement > 0 ? 'Lower historical error than the league-frequency baseline' : 'The model does not beat the league-frequency baseline'}</strong><p>Reconstructed evaluation · ${e.n.toLocaleString()} matches. This is historical evidence, not a guarantee of future accuracy.</p></div><div class="evidence-value">${Math.abs(improvement).toFixed(1)}%<small>${improvement > 0 ? 'lower' : 'higher'} log loss</small></div></div>` : ''}
+    ${wbPanel('Upcoming fixtures', d.upcoming.length ? d.upcoming.slice(0, 6).map(forecastFixture).join('') + (d.upcoming.length > 6 ? `<details class="forecast-more"><summary>Show ${d.upcoming.length - 6} more scheduled fixtures</summary>${d.upcoming.slice(6).map(forecastFixture).join('')}</details>` : '') : empty('No scheduled fixtures within the next 14 days.'), 'Next 14 days · Home / Draw / Away')}
+    <div class="toolbar">${wbSelect('wb-eval-season', 'Evaluation period', [['', 'All evaluation seasons'], ...Object.keys(d.by_season).map((s) => [s, s])], wb.evalSeason)}</div>
+    ${
+      e.n
+        ? `<div class="method-grid">${wbPanel(
+            'Performance against baselines',
+            wbTable(
+              ['Model', 'Log loss', 'Brier', 'RPS'],
+              [
+                ['probabilities', 'Venue Poisson'],
+                ['baseline', 'League frequency'],
+                ['uniform', 'Equal probabilities'],
+              ].map(
+                ([key, name]) =>
+                  `<tr><td>${name}</td><td>${e.metrics[key].log_loss.toFixed(3)}</td><td>${e.metrics[key].brier.toFixed(3)}</td><td>${e.metrics[key].rps.toFixed(3)}</td></tr>`,
+              ),
+              'Forecast validation metrics',
+            ) +
+              `<p>Model minus frequency log-loss difference, 95% date-block bootstrap interval: <strong>${e.log_loss_delta_95ci.map((n) => n.toFixed(3)).join(' to ')}</strong>.</p><p class="muted">${esc(e.note)} Brier sums three outcomes (0–2). RPS order: home, draw, away. Lower is better for all three scores.</p>`,
+          )}${wbPanel(
+            'Calibration · predicted vs observed',
+            `<svg class="calibration-chart" viewBox="0 0 320 270" role="img" aria-label="Forecast calibration; points on the dashed diagonal match the observed rate"><g stroke="#e3e9e4">${[0, 0.25, 0.5, 0.75, 1].map((v) => `<path d="M45 ${225 - v * 200}H295M${45 + v * 250} 25V225"/>`).join('')}</g><path d="M45 225L295 25" stroke="#81998b" stroke-dasharray="5 5"/>${e.calibration.map((b) => `<circle cx="${45 + 250 * b.predicted}" cy="${225 - 200 * b.observed}" r="${3 + Math.min(7, Math.sqrt(b.n) / 8)}" fill="#147d67" fill-opacity=".8" stroke="white"><title>${pct(b.predicted)} predicted; ${pct(b.observed)} observed; ${b.n} outcome probabilities</title></circle>`).join('')}<g fill="#63716d" font-size="10">${[0, 0.5, 1].map((v) => `<text x="${45 + v * 250}" y="243" text-anchor="middle">${v * 100}%</text><text x="36" y="${229 - v * 200}" text-anchor="end">${v * 100}%</text>`).join('')}<text x="170" y="262" text-anchor="middle">Predicted probability</text><text x="45" y="13">Observed frequency</text></g></svg><p class="muted">Home/draw/away probabilities pooled into ten bins. Circle size reflects sample count. This is a diagnostic, not a calibration adjustment.</p><details><summary>Calibration values</summary>${wbTable(
+              ['Predicted', 'Observed', 'Count'],
+              e.calibration.map(
+                (b) =>
+                  `<tr><td>${pct(b.predicted)}</td><td>${pct(b.observed)}</td><td>${b.n}</td></tr>`,
+              ),
+              'Calibration bins',
+            )}</details>`,
+          )}</div>`
+        : empty('Insufficient historical matches for evaluation in this period.')
+    }
     ${wbPanel(
-      'Season scenarios · uncertainty stays visible',
-      `<p>${d.scenarios.runs.toLocaleString()} simulations of ${d.scenarios.simulated_fixtures} remaining fixtures. ${d.scenarios.omitted_fixtures} unresolved fixtures omitted.</p>${wbTable(
-        ['Team', 'Mean points', '10–90% range', 'Finish first', 'Top four'],
+      complete ? 'Season outlook' : 'Partial season scenario',
+      `${!complete ? '<div class="notice"><strong>Incomplete schedule: finishing probabilities withheld.</strong> Unresolved fixtures are excluded. These points totals describe only the simulated subset, not a complete season forecast.</div>' : ''}<p>${d.scenarios.runs.toLocaleString()} simulations · ${d.scenarios.simulated_fixtures} remaining fixtures · ${d.scenarios.omitted_fixtures} omitted.</p>${wbTable(
+        [
+          'Team',
+          complete ? 'Mean points' : 'Partial points',
+          '10–90% range',
+          'Finish first',
+          'Top four',
+        ],
         [...d.scenarios.teams]
           .sort((a, b) => b.mean_points - a.mean_points)
           .map(
             (t) =>
-              `<tr><td>${esc(short(t.team))}</td><td>${t.mean_points}</td><td>${t.points_10}–${t.points_90}</td><td>${pct(t.first)}</td><td>${pct(t.top_four)}</td></tr>`,
+              `<tr><td>${esc(short(t.team))}</td><td>${t.mean_points}</td><td>${t.points_10}–${t.points_90}</td><td>${complete && t.first !== null ? pct(t.first) : '—'}</td><td>${complete && t.top_four !== null ? pct(t.top_four) : '—'}</td></tr>`,
           ),
         'Season simulations',
-      )}<p class="muted">${esc(d.scenarios.limitations)} These long-horizon scenarios have not been independently validated.</p>`,
-    )}${wbPanel('Reproduce and challenge the result', `<p>${esc(d.methodology)}</p><p>Reconstructed historical evaluation uses the provider’s corrected results available now. It cannot reproduce every data delay or correction that occurred at the time.</p><a href="data/workbench/backtest_${leagueId}.json" download>Download every evaluation prediction ↓</a><br><a href="docs/MODEL_CARD.html">Read the model card ↗</a>`)} `;
-}
-function portfolioView() {
-  const c = wbLoad('catalogue.json');
-  return /* HTML */ `<section class="panel portfolio-hero">
-      <p class="eyebrow">BUILT FOR THE FOOTBALL QUESTION</p>
-      <h2>Evidence. Interpretation.<br />A decision someone can use.</h2>
-      <p>
-        A research portfolio connecting football analysis with dependable software. Every claim
-        should be traceable to data, a method and a clearly stated limitation.
-      </p>
-      <div class="toolbar">
-        <a class="secondary" href="docs/PROJECT_REVIEW.html">Project comparison ↗</a
-        ><a class="secondary" href="docs/APPLICATION_GUIDE.html">Where to apply ↗</a
-        ><a class="secondary" href="docs/CAREER_RESEARCH.html">Club role research ↗</a
-        ><a class="secondary" href="docs/PORTFOLIO_PLAYBOOK.html">Case-study playbook ↗</a>
-      </div>
-    </section>
-    ${c && !c.error ? `<div class="metrics">${metric('League-seasons', c.league_seasons, 'OpenFootball snapshots')}${metric('Recorded results', c.results.toLocaleString(), 'Across the five leagues')}${metric('Historical events', c.events.toLocaleString(), 'StatsBomb Open Data')}${metric('Current player records', c.current_players.toLocaleString(), 'Player × club, not unique people')}</div>` : ''}
-    <div class="method-grid">
-      ${wbPanel('01 · Prepare the next opponent', '<p>Start with the Match centre, inspect the recent shot balance and review the source match reports. Turn three observations into video questions and a concise coaching briefing.</p><button class="secondary" data-view="matchlab">Open match centre →</button>')}${wbPanel('02 · Profile a player fairly', '<p>Use the Event lab, set a minutes threshold and compare within a position group. Explain selection bias, role and team context before recommending further scouting.</p><button class="secondary" data-view="events">Open event lab →</button>')}${wbPanel('03 · Test a football hypothesis', '<p>Review the Forecast lab against simple baselines, inspect calibration and reproduce the cutoff for any evaluation match. Report what the model misses as carefully as what it predicts.</p><button class="secondary" data-view="forecast">Open forecast lab →</button>')}${wbPanel('04 · Demonstrate engineering', '<p>Explore a relational warehouse with stable IDs, documented sources, indexed tables, automated imports and regression tests. SQL exercises connect the data model to football questions.</p><a href="data/football.sqlite" download>Download SQLite warehouse ↓</a><br><a href="docs/analysis_queries.sql" download>Get the SQL examples ↓</a>')}
-    </div>
-    ${wbPanel('What clubs expect—and what still needs your work', '<p>Published Manchester City and Swansea roles emphasize tactical understanding, event data, SQL, visual communication and support for coaches. Leeds’ developer role emphasizes maintainable applications, cloud infrastructure, React/TypeScript and delivery into production.</p><p>This project demonstrates a subset of that work. Add your own written case studies, video-supported observations and experience presenting to a coach. A portfolio cannot substitute for those skills or guarantee recruitment.</p><p>Current full-event feeds, continuous tracking, medical data and licensed video are unavailable here. The open event selections are historical. The frontend uses vanilla JavaScript; it does not establish React/TypeScript experience.</p><a href="docs/CAREER_RESEARCH.html">Read the dated primary sources and skills matrix ↗</a>')}`;
+      )}<p class="muted">${esc(d.scenarios.limitations)} The 10–90% range reflects simulated results, not all sources of uncertainty. Long-horizon scenarios are not independently validated.</p>`,
+    )}
+    ${wbPanel('Method & reproducibility', `<p>${esc(d.methodology)}</p><p>The backtest uses corrected results available now. It cannot reproduce every historical data delay or correction.</p><a href="data/workbench/backtest_${leagueId}.json" download>Download evaluation predictions ↓</a> · <a href="docs/MODEL_CARD.html">Model card ↗</a>`)}`;
 }

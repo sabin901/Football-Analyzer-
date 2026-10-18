@@ -25,7 +25,7 @@ Use it in your browser on desktop or mobile. No installation, account or API key
 4. Check **Data & methodology** for sources, sample sizes, missing data and freshness before drawing conclusions.
 5. Use the export controls in each workspace to save the available results.
 
-The **Research archive** contains fixed examples from the 2018 World Cup final and Arsenal's 2015/16 season. They remain historical reports when you change the current league.
+Personal project reviews, career research and application notes stay in the repository; the public build publishes only product data, attribution and methodology documents. The legacy research interface is available locally at `/research` when running the API.
 
 ## Where the data comes from
 

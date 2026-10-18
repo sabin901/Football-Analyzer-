@@ -38,7 +38,27 @@ function xgFlow(m) {
     `<div class="xg-legend"><span><i class="xg-key"></i>${esc(m.home)} · ${totals[0].toFixed(2)} xG</span><span><i class="xg-key away"></i>${esc(m.away)} · ${totals[1].toFixed(2)} xG</span></div><svg class="xg-flow" viewBox="0 0 610 267" role="img" aria-label="Cumulative expected goals for ${esc(m.home)} and ${esc(m.away)}. Goal markers are circles. Shot table above provides the underlying values.">${[0, 0.5, 1].map((f) => `<path d="M48 ${py(f * ymax)}H568" stroke="#dbe3d5"/><text x="34" y="${py(f * ymax) + 4}" text-anchor="end" fill="#657169" font-size="11">${(f * ymax).toFixed(1)}</text>`).join('')}${paths}${[0, 45, end].map((t) => `<text x="${px(t)}" y="245" text-anchor="middle" fill="#657169" font-size="11">${t}′</text>`).join('')}<text x="48" y="20" fill="#657169" font-size="11">Cumulative xG</text></svg><p class="muted">Provider shot xG accumulated by recorded minute. Penalties included. Dots mark goals from shots; own goals are not shot xG. This describes chance creation, not momentum, possession or the deserved winner.</p>`,
   );
 }
-const heatColors = ['#102d29', '#17483f', '#236553', '#378668', '#64a47b', '#a6c783', '#f5e6a1'];
+// Perceptually ordered, colour-blind-friendly luminance: deep teal to warm yellow.
+const heatColors = ['#142e31', '#205d63', '#298a88', '#59b5a0', '#a9d7a3', '#e4e5a0', '#f9dc78'];
+function heatColor(value, maximum) {
+  if (!value || maximum <= 0) return heatColors[0];
+  const level = Math.max(0, Math.min(6, (value / maximum) * 6));
+  const low = Math.min(5, Math.floor(level)),
+    mix = level - low;
+  const rgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  const a = rgb(heatColors[low]),
+    b = rgb(heatColors[low + 1]);
+  return (
+    '#' +
+    a
+      .map((v, i) =>
+        Math.round(v + (b[i] - v) * mix)
+          .toString(16)
+          .padStart(2, '0'),
+      )
+      .join('')
+  );
+}
 function heatGrid(d, team, player = '') {
   const bins = Array(d.cols * d.rows).fill(0);
   for (const [i, period, kind, cell, n] of d.cells) {
@@ -56,14 +76,17 @@ function heatGrid(d, team, player = '') {
   };
 }
 function heatSvg(grid, maximum, title, subtitle) {
-  const value = (v) => (hs.measure === 'share' ? `${v.toFixed(1)}%` : String(v));
+  const value = (v) =>
+    hs.measure === 'share' ? `${v.toFixed(1)}%` : Number(v.toFixed(1)).toString();
   const cells = grid.values
-    .map(
-      (v, i) =>
-        `<rect x="${10 + (i % 12) * 10}" y="${24 + Math.floor(i / 12) * 10}" width="10" height="10" fill="${heatColors[v ? Math.max(1, Math.ceil((v / maximum) * 6)) : 0]}"><title>x ${(i % 12) * 10} to ${(i % 12) * 10 + 10}, y ${Math.floor(i / 12) * 10} to ${Math.floor(i / 12) * 10 + 10}: ${grid.bins[i]} events, ${value(v)}</title></rect>`,
-    )
+    .map((v, i) => {
+      const x = 60 + (i % 12) * 60,
+        y = 100 + Math.floor(i / 12) * 60;
+      const label = `x ${(i % 12) * 10}–${(i % 12) * 10 + 10}, y ${Math.floor(i / 12) * 10}–${Math.floor(i / 12) * 10 + 10}: ${grid.bins[i]} events · ${value(v)}`;
+      return `<g><title>${label}</title><rect x="${x + 0.7}" y="${y + 0.7}" width="58.6" height="58.6" rx="2" fill="${heatColor(v, maximum)}"/>${v > 0 && v >= maximum * 0.55 ? `<text x="${x + 30}" y="${y + 35}" text-anchor="middle" fill="${v / maximum > 0.7 ? '#173b35' : '#0c3030'}" font-size="13" font-weight="600">${value(v)}</text>` : ''}</g>`;
+    })
     .join('');
-  return `<svg xmlns="http://www.w3.org/2000/svg" class="heat-pitch" viewBox="0 0 140 137" role="img" aria-label="${esc(title)} activity heatmap. ${grid.total} located events. Both teams attack right. Numeric grid available below."><rect width="140" height="137" rx="4" fill="#10231f"/><text x="10" y="11" fill="#eef5e9" font-family="sans-serif" font-size="4.8" font-weight="700">${esc(title)}</text><text x="10" y="18" fill="#b8d0c3" font-family="sans-serif" font-size="2.8">${esc(subtitle)}</text>${cells}<g fill="none" stroke="#edf7ed" stroke-opacity=".65" stroke-width=".35"><rect x="10" y="24" width="120" height="80"/><path d="M70 24V104M10 42H28V86H10M130 42H112V86H130M10 54H16V74H10M130 54H124V74H130"/><circle cx="70" cy="64" r="10"/></g><text x="10" y="113" fill="#b8d0c3" font-family="sans-serif" font-size="3">ATTACK DIRECTION →</text>${heatColors.map((c, i) => `<rect x="${86 + i * 6}" y="109" width="6" height="3" fill="${c}"/>`).join('')}<text x="86" y="117" fill="#b8d0c3" font-family="sans-serif" font-size="2.8">0</text><text x="128" y="117" text-anchor="end" fill="#b8d0c3" font-family="sans-serif" font-size="2.8">${value(maximum)}</text><text x="10" y="125" fill="#e4eedf" font-family="sans-serif" font-size="3">${grid.total.toLocaleString()} events · ${hs.measure === 'share' ? 'Share within this selection' : 'Event count'} · 12 × 8 grid</text><text x="10" y="132" fill="#b8d0c3" font-family="sans-serif" font-size="2.5">Footlyzer · StatsBomb Open Data · Historical event activity</text></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" class="heat-pitch" viewBox="0 0 840 712" role="img" aria-label="${esc(title)} activity heatmap. ${grid.total} located events. Both teams attack right. Numeric grid available below." font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"><rect width="840" height="712" rx="14" fill="#102729"/><text x="60" y="41" fill="#eff6ef" font-size="23" font-weight="600">${esc(title)}</text><text x="60" y="67" fill="#a6c0b9" font-size="13">${esc(subtitle)}</text><text x="780" y="87" text-anchor="end" fill="#a6c0b9" font-size="10" letter-spacing="2">ATTACKING →</text>${cells}<g fill="none" stroke="#ebf5e9" stroke-opacity=".65" stroke-width="1.4"><rect x="60" y="100" width="720" height="480"/><path d="M420 100V580M60 208H168V472H60M780 208H672V472H780M60 280H96V400H60M780 280H744V400H780M60 316H48V364H60M780 316H792V364H780"/><circle cx="420" cy="340" r="60"/><path d="M168 292A60 60 0 0 1 168 388M672 292A60 60 0 0 0 672 388"/><path d="M60 112A12 12 0 0 0 72 100M768 100A12 12 0 0 0 780 112M60 568A12 12 0 0 1 72 580M768 580A12 12 0 0 1 780 568"/></g><g fill="#eff6ef" fill-opacity=".75"><circle cx="420" cy="340" r="2.6"/><circle cx="132" cy="340" r="2.6"/><circle cx="708" cy="340" r="2.6"/></g><g fill="#a6c0b9" font-size="10" letter-spacing="1.2" text-anchor="middle"><text x="180" y="602">DEFENSIVE THIRD</text><text x="420" y="602">MIDDLE THIRD</text><text x="660" y="602">ATTACKING THIRD</text></g><text x="60" y="639" fill="#f0f6ef" font-size="15" font-weight="600">${grid.total.toLocaleString()} events</text><text x="60" y="661" fill="#a6c0b9" font-size="11">${hs.measure === 'share' ? 'Share of selected events per cell' : 'Recorded events per cell'} · 12 × 8 exact grid</text>${Array.from({ length: 60 }, (_, i) => `<rect x="${510 + i * 4.5}" y="626" width="4.6" height="10" fill="${heatColor(i, 59)}"/>`).join('')}<text x="510" y="655" fill="#a6c0b9" font-size="11">0</text><text x="645" y="655" text-anchor="middle" fill="#a6c0b9" font-size="11">${value(maximum / 2)}</text><text x="780" y="655" text-anchor="end" fill="#e4eedf" font-size="11">${value(maximum)}</text><path d="M60 679H780" stroke="#2b4544"/><text x="60" y="700" fill="#8ea9a2" font-size="10">FOOTLYZER / HISTORICAL EVENT ACTIVITY</text><text x="780" y="700" text-anchor="end" fill="#8ea9a2" font-size="10">Source: StatsBomb Open Data</text></svg>`;
 }
 function heatmapView() {
   heatExport = null;
@@ -167,7 +190,7 @@ function heatmapView() {
       ['count', 'Event counts'],
     ],
     hs.measure,
-  )}${wbSelect('heat-compare', 'Compare with team', [['', 'No comparison'], ...teams.filter(([id]) => id !== hs.team)], hs.compare)}</div><div class="panel-body"><div class="heat-maps ${other ? 'two-maps' : ''}"><div><div class="heat-map-caption"><h3>${esc(name)}</h3><p>${esc(action)} · ${period}</p></div>${svg}<p class="heat-scale-note">Attack right · Colour: 0 to ${hs.measure === 'share' ? maximum.toFixed(1) + '%' : maximum} per cell</p>${grid.total ? '' : empty('No located events match this selection. Try another action or period.')}</div>${other ? `<div><div class="heat-map-caption"><h3>${esc(teams.find(([id]) => id === hs.compare)[1])}</h3><p>Whole team · ${esc(action)} · ${period}</p></div>${heatSvg(other, maximum, teams.find(([id]) => id === hs.compare)[1], subtitle)}<p class="heat-scale-note">Attack right · Colour: 0 to ${hs.measure === 'share' ? maximum.toFixed(1) + '%' : maximum} per cell</p>${other.total ? '' : empty('No located events in this comparison.')}</div>` : ''}</div><div class="heat-summary"><div><strong>${grid.total.toLocaleString()}</strong><span>Selected events</span></div><div><strong>${playerMatches}</strong><span>${p ? 'Matches with any located action' : 'Team matches in sample'}</span></div><div><strong>${grid.total ? Math.round((100 * third[2]) / grid.total) + '%' : '—'}</strong><span>In attacking third</span></div><div><strong>${grid.total ? Math.round((100 * third[0]) / grid.total) + '%' : '—'}</strong><span>In defensive third</span></div></div><div class="heat-actions"><button class="secondary" data-heat-csv>${icon('download')} Export grid CSV</button><button class="secondary" data-heat-svg>${icon('image')} Save selected map SVG</button><a href="docs/SPATIAL_METHOD.html">Method and coordinate guide ${icon('arrow-up-right')}</a></div><p class="muted">${other ? 'Both maps share the same colour maximum. ' : ''}${hs.measure === 'share' ? 'Each map sums to 100% when events exist. This compares distributions, not work rate.' : 'Counts depend on playing time, possession and sample size.'} A brighter cell means more recorded activity, not better performance.</p><details><summary>Accessible numeric grid for ${esc(name)}</summary>${wbTable(
+  )}${wbSelect('heat-compare', 'Compare with team', [['', 'No comparison'], ...teams.filter(([id]) => id !== hs.team)], hs.compare)}</div><div class="panel-body"><div class="heat-maps ${other ? 'two-maps' : ''}"><div><div class="heat-map-caption"><h3>${esc(name)}</h3><p>${esc(action)} · ${period}</p></div>${svg}<p class="heat-scale-note">Attack right · Colour: 0 to ${hs.measure === 'share' ? maximum.toFixed(1) + '%' : maximum} per cell</p>${grid.total ? '' : empty('No located events match this selection. Try another action or period.')}</div>${other ? `<div><div class="heat-map-caption"><h3>${esc(teams.find(([id]) => id === hs.compare)[1])}</h3><p>Whole team · ${esc(action)} · ${period}</p></div>${heatSvg(other, maximum, teams.find(([id]) => id === hs.compare)[1], subtitle)}<p class="heat-scale-note">Attack right · Colour: 0 to ${hs.measure === 'share' ? maximum.toFixed(1) + '%' : maximum} per cell</p>${other.total ? '' : empty('No located events in this comparison.')}</div>` : ''}</div><div class="heat-summary"><div><strong>${grid.total.toLocaleString()}</strong><span>Selected events</span></div><div><strong>${playerMatches}</strong><span>${p ? 'Matches with any located action' : 'Team matches in sample'}</span></div></div><div class="heat-territory" aria-label="Distribution across pitch thirds">${['Defensive third', 'Middle third', 'Attacking third'].map((label, i) => `<div><span>${label}</span><strong>${grid.total ? ((100 * third[i]) / grid.total).toFixed(1) + '%' : '—'}</strong></div>`).join('')}</div><div class="heat-actions"><button class="secondary" data-heat-csv>${icon('download')} Export grid CSV</button><button class="secondary" data-heat-svg>${icon('image')} Save selected map SVG</button><a href="docs/SPATIAL_METHOD.html">Method and coordinate guide ${icon('arrow-up-right')}</a></div><p class="muted">${other ? 'Both maps share the same colour maximum. ' : ''}${hs.measure === 'share' ? 'Each map sums to 100% when events exist. This compares distributions, not work rate.' : 'Counts depend on playing time, possession and sample size.'} A brighter cell means more recorded activity, not better performance.</p><details><summary>Accessible numeric grid for ${esc(name)}</summary>${wbTable(
     ['Y / X', ...Array.from({ length: 12 }, (_, i) => `${i * 10} to ${i * 10 + 10}`)],
     Array.from(
       { length: 8 },

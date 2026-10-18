@@ -20,7 +20,7 @@ The matches card is the number of team matches in the imported sample, or matche
 
 ## Missing data and boundaries
 
-Missing and invalid coordinates are excluded and counted. Missing coordinates never become the origin. Finite points within a one unit tolerance of the pitch boundary are assigned to the nearest edge cell, with a clamped count. Coordinates further outside are excluded. Exact x = 120 and y = 80 belong to the last column and row. No smoothing creates artificial locations.
+Missing and invalid coordinates are excluded and counted. Missing coordinates never become the origin. Finite points within a one unit tolerance of the pitch boundary are assigned to the nearest edge cell, with a clamped count. Coordinates further outside are excluded. Exact x = 120 and y = 80 belong to the last column and row. No smoothing creates artificial locations. The pitch uses a continuous teal-to-yellow colour scale on the exact grid, with selected high-value cells labelled. Two comparison maps always use one shared maximum; numerical values and CSV exports use the original unsmoothed counts. The defensive, middle and attacking thirds divide the pitch into equal 40-unit bands.
 
 Coverage details show quality counts across the full match or dataset before filtering. A sparse or empty selection is displayed as such. Some seasons contain one club or a selected subset of fixtures. All currently available imported archive matches are eligible, but an import failure reduces the mapped sample and is disclosed.
 
