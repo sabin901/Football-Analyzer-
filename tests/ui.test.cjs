@@ -19,3 +19,15 @@ test('provider text is escaped and missing metrics are not zero', () => {
   assert.equal(run(`decimal(null)`), '—');
   assert.equal(run(`decimal(0)`), '0.00');
 });
+
+test('awarded outcomes do not become draws from an administrative 0-0 score', () => {
+  assert.equal(
+    run(`matchOutcome({home:'Bastia', away:'Lyon', hg:0, ag:0, awarded_winner:'Lyon'}, 'Lyon')`),
+    'W',
+  );
+  assert.equal(
+    run(`matchOutcome({home:'Bastia', away:'Lyon', hg:0, ag:0, awarded_winner:'Lyon'}, 'Bastia')`),
+    'L',
+  );
+  assert.equal(run(`matchOutcome({home:'A', away:'B', hg:0, ag:0}, 'A')`), 'D');
+});

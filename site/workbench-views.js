@@ -473,16 +473,31 @@ function forecastFixture(p) {
   return `<article class="forecast-fixture"><div><span class="eyebrow">${day(p.date)}</span><h3>${esc(short(p.home))} <span class="muted">vs</span> ${esc(short(p.away))}</h3><small>${p.home_sample} home / ${p.away_sample} away venue matches · ${p.sample} league results</small>${limited ? '<div><span class="forecast-quality">Limited team sample · stronger reliance on league averages</span></div>' : ''}<details><summary>Model inputs & sample</summary><p>Training: ${day(p.training_start)}–${day(p.training_end)}. Cut-off: ${day(p.cutoff_exclusive)}, exclusive. Goal rates: ${p.home_rate.toFixed(2)} home / ${p.away_rate.toFixed(2)} away. These rates are based on results, not shot xG.</p><p>The eight-game prior contributes ${Math.round(800 / (p.home_sample + 8))}% of the home venue rate and ${Math.round(800 / (p.away_sample + 8))}% of the away venue rate. A larger prior share means less team-specific evidence.</p></details></div><div class="forecast-distribution"><div class="forecast-chances">${['Home win', 'Draw', 'Away win'].map((n, i) => `<div><strong>${pct(p.probabilities[i])}</strong><span>${n}</span></div>`).join('')}</div><div class="prob-bar" aria-hidden="true">${p.probabilities.map((p) => `<span style="width:${p * 100}%"></span>`).join('')}</div></div></article>`;
 }
 function forecastView(d) {
+  const expiry = Date.parse(d.publication?.valid_until);
+  const expired = !Number.isFinite(expiry) || Date.now() >= expiry;
+  if (expired)
+    d = {
+      ...d,
+      upcoming: [],
+      publication: {
+        allowed: false,
+        reason:
+          d.publication?.allowed === false
+            ? d.publication.reason
+            : 'The verified forecast inputs have expired. A fresh source check is required.',
+      },
+    };
+  d = { ...d, upcoming: d.upcoming.filter((p) => p.date > new Date().toISOString().slice(0, 10)) };
   const e = d.by_season[wb.evalSeason] || d.evaluation;
   const improvement = e.n
     ? (100 * (e.metrics.baseline.log_loss - e.metrics.probabilities.log_loss)) /
       e.metrics.baseline.log_loss
     : null;
-  const complete = d.scenarios.omitted_fixtures === 0;
-  return `<div class="notice"><strong>Forecasts as of ${day(d.as_of)} · ${esc(d.season)}.</strong> Training excludes results on or after this date. ${Date.now() - Date.parse(d.built_at) > 36 * 3600000 ? '<strong>This forecast snapshot is older than 36 hours.</strong> ' : ''}Lineups, injuries and team news are not included.</div>
+  return `<div class="notice"><strong>Experimental forecasts as of ${day(d.as_of)} · ${esc(d.season)}.</strong> Training excludes results on or after this date. ${Date.now() - Date.parse(d.built_at) > 36 * 3600000 ? '<strong>This forecast snapshot is older than 36 hours.</strong> ' : ''}Lineups, injuries and team news are not included.</div>
     <div class="metrics">${metric('Results in the archive', d.history_matches.toLocaleString(), 'Training uses the preceding 365 days')}${metric('Evaluation matches', e.n.toLocaleString(), e.n ? `${day(e.first_date)} – ${day(e.last_date)}` : 'No evaluation available')}${metric('Model log loss', e.n ? e.metrics.probabilities.log_loss.toFixed(3) : '—', 'Lower is better')}${metric('Frequency baseline', e.n ? e.metrics.baseline.log_loss.toFixed(3) : '—', 'Same fixtures, same training window')}</div>
     ${e.n ? `<div class="forecast-evidence"><div><strong>${improvement > 0 ? 'Lower historical error than the league-frequency baseline' : 'The model does not beat the league-frequency baseline'}</strong><p>Reconstructed evaluation · ${e.n.toLocaleString()} matches. This is historical evidence, not a guarantee of future accuracy.</p></div><div class="evidence-value">${Math.abs(improvement).toFixed(1)}%<small>${improvement > 0 ? 'lower' : 'higher'} log loss</small></div></div>` : ''}
-    ${wbPanel('Upcoming fixtures', d.upcoming.length ? d.upcoming.slice(0, 6).map(forecastFixture).join('') + (d.upcoming.length > 6 ? `<details class="forecast-more"><summary>Show ${d.upcoming.length - 6} more scheduled fixtures</summary>${d.upcoming.slice(6).map(forecastFixture).join('')}</details>` : '') : empty('No scheduled fixtures within the next 14 days.'), 'Next 14 days · Home / Draw / Away')}
+    ${d.publication?.allowed === false ? `<div class="notice"><strong>Upcoming probabilities withheld.</strong> ${esc(d.publication.reason)}</div>` : ''}
+    ${wbPanel('Upcoming fixtures', d.upcoming.length ? d.upcoming.slice(0, 6).map(forecastFixture).join('') + (d.upcoming.length > 6 ? `<details class="forecast-more"><summary>Show ${d.upcoming.length - 6} more scheduled fixtures</summary>${d.upcoming.slice(6).map(forecastFixture).join('')}</details>` : '') : empty(d.publication?.allowed === false ? 'Probabilities will return when the data checks pass.' : 'No eligible fixtures within the next 14 days.'), 'Next 14 days · Home / Draw / Away')}
     <div class="toolbar">${wbSelect('wb-eval-season', 'Evaluation period', [['', 'All evaluation seasons'], ...Object.keys(d.by_season).map((s) => [s, s])], wb.evalSeason)}</div>
     ${
       e.n
@@ -514,24 +529,6 @@ function forecastView(d) {
           )}</div>`
         : empty('Insufficient historical matches for evaluation in this period.')
     }
-    ${wbPanel(
-      complete ? 'Season outlook' : 'Partial season scenario',
-      `${!complete ? '<div class="notice"><strong>Incomplete schedule: finishing probabilities withheld.</strong> Unresolved fixtures are excluded. These points totals describe only the simulated subset, not a complete season forecast.</div>' : ''}<p>${d.scenarios.runs.toLocaleString()} simulations · ${d.scenarios.simulated_fixtures} remaining fixtures · ${d.scenarios.omitted_fixtures} omitted.</p>${wbTable(
-        [
-          'Team',
-          complete ? 'Mean points' : 'Partial points',
-          '10–90% range',
-          'Finish first',
-          'Top four',
-        ],
-        [...d.scenarios.teams]
-          .sort((a, b) => b.mean_points - a.mean_points)
-          .map(
-            (t) =>
-              `<tr><td>${esc(short(t.team))}</td><td>${t.mean_points}</td><td>${t.points_10}–${t.points_90}</td><td>${complete && t.first !== null ? pct(t.first) : '—'}</td><td>${complete && t.top_four !== null ? pct(t.top_four) : '—'}</td></tr>`,
-          ),
-        'Season simulations',
-      )}<p class="muted">${esc(d.scenarios.limitations)} The 10–90% range reflects simulated results, not all sources of uncertainty. Long-horizon scenarios are not independently validated.</p>`,
-    )}
+    ${wbPanel('Published before the match', `<p><strong>${d.prospective?.settled || 0} settled forecasts</strong> from ${(d.prospective?.recorded || 0).toLocaleString()} stored predictions. Forecasts are fixed before the fixture date; revised dates and administrative results are excluded from scoring.</p>${d.prospective?.settled ? `<p>Observed outcome accuracy: ${pct(d.prospective.accuracy)}. Small samples are not evidence of reliable future performance.</p>` : '<p>Not enough prospective evidence yet. The historical evaluation above must not be described as a live prediction record.</p>'}<a href="data/workbench/forecast_log_${leagueId}.json" download>Download the timestamped forecast record</a>`)}
     ${wbPanel('Method & reproducibility', `<p>${esc(d.methodology)}</p><p>The backtest uses corrected results available now. It cannot reproduce every historical data delay or correction.</p><a href="data/workbench/backtest_${leagueId}.json" download>Download evaluation predictions ↓</a> · <a href="docs/MODEL_CARD.html">Model card ↗</a>`)}`;
 }

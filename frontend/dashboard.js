@@ -17,11 +17,6 @@ const titles = {
     'Team comparison',
     'Compare like for like: the same league, season, venue and sample window.',
   ],
-  predict: [
-    'Match simulator',
-    'Match simulator',
-    'A transparent goals-based estimate, with its assumptions in view.',
-  ],
   coverage: [
     'Data & methodology',
     'Data & methodology',
@@ -67,7 +62,7 @@ Object.assign(titles, {
   forecast: [
     'Forecast lab',
     'Match forecasts',
-    'Auditable backtests, upcoming probabilities and season scenarios.',
+    'Experimental probabilities, measured performance and a published forecast record.',
   ],
 });
 const content = $('#content');
@@ -112,7 +107,7 @@ function filteredTable() {
       };
       for (const m of games) {
         const [gf, ga] = m.home === base.team ? [m.hg, m.ag] : [m.ag, m.hg];
-        const x = gf > ga ? 'W' : gf === ga ? 'D' : 'L';
+        const x = matchOutcome(m, base.team);
         r[x.toLowerCase()]++;
         r.gf += gf;
         r.ga += ga;
@@ -133,9 +128,11 @@ function selectorToolbar(includeTeams = false) {
   </div>`;
 }
 function standingsRows() {
-  const all = filteredTable();
+  const overall = venue === 'all' && windowSize === 'all';
+  const reconciled = data.quality?.standings?.status === 'matched';
+  const all = overall && reconciled ? data.table : filteredTable();
   const rows = all
-    .map((r, i) => ({ ...r, rank: i + 1 }))
+    .map((r, i) => ({ ...r, rank: overall && !reconciled ? '—' : r.rank || i + 1 }))
     .filter((r) => r.team.toLowerCase().includes(query.toLowerCase()));
   if (sort === 'attack') rows.sort((a, b) => (b.p ? b.gf / b.p : -1) - (a.p ? a.gf / a.p : -1));
   if (sort === 'defence')
@@ -150,30 +147,37 @@ function standingsRows() {
     rows
       .map(
         (r) =>
-          `<tr><td>${r.rank}</td><td><button class="team-link" data-team="${esc(r.team)}" title="Compare ${esc(short(r.team))}">${badge(r.team)}${esc(short(r.team))}</button></td><td>${r.p}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td><td>${r.gf}:${r.ga}</td><td>${r.gd > 0 ? '+' : ''}${r.gd}</td><td class="points">${r.pts}</td><td>${form(r.form)}</td></tr>`,
+          `<tr><td>${r.rank}</td><td><button class="team-link" data-team="${esc(r.team)}" title="Compare ${esc(short(r.team))}">${badge(r.team)}${esc(short(r.team))}</button></td><td>${r.p}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td><td>${r.gf}:${r.ga}</td><td>${r.gd > 0 ? '+' : ''}${r.gd}</td><td class="points">${r.pts}${r.adjustment ? `<small title="${r.adjustment} administrative points adjustment"> (${r.adjustment > 0 ? '+' : ''}${r.adjustment})</small>` : ''}</td><td>${form(r.form)}</td></tr>`,
       )
       .join('') || '<tr><td colspan="10">No teams match your search.</td></tr>'
   );
 }
 function matchRow(m) {
   const state =
-    m.hg !== null
-      ? 'Full time'
-      : interrupted(m)
-        ? m.status[0].toUpperCase() + m.status.slice(1)
-        : m.date && m.date < today()
-          ? 'Result missing'
-          : 'Scheduled';
+    m.status === 'awarded'
+      ? 'Awarded result'
+      : m.status === 'ratified'
+        ? 'Ratified result'
+        : m.hg !== null
+          ? 'Full time'
+          : interrupted(m)
+            ? m.status[0].toUpperCase() + m.status.slice(1)
+            : m.date && m.date < today()
+              ? 'Result missing'
+              : 'Scheduled';
   return /* HTML */ `<div class="match-row">
     <span class="match-date">${day(m.date)}</span><span class="home">${esc(short(m.home))}</span
     ><span class="score">${m.hg !== null ? `${m.hg}–${m.ag}` : 'vs'}</span
-    ><span class="away">${esc(short(m.away))}</span><span class="match-state">${state}</span>
+    ><span class="away">${esc(short(m.away))}</span
+    ><span class="match-state"
+      >${m.result_review ? `<details><summary>${state} · source note</summary><p>${esc(m.result_review.reason)}</p>${m.result_review.sources.map((url, i) => `<a href="${esc(url)}" target="_blank" rel="noopener">Source ${i + 1}</a>`).join(' · ')}</details>` : state}</span
+    >
   </div>`;
 }
 function overview() {
   const done = data.matches.filter((m) => m.hg !== null),
     goals = done.reduce((s, m) => s + m.hg + m.ag, 0),
-    leader = data.table[0];
+    leader = data.quality?.standings?.status === 'matched' ? data.table[0] : null;
   const scored = [...data.table]
     .filter((r) => r.p)
     .sort((a, b) => b.gf / b.p - a.gf / a.p)
@@ -188,14 +192,18 @@ function overview() {
     )[0];
   return /* HTML */ ` ${data.archive_note ? `<div class="notice">${esc(data.archive_note)}</div>` : ''}
     <div class="metrics">
-      ${metric('RECORDED MATCHES', data.completed, `of ${data.matches.length} scheduled fixtures`)}${metric('GOALS PER MATCH', done.length ? (goals / done.length).toFixed(2) : '—', `${goals} goals in recorded results`)}${metric('TABLE LEADER', esc(short(leader?.team || '—')), leader ? `${leader.pts} points · ${leader.p} matches played` : 'No results', true)}${metric('TEAMS IN FOCUS', data.table.length, `${esc(manifest.leagues.find((l) => l.id === leagueId).country)} · ${seasonId.replace('-', '/')}`)}
+      ${metric('RECORDED MATCHES', data.completed, `of ${data.matches.length} scheduled fixtures`)}${metric('GOALS PER MATCH', done.length ? (goals / done.length).toFixed(2) : '—', `${goals} goals in recorded results`)}${metric('TABLE LEADER', esc(short(leader?.team || '—')), leader ? `${leader.pts} points · ${leader.p} matches played` : 'Waiting for standings reconciliation', true)}${metric('TEAMS IN FOCUS', data.table.length, `${esc(manifest.leagues.find((l) => l.id === leagueId).country)} · ${seasonId.replace('-', '/')}`)}
     </div>
     <div class="dashboard-grid">
       <section class="panel">
         <div class="panel-head">
           <div>
-            <h2>League standings</h2>
-            <p>Read the season. Spot the momentum.</p>
+            <h2>
+              ${venue === 'all' && data.quality?.standings?.status === 'matched' ? 'League standings' : 'Results summary'}
+            </h2>
+            <p>
+              ${venue === 'all' && data.quality?.standings?.status === 'matched' ? 'Published points and ranking · ESPN' : venue === 'all' ? 'Match points · competition ranking withheld' : 'Match points · rank within this venue only'}
+            </p>
           </div>
           <div class="segmented" role="group" aria-label="Standings venue">
             ${['all', 'home', 'away'].map((v) => `<button data-venue="${v}" class="${venue === v ? 'selected' : ''}" aria-pressed="${venue === v}">${v === 'all' ? 'Overall' : v[0].toUpperCase() + v.slice(1)}</button>`).join('')}
@@ -242,9 +250,8 @@ function overview() {
           </table>
         </div>
         <p class="table-note">
-          Calculated from recorded results. Points → goal difference → goals scored. League-specific
-          tie-breakers and points deductions are not applied. Form runs oldest to newest. Select a
-          club to compare.
+          ${venue === 'all' && data.quality?.standings?.status === 'matched' ? `Points and rank follow the <a href="${esc(data.quality.standings.source_url)}">ESPN table</a>, including administrative adjustments and provider tie-break ordering. Played, W/D/L and goals reconcile with the recorded results. Checked ${stamp(data.quality.checked_at)}.` : 'These are points earned from recorded results. Administrative deductions are not allocated to home/away splits. A competition ranking is shown only when the full table reconciles with the provider.'}
+          Form runs oldest to newest.
         </p>
       </section>
       <aside class="side-panels">
@@ -365,7 +372,7 @@ function compareView() {
   const cards = [a, b]
     .map(
       (r, i) =>
-        `<section class="panel comparison-team ${i ? 'team-b' : 'team-a'}"><div class="comparison-identity">${badge(r.team)}<div><span class="eyebrow">TEAM ${i ? 'B' : 'A'} · ${venue === 'all' ? 'ALL VENUES' : venue.toUpperCase()}</span><h2>${esc(short(r.team))}</h2></div><span class="comparison-rank" title="Rank within the selected filters">#${table.findIndex((t) => t.team === r.team) + 1}</span></div><div class="comparison-stats"><div><strong>${r.p}</strong><span>Played</span></div><div><strong>${r.pts}</strong><span>Points</span></div><div><strong>${decimal(r.ppg)}</strong><span>Points / match</span></div><div><strong>${r.gd > 0 ? '+' : ''}${r.gd}</strong><span>Goal difference</span></div></div><div class="comparison-form"><span>Recent form</span>${form(r.form)}<small>Oldest → latest</small></div></section>`,
+        `<section class="panel comparison-team ${i ? 'team-b' : 'team-a'}"><div class="comparison-identity">${badge(r.team)}<div><span class="eyebrow">TEAM ${i ? 'B' : 'A'} · ${venue === 'all' ? 'ALL VENUES' : venue.toUpperCase()}</span><h2>${esc(short(r.team))}</h2></div><span class="comparison-rank" title="Rank within the selected filters">#${table.findIndex((t) => t.team === r.team) + 1}</span></div><div class="comparison-stats"><div><strong>${r.p}</strong><span>Played</span></div><div><strong>${r.pts}</strong><span>Match points</span></div><div><strong>${decimal(r.ppg)}</strong><span>Points / match</span></div><div><strong>${r.gd > 0 ? '+' : ''}${r.gd}</strong><span>Goal difference</span></div></div><div class="comparison-form"><span>Recent form</span>${form(r.form)}<small>Oldest → latest</small></div></section>`,
     )
     .join('');
   const measures = [
@@ -380,56 +387,34 @@ function compareView() {
       m.hg !== null &&
       ((m.home === home && m.away === away) || (m.home === away && m.away === home)),
   );
-  return `${selectorToolbar(true)}${home === away ? '<div class="notice">Choose different teams for a meaningful comparison.</div>' : ''}<div class="compare-grid">${cards}</div><section class="panel comparison-panel"><div class="panel-head"><div><p class="eyebrow">TEAM METRICS</p><h2>Performance comparison</h2></div><span class="muted">${windowSize === 'all' ? 'Full season' : 'Last ' + windowSize + ' matches'} · ${venue === 'all' ? 'All venues' : venue + ' only'}</span></div><div class="comparison-legend"><span><i class="dot-a"></i>${esc(short(a.team))}</span><span><i class="dot-b"></i>${esc(short(b.team))}</span><span><i class="average-key"></i>League average</span></div><div class="comparison-chart">${measures.map(([label, fn, options]) => comparisonMetric(label, fn, a, b, table, options)).join('')}</div><p class="table-note">League average is weighted by matches in the same filters. Each row has its own labelled scale. Rates are not adjusted for opponent strength. ${a.p < 5 || b.p < 5 ? '<strong>Small sample: fewer than five matches for at least one team.</strong>' : ''}</p></section><section class="panel"><div class="panel-head"><h2>Head to head</h2><span class="muted">Selected season · all venues</span></div>${h2h.length ? h2h.map(matchRow).join('') : '<div class="h2h-empty"><span aria-hidden="true">↔</span><div><strong>No meeting recorded this season</strong><p>Use the season selector to explore previous encounters.</p></div></div>'}</section>`;
+  return `${selectorToolbar(true)}${home === away ? '<div class="notice">Choose different teams for a meaningful comparison.</div>' : ''}<div class="compare-grid">${cards}</div><section class="panel comparison-panel"><div class="panel-head"><div><p class="eyebrow">TEAM METRICS</p><h2>Performance comparison</h2></div><span class="muted">${windowSize === 'all' ? 'Full season' : 'Last ' + windowSize + ' matches'} · ${venue === 'all' ? 'All venues' : venue + ' only'}</span></div><div class="comparison-legend"><span><i class="dot-a"></i>${esc(short(a.team))}</span><span><i class="dot-b"></i>${esc(short(b.team))}</span><span><i class="average-key"></i>League average</span></div><div class="comparison-chart">${measures.map(([label, fn, options]) => comparisonMetric(label, fn, a, b, table, options)).join('')}</div><p class="table-note">League average is weighted by matches in the same filters. Each row has its own labelled scale. Match points exclude administrative deductions; sample rank is not league position. Rates are not adjusted for opponent strength. ${a.p < 5 || b.p < 5 ? '<strong>Small sample: fewer than five matches for at least one team.</strong>' : ''}</p></section><section class="panel"><div class="panel-head"><h2>Head to head</h2><span class="muted">Selected season · all venues</span></div>${h2h.length ? h2h.map(matchRow).join('') : '<div class="h2h-empty"><span aria-hidden="true">↔</span><div><strong>No meeting recorded this season</strong><p>Use the season selector to explore previous encounters.</p></div></div>'}</section>`;
 }
-function predictionView() {
-  const p = data.predictions.find((p) => p.home === home && p.away === away);
-  return /* HTML */ `${selectorToolbar(true)}
-    <div class="notice">
-      <strong>Experimental scenario, not a scheduled fixture.</strong> This independent Poisson
-      baseline uses goals scored and conceded, with five league-average prior games. It is not
-      shot-based xG. Injuries, lineups, transfers and opponent strength are not modeled. No
-      validated accuracy claim is made for this baseline.
-    </div>
-    ${
-      !p
-        ? empty(
-            home === away
-              ? 'Choose two different teams.'
-              : 'Not enough recorded results: at least 30 league matches and 2 relevant home/away matches per selected team are required.',
-          )
-        : `<section class="panel simulation"><p class="eyebrow">${esc(seasonId.replace('-', '/'))} · GOALS-BASED BASELINE</p><h2>${esc(short(home))} <span class="muted">vs</span> ${esc(short(away))}</h2><div class="probabilities">${[
-            ['Home win', p.p_home],
-            ['Draw', p.p_draw],
-            ['Away win', p.p_away],
-          ]
-            .map(
-              ([l, v]) =>
-                `<div class="probability"><strong>${pct(v)}</strong><span>${l}</span></div>`,
-            )
-            .join(
-              '',
-            )}</div><div class="prob-bar" aria-hidden="true"><span style="width:${100 * p.p_home}%"></span><span style="width:${100 * p.p_draw}%"></span><span style="width:${100 * p.p_away}%"></span></div><p class="muted">Modeled goal rates: <strong>${p.home_goals} – ${p.away_goals}</strong> · Based on ${p.sample} recorded league results</p><h3>Most likely scorelines</h3><div class="scorelines">${p.scorelines.map((s) => `<div class="scoreline"><strong>${s.score}</strong><span>${pct(s.p)}</span></div>`).join('')}</div><p class="muted">Venue samples: ${p.home_sample} home games / ${p.away_sample} away games. Rounded probabilities may differ from 100% by 0.1%.</p></section>`
-    }
-    <section class="panel prose">
-      <div class="panel-body">
-        <h2>How to read the estimate</h2>
-        <p>
-          For each team, scoring and conceding rates are blended with five games at the league
-          average. Home scoring rate × away conceding rate ÷ league home scoring rate gives the home
-          goal rate; the away side is analogous. Independent Poisson distributions produce the
-          scoreline probabilities, normalized over 0–15 goals.
-        </p>
-        <p>
-          All available completed matches in this season inform a hypothetical matchup. This is not
-          a pre-match backtest of a past fixture. Early-season samples and incomplete results
-          increase uncertainty; a precise-looking percentage does not remove it.
-        </p>
-      </div>
-    </section>`;
+function qualityPanel() {
+  const q = data.quality || {},
+    r = q.results || {},
+    t = q.standings || {};
+  const issues = [
+    ...(r.conflicts || []).map((x) => `${x.home} vs ${x.away}: providers disagree`),
+    ...(t.issues || []).map(
+      (x) => `${x.team}: ${x.field} differs (${x.results} results / ${x.provider} provider)`,
+    ),
+  ];
+  return wbPanel(
+    'Verification for this season',
+    `<p><strong>${esc(leagueId)} · ${esc(seasonId)}</strong> · Checked ${stamp(q.checked_at)}</p><div class="metrics">${metric('Scores and dates agree', `${r.matched ?? 0} / ${data.completed}`, 'Compared with Football-Data.co.uk')}${metric('Reviewed differences', r.reviewed?.length || 0, 'Administrative decisions with source evidence')}${metric('Score/date conflicts', r.conflicts?.length || 0, 'Conflicting records block publication')}${metric('Standings', t.status === 'matched' ? 'Reconciled' : 'Withheld', 'Points and rank supplied by ESPN')}</div><p>Agreement between providers is a cross-check, not a guarantee of error-free source data. ${r.status === 'partial' ? `${r.unmatched.length} fixtures have not been matched across both result sources; recent feeds may update at different times.` : ['unavailable', 'unchecked'].includes(r.status) ? 'The second-source check is currently unavailable.' : ''}</p>${
+      issues.length
+        ? `<details open><summary>Records requiring reconciliation</summary><ul>${issues
+            .slice(0, 20)
+            .map((i) => `<li>${esc(i)}</li>`)
+            .join('')}</ul></details>`
+        : ''
+    }${r.reviewed?.length ? `<details><summary>Reviewed administrative results</summary>${r.reviewed.map((x) => `<p>${esc(x.home)} vs ${esc(x.away)}: ${esc(x.review.reason)} ${x.review.sources.map((url, i) => `<a href="${esc(url)}">Source ${i + 1}</a>`).join(' · ')}</p>`).join('')}</details>` : ''}<p>${t.source_url ? `<a href="${esc(t.source_url)}">Standings source</a> · ` : ''}${r.source_url ? `<a href="${esc(r.source_url)}">Result cross-check source</a> · ` : ''}<a href="data/${leagueId}_${seasonId}.json">Download data and verification record</a> · <a href="docs/DATA_QUALITY.html">Verification policy and corrections</a></p>`,
+  );
 }
+
 function coverageView() {
-  return /* HTML */ `<section class="panel">
+  return /* HTML */ `${qualityPanel()}
+    <section class="panel">
       <div class="panel-head">
         <h2>Coverage across the five leagues</h2>
         <span class="pill">${esc(manifest.current_season.replace('-', '/'))}</span>
@@ -463,15 +448,16 @@ function coverageView() {
           <h2>What is in the data</h2>
           <p>
             <strong>Available:</strong> scheduled match dates, teams, full-time results, calculated
-            standings, recent form, home/away splits, goals per match, clean sheets and head-to-head
-            results.
+            standings where reconciled, recent form, home/away splits, goals per match, clean sheets
+            and head-to-head results.
           </p>
           <p>
             <strong>More workspaces:</strong> Players & squads and Match centre provide current ESPN
             lineups, appearance totals, possession and box scores. Event & scouting lab supplies
             historical StatsBomb shots and player profiles. Forecast lab has rolling validation and
-            future scenarios. Current reliable player minutes, shot xG, injuries and continuous
-            tracking are unavailable. Missing values are never filled with invented metrics.
+            a prospective forecast record. Current reliable player minutes, shot xG, injuries and
+            continuous tracking are unavailable. Missing values are never filled with invented
+            metrics.
           </p>
           <p>
             <a href="docs/DATA_DICTIONARY.html">Full data dictionary and coverage ↗</a> ·
@@ -487,7 +473,9 @@ function coverageView() {
           </p>
           <p>
             We check every six hours. If a feed fails, the last verified results remain available.
-            Past fixtures without scores are listed separately. Selected feed:
+            Scores and dates are cross-checked against Football-Data.co.uk; this source can lag
+            recent games. Reviewed administrative decisions retain their evidence. Past fixtures
+            without scores are listed separately. Selected feed:
             <strong>${esc(data.source)}</strong>.
           </p>
           <p>
@@ -502,9 +490,10 @@ function coverageView() {
         <div class="panel-body">
           <h2>What the numbers mean</h2>
           <p>
-            <strong>Standings:</strong> 3 points for a win, 1 for a draw. Sorted by points, goal
-            difference, goals for and team name. Administrative deductions and competition-specific
-            tie-breakers are not included, so these are calculated standings, not an official table.
+            <strong>Standings:</strong> Overall points and ranking use ESPN only after the played,
+            win/draw/loss and goal totals reconcile with the result archive. Deductions are shown
+            beside the total. Unreconciled rankings are withheld. Home/away splits and team
+            comparisons show match points, with awarded outcomes explicitly annotated.
           </p>
           <p>
             <strong>Form:</strong> last five recorded results, oldest on the left. Home/away and
@@ -512,8 +501,9 @@ function coverageView() {
             and displays the sample size.
           </p>
           <p>
-            <strong>Simulator:</strong> a smoothed goals-based Poisson baseline. It is distinct from
-            the research Dixon–Coles model and the historical shot-based xG model.
+            <strong>Forecasts:</strong> experimental probabilities with historical evaluation.
+            Unvalidated season finishing projections and the separate match simulator are not part
+            of the public product. Injuries and confirmed lineups are unavailable.
           </p>
           <p>
             <strong>Historical research:</strong> StatsBomb event data is limited to specific
@@ -571,7 +561,6 @@ function render() {
         overview,
         matches: matchesView,
         compare: compareView,
-        predict: predictionView,
         research: researchView,
         coverage: coverageView,
       }[view]();
@@ -653,11 +642,15 @@ async function loadLeague(push = false) {
     const overdue = data.matches.filter(
       (m) => m.hg === null && !interrupted(m) && m.date && m.date < today(),
     ).length;
-    const oldFetch = Date.now() - Date.parse(data.fetched_at) > 36 * 3600000;
+    const oldFetch =
+      seasonId === manifest.current_season &&
+      Date.now() - Date.parse(data.fetched_at) > 36 * 3600000;
     const warning =
       overdue || oldFetch || data.refresh_ok === false || seasonId !== manifest.current_season;
     $('#data-status').innerHTML =
       `<span class="status-tag ${warning ? '' : 'good'}">${seasonId !== manifest.current_season ? 'HISTORICAL SNAPSHOT' : overdue ? 'PARTIAL RESULTS' : oldFetch ? 'STALE SNAPSHOT' : data.refresh_ok === false ? 'REFRESH FAILED' : 'CURRENT-SEASON SNAPSHOT'}</span> Latest recorded result <strong>${day(data.last_result)}</strong> <span aria-hidden="true">·</span> Fetched ${stamp(data.fetched_at)}${overdue ? ` <span aria-hidden="true">·</span> <strong>${overdue} past fixtures have no recorded result.</strong>` : ''}${data.refresh_ok === false ? ' · Last refresh failed; showing the last successful snapshot.' : ''}${oldFetch ? ' · Fetch is older than 36 hours.' : ''}`;
+    $('#data-status').innerHTML +=
+      `<br><a href="#view=coverage&league=${leagueId}&season=${seasonId}">${data.quality?.standings?.status === 'matched' ? 'Standings reconciled' : 'Competition ranking unavailable'} · ${data.quality?.results?.matched ?? 0}/${data.completed} scores and dates agree with the second provider</a>`;
     $('#export').disabled = false;
     render();
   } catch (error) {
@@ -787,6 +780,10 @@ $('#export').addEventListener('click', () => {
       'away_goals',
       'source',
       'fetched_at',
+      'result_status',
+      'awarded_winner',
+      'source_note',
+      'review_sources',
     ],
     ...data.matches
       .filter((m) => m.hg !== null)
@@ -798,8 +795,12 @@ $('#export').addEventListener('click', () => {
         m.away,
         m.hg,
         m.ag,
-        m.result_source || 'OpenFootball',
+        m.result_review ? 'Reviewed correction' : m.result_source || 'OpenFootball',
         m.result_checked_at || data.fetched_at,
+        m.status || 'finished',
+        m.awarded_winner || '',
+        m.result_review?.reason || '',
+        m.result_review?.sources.join(' | ') || '',
       ]),
   ];
   downloadFile(

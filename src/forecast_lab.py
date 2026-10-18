@@ -8,6 +8,7 @@ corrected historical results, not a vintage data feed; they are not live trials.
 from collections import defaultdict
 from datetime import date, datetime, timezone, timedelta
 import math
+import os
 import numpy as np
 from dashboard_data import (
     LEAGUES,
@@ -15,13 +16,14 @@ from dashboard_data import (
     read_json,
     write_json,
     current_season,
-    normalized_name,
     standings,
     utc_now,
 )
 from workbench_data import OUT
+from club_identity import club_key
+from data_quality import quality_for
 
-MODEL = "venue-poisson-365d-prior8-v1"
+MODEL = "venue-poisson-365d-prior8-v2"
 
 
 def probabilities(lam, mu):
@@ -34,15 +36,19 @@ def probabilities(lam, mu):
 
 def forecast(history, fixture, cutoff):
     start = (date.fromisoformat(cutoff) - timedelta(days=365)).isoformat()
-    train = [m for m in history if start <= m["date"] < cutoff and m["hg"] is not None]
+    train = [
+        m
+        for m in history
+        if start <= m["date"] < cutoff and m["hg"] is not None and not m.get("exclude_from_model")
+    ]
     if len(train) < 50:
         return None
     hg = sum(m["hg"] for m in train) / len(train)
     ag = sum(m["ag"] for m in train) / len(train)
     if hg <= 0 or ag <= 0:
         return None
-    h = [m for m in train if normalized_name(m["home"]) == normalized_name(fixture["home"])]
-    a = [m for m in train if normalized_name(m["away"]) == normalized_name(fixture["away"])]
+    h = [m for m in train if club_key(m["home"]) == club_key(fixture["home"])]
+    a = [m for m in train if club_key(m["away"]) == club_key(fixture["away"])]
     rate = lambda rows, k, mean: (sum(m[k] for m in rows) + 8 * mean) / (len(rows) + 8)
     lam = rate(h, "hg", hg) * rate(a, "hg", hg) / hg
     mu = rate(a, "ag", ag) * rate(h, "ag", ag) / ag
@@ -187,6 +193,81 @@ def season_scenarios(snapshot, history, cutoff):
     }
 
 
+def publication_gate(snapshot, quality, now=None):
+    now = now or datetime.now(timezone.utc)
+    if quality.get("standings", {}).get("status") != "matched":
+        return {
+            "allowed": False,
+            "reason": "The current results and provider standings have not reconciled.",
+        }
+    result = quality.get("results", {})
+    if result.get("status") not in {"matched", "reviewed", "partial"} or any(
+        x["source"] == "local" for x in result.get("unmatched", [])
+    ):
+        return {
+            "allowed": False,
+            "reason": "Result verification is incomplete or contains unresolved discrepancies.",
+        }
+    try:
+        times = [
+            datetime.fromisoformat(snapshot["fetched_at"]),
+            datetime.fromisoformat(quality["checked_at"]),
+        ]
+        if any(not 0 <= (now - t).total_seconds() <= 36 * 3600 for t in times):
+            raise ValueError("Expired data")
+    except (KeyError, ValueError, TypeError):
+        return {
+            "allowed": False,
+            "reason": "A fresh result snapshot and verification record are required.",
+        }
+    return {
+        "allowed": True,
+        "valid_until": (min(times) + timedelta(hours=36)).isoformat(),
+        "reason": "Standings reconciled; no unresolved score conflicts. Second-source coverage may lag recent results.",
+    }
+
+
+def update_forecast_log(previous, upcoming, snapshot, recorded_at):
+    """Freeze the first pre-date forecast; never reconstruct one after the outcome."""
+    import copy
+
+    rows = copy.deepcopy(previous.get("records", []))
+    known = {(r["model"], r["date"], r["home"], r["away"]) for r in rows}
+    for p in upcoming:
+        key = (MODEL, p["date"], p["home"], p["away"])
+        if p["date"] <= recorded_at[:10] or key in known:
+            continue
+        rows.append({**p, "model": MODEL, "recorded_at": recorded_at, "season": snapshot["season"]})
+        known.add(key)
+    matches = {(m["home"], m["away"]): m for m in snapshot["matches"]}
+    for r in rows:
+        m = matches.get((r["home"], r["away"])) if r["season"] == snapshot["season"] else None
+        if m is None:
+            continue
+        r.pop("actual", None)
+        if r["recorded_at"][:10] >= r["date"]:
+            r["status"] = "ineligible"
+        elif m["date"] != r["date"]:
+            r["status"] = "rescheduled"
+        elif m.get("exclude_from_model"):
+            r["status"] = "administrative result"
+        elif m["hg"] is not None:
+            r["status"] = "settled"
+            r["actual"] = 0 if m["hg"] > m["ag"] else 1 if m["hg"] == m["ag"] else 2
+        else:
+            r["status"] = "pending"
+    settled = [r for r in rows if r.get("status") == "settled"]
+    return {"schema_version": 1, "records": rows}, {
+        "recorded": len(rows),
+        "settled": len(settled),
+        "accuracy": (
+            sum(losses(r["probabilities"], r["actual"])["accuracy"] for r in settled) / len(settled)
+            if settled
+            else None
+        ),
+    }
+
+
 def run():
     cutoff = datetime.now(timezone.utc).date().isoformat()
     for league in LEAGUES:
@@ -194,7 +275,9 @@ def run():
         for path in sorted(LIVE.glob(f"dashboard_{league['id']}_*.json")):
             raw = read_json(path)
             history.extend(
-                {**m, "season": raw["season"]} for m in raw["matches"] if m["hg"] is not None
+                {**m, "season": raw["season"]}
+                for m in raw["matches"]
+                if m["hg"] is not None and not m.get("exclude_from_model")
             )
         history.sort(key=lambda m: m["date"])
         records = []
@@ -210,25 +293,39 @@ def run():
                 )
                 records.append(p)
         snapshot = read_json(LIVE / f"dashboard_{league['id']}_{current_season()}.json")
+        quality = quality_for(snapshot)
+        publication = publication_gate(snapshot, quality)
         upcoming = []
         for m in snapshot["matches"]:
             if (
-                m["hg"] is None
+                publication["allowed"]
+                and m["hg"] is None
                 and m.get("date")
                 and cutoff
-                <= m["date"]
+                < m["date"]
                 <= (date.fromisoformat(cutoff) + timedelta(days=14)).isoformat()
                 and m.get("status") not in ("abandoned", "cancelled", "postponed")
             ):
                 p = forecast(history, m, cutoff)
                 if p:
                     upcoming.append(p)
+        built_at = utc_now()
+        log_path = OUT / f"forecast_log_{league['id']}.json"
+        log, prospective = update_forecast_log(
+            read_json(log_path, {}),
+            upcoming if os.environ.get("FOOTLYZER_RECORD_FORECASTS") == "1" else [],
+            snapshot,
+            built_at,
+        )
+        write_json(log_path, log)
         payload = {
             "model": MODEL,
             "league": league["id"],
             "season": current_season(),
             "as_of": cutoff,
-            "built_at": utc_now(),
+            "built_at": built_at,
+            "publication": publication,
+            "prospective": prospective,
             "history_matches": len(history),
             "evaluation": evaluate(records),
             "by_season": {
@@ -236,7 +333,10 @@ def run():
                 for s in sorted({r["season"] for r in records})
             },
             "upcoming": upcoming,
-            "scenarios": season_scenarios(snapshot, history, cutoff),
+            "source_quality": {
+                "checked_at": quality.get("checked_at"),
+                "result_status": quality.get("results", {}).get("status"),
+            },
             "methodology": "365 preceding days; eight league-average prior venue games. Every evaluation date excludes all results on that date and later. Fixed parameters; no optimization on evaluation seasons. Current corrected results, not archived as-known-at-time feeds. No lineup, injury, tracking or market inputs.",
         }
         write_json(OUT / f"forecast_{league['id']}.json", payload)

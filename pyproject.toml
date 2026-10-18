@@ -1,5 +1,5 @@
 [tool.black]
 line-length = 100
 target-version = ['py312']
-include = '(app\.py|src/(dashboard_data|workbench_data|event_workbench|spatial_workbench|forecast_lab|warehouse|build_site|build_docs)\.py|tests/.*\.py)$'
+include = '(app\.py|src/(dashboard_data|workbench_data|event_workbench|spatial_workbench|forecast_lab|warehouse|build_site|build_docs|data_quality|club_identity|result_corrections)\.py|tests/.*\.py)$'
 extend-exclude = '/(site|node_modules|\.venv|\.artifacts)/'

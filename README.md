@@ -50,3 +50,9 @@ For metric definitions and assumptions, read the [data dictionary](docs/DATA_DIC
 ## Feedback
 
 Found a missing result, an unexpected calculation or a display problem? [Open an issue](https://github.com/sabin901/Football-Analyzer-/issues) with the workspace, league, season and steps needed to reproduce it. Include the source or fixture when reporting a data discrepancy.
+
+## Public release quality
+
+Overall league tables preserve reconciled provider ranking and administrative points adjustments. Results are cross-checked against Football-Data.co.uk, with reviewed source corrections and visible coverage. Forecasts are experimental, gated on current reconciled inputs and recorded prospectively before match day. Unvalidated finishing projections and the separate simulator are not published. See [data quality](docs/DATA_QUALITY.md).
+
+To refresh verification, run `python src/data_quality.py` for the current season or add `--all` for the historical archive. Rebuild forecasts and the site afterward.

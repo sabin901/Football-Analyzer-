@@ -271,6 +271,8 @@ def parse_openfootball(payload, season, today=None):
 
 
 def sync(seasons=None, live_dir=LIVE, fetch=None, today=None):
+    from result_corrections import apply_corrections
+
     today = today or datetime.now(timezone.utc).date()
     seasons = seasons or [current_season(today)]
     status_path = live_dir / "dashboard_sync.json"
@@ -306,20 +308,22 @@ def sync(seasons=None, live_dir=LIVE, fetch=None, today=None):
                 supplemented = any(m.get("result_source") == "ESPN" for m in matches)
                 write_json(
                     live_dir / f"dashboard_{key}.json",
-                    {
-                        "league": league["id"],
-                        "season": season,
-                        "source": "OpenFootball + ESPN" if supplemented else "OpenFootball",
-                        "source_url": url,
-                        "license": (
-                            "CC0 schedule; ESPN terms for supplemented results"
-                            if supplemented
-                            else "CC0-1.0"
-                        ),
-                        "fetched_at": fetched,
-                        "matches": matches,
-                        "supplement_errors": supplement_errors,
-                    },
+                    apply_corrections(
+                        {
+                            "league": league["id"],
+                            "season": season,
+                            "source": "OpenFootball + ESPN" if supplemented else "OpenFootball",
+                            "source_url": url,
+                            "license": (
+                                "CC0 schedule; ESPN terms for supplemented results"
+                                if supplemented
+                                else "CC0-1.0"
+                            ),
+                            "fetched_at": fetched,
+                            "matches": matches,
+                            "supplement_errors": supplement_errors,
+                        }
+                    ),
                 )
                 status["leagues"][key] = {"checked_at": fetched, "ok": not supplement_errors}
                 if supplement_errors:
@@ -352,7 +356,12 @@ def standings(matches, venue="all", last=None):
         row = dict(team=team, p=0, w=0, d=0, l=0, gf=0, ga=0, pts=0, cs=0, form=[])
         for m in games:
             gf, ga = (m["hg"], m["ag"]) if m["home"] == team else (m["ag"], m["hg"])
-            result = "W" if gf > ga else "D" if gf == ga else "L"
+            awarded = m.get("awarded_winner")
+            result = (
+                ("W" if awarded == team else "L")
+                if awarded
+                else "W" if gf > ga else "D" if gf == ga else "L"
+            )
             row["p"] += 1
             row[result.lower()] += 1
             row["gf"] += gf
@@ -421,6 +430,8 @@ def baseline_prediction(matches, home, away):
 
 
 def enrich(payload, status=None, today=None):
+    from data_quality import quality_for, apply_standings
+
     today = today or datetime.now(timezone.utc).date()
     matches = payload["matches"]
     done = [m for m in matches if m["hg"] is not None]
@@ -432,9 +443,11 @@ def enrich(payload, status=None, today=None):
         for m in matches
     )
     last = max((m["date"] for m in done), default=None)
+    quality = quality_for(payload)
     return {
         **payload,
-        "table": standings(matches),
+        "table": apply_standings(payload, quality),
+        "quality": quality,
         "last_result": last,
         "completed": len(done),
         "overdue": overdue,

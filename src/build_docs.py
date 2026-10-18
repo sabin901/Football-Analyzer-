@@ -7,6 +7,7 @@ import re
 PUBLIC_DOCS = frozenset(
     {
         "DATA_DICTIONARY.md",
+        "DATA_QUALITY.md",
         "MODEL_CARD.md",
         "SPATIAL_METHOD.md",
         "ASSET_CREDITS.md",
