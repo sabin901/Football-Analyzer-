@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Football analytics across five European leagues with current results, historical player and team heatmaps, scouting profiles and experimental match probabilities."
+      content="Football analytics across five European leagues with published results, historical player and team heatmaps, scouting profiles and experimental match probabilities."
     />
     <link rel="canonical" href="https://sabin901.github.io/Football-Analyzer-/" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Footlyzer | Football Analytics and Player Heatmaps" />
     <meta
       property="og:description"
-      content="Explore five leagues with current results, historical event heatmaps, player profiles and transparent forecasts."
+      content="Explore five leagues with published results, historical event heatmaps, player profiles and transparent forecasts."
     />
     <meta property="og:url" content="https://sabin901.github.io/Football-Analyzer-/" />
     <meta name="twitter:card" content="summary" />
@@ -30,14 +30,23 @@
     <link rel="stylesheet" href="dashboard.css" />
     <link rel="stylesheet" href="workbench.css" />
     <link rel="stylesheet" href="interface.css" />
+    <link rel="stylesheet" href="analyst.css" />
+    <link rel="stylesheet" href="studio.css" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <meta name="referrer" content="no-referrer" />
     <script defer src="ui.js"></script>
     <script defer src="snapshot-store.js"></script>
     <script defer src="league-branding.js"></script>
     <script defer src="icons.js"></script>
     <script defer src="spatial.js"></script>
     <script defer src="workbench.js"></script>
+    <script defer src="scouting-plot.js"></script>
     <script defer src="workbench-views.js"></script>
-    <script defer src="research.js"></script>
+    <script defer src="analyst-core.js"></script>
+    <script defer src="analyst-workspace.js"></script>
     <script defer src="dashboard.js"></script>
   </head>
   <body>
@@ -49,6 +58,9 @@
       >
       <div class="nav-caption">EXPLORE</div>
       <nav aria-label="Analysis views" id="navigation">
+        <button data-view="analyst" class="nav-item">
+          <span data-icon="clipboard-list"></span>Analyst workspace
+        </button>
         <button data-view="overview" class="nav-item active">
           <span data-icon="layout-dashboard"></span>League overview
         </button>
@@ -59,10 +71,10 @@
           <span data-icon="git-compare-arrows"></span>Team comparison
         </button>
         <button data-view="players" class="nav-item">
-          <span data-icon="users"></span>Players & squads
+          <span data-icon="users"></span>Player archive
         </button>
         <button data-view="matchlab" class="nav-item">
-          <span data-icon="clipboard-list"></span>Match centre
+          <span data-icon="clipboard-list"></span>Match archive
         </button>
         <div class="nav-caption nav-section">ANALYSE</div>
         <button data-view="heatmap" class="nav-item">
@@ -126,10 +138,11 @@
         <footer>
           <span>Footlyzer · Evidence before opinion.</span
           ><span
-            >Schedule:
-            <a href="https://github.com/openfootball/football.json">OpenFootball · CC0</a> · Recent
-            results: <a href="https://www.espn.com/soccer/scoreboard">ESPN</a><br />Scheduled
-            snapshots. Source updates may lag.</span
+            >Results: <a href="https://github.com/openfootball/football.json">OpenFootball · CC0</a
+            ><br />Historical events:
+            <a href="https://doi.org/10.6084/m9.figshare.c.4415000"
+              >Pappalardo / Wyscout · CC BY 4.0</a
+            ></span
           >
           <span
             ><a href="docs/MODEL_CARD.html">Forecast method</a> ·

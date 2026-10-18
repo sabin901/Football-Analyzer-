@@ -29,3 +29,19 @@ data/*
 # experimental VAEP outputs (not production-ready)
 data/vaep_*.parquet
 models/vaep_*.json
+
+# Public output is rebuilt from the explicitly licensed allowlist.
+/site/
+/data/live/
+/data/workbench/
+/data/*.parquet
+/models/
+/output/
+!data/open/
+!data/open/**
+
+/test-results/
+/playwright-report/
+
+# Expanded public bundle is disposable; the checksum-pinned archive is tracked.
+/data/open/workbench/

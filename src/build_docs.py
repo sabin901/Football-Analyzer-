@@ -11,6 +11,8 @@ PUBLIC_DOCS = frozenset(
         "MODEL_CARD.md",
         "SPATIAL_METHOD.md",
         "ASSET_CREDITS.md",
+        "PRIVACY.md",
+        "ANALYST_GUIDE.md",
     }
 )
 PUBLIC_FILES = PUBLIC_DOCS | {"LUCIDE_LICENSE.txt"}

@@ -167,7 +167,7 @@ class WorkbenchTests(unittest.TestCase):
 
 class WorkbenchDataTests(unittest.TestCase):
     def test_imported_current_identity_and_coverage(self):
-        for path in (ROOT / "data/workbench").glob("current_*.json"):
+        for path in (ROOT / "data/open/workbench").glob("current_*.json"):
             d = json.loads(path.read_text(encoding="utf8"))
             self.assertEqual(d["coverage"]["squads"], d["coverage"]["expected_teams"])
             self.assertEqual(len({m["id"] for m in d["matches"]}), len(d["matches"]))
@@ -179,7 +179,7 @@ class WorkbenchDataTests(unittest.TestCase):
                 self.assertTrue(all(n <= p["matches"] for n in p["stat_samples"].values()))
 
     def test_backtest_audit_is_before_fixture(self):
-        for path in (ROOT / "data/workbench").glob("backtest_*.json"):
+        for path in (ROOT / "data/open/workbench").glob("backtest_*.json"):
             d = json.loads(path.read_text(encoding="utf8"))
             for r in d["records"]:
                 self.assertLess(r["training_end"], r["date"])
@@ -187,7 +187,7 @@ class WorkbenchDataTests(unittest.TestCase):
                 self.assertAlmostEqual(sum(r["probabilities"]), 1)
 
     def test_event_catalogue_matches_detail_files(self):
-        path = ROOT / "data/workbench/events_manifest.json"
+        path = ROOT / "data/open/workbench/events_manifest.json"
         d = json.loads(path.read_text(encoding="utf8"))
         for s in d["sets"]:
             data = json.loads((path.parent / f"events_{s['key']}.json").read_text(encoding="utf8"))
@@ -196,14 +196,14 @@ class WorkbenchDataTests(unittest.TestCase):
                 self.assertTrue((path.parent / "event_matches" / f"{m['id']}.json").exists())
 
     def test_all_shots_have_valid_probabilities_and_provider_coordinates(self):
-        for path in (ROOT / "data/workbench/event_matches").glob("*.json"):
+        for path in (ROOT / "data/open/workbench/event_matches").glob("*.json"):
             d = json.loads(path.read_text(encoding="utf8"))
             self.assertEqual(len({p["id"] for p in d["players"]}), len(d["players"]))
             for p in d["players"]:
                 self.assertGreaterEqual(p["minutes"], 0)
             for s in d["shots"]:
                 self.assertTrue(-1 <= s["x"] <= 121 and -1 <= s["y"] <= 81)
-                self.assertTrue(0 <= s["xg"] <= 1)
+                self.assertIsNone(s["xg"])
 
 
 if __name__ == "__main__":

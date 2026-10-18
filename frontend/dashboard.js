@@ -39,20 +39,25 @@ let manifest,
   away = '',
   requestId = 0;
 Object.assign(titles, {
+  analyst: [
+    'Analyst workspace',
+    'Build the evidence. Make the decision.',
+    'A private workspace for your match data, local video and decision brief.',
+  ],
   heatmap: [
     'Player & team heatmaps',
     'The game, mapped',
     'Player and team activity maps from real historical event locations.',
   ],
   players: [
-    'Players & squads',
-    'Players & squads',
-    'Explore current squads and imported match appearances across five leagues.',
+    'Player archive',
+    'Player archive',
+    'Explore the 2017/18 research archive. These are historical player records.',
   ],
   matchlab: [
-    'Match centre',
-    'Match centre',
-    'Read the match, inspect the lineups and prepare your opposition questions.',
+    'Match archive',
+    'Match archive',
+    'Inspect historical 2017/18 match events and lineups.',
   ],
   events: [
     'Event & scouting lab',
@@ -132,7 +137,7 @@ function standingsRows() {
   const reconciled = data.quality?.standings?.status === 'matched';
   const all = overall && reconciled ? data.table : filteredTable();
   const rows = all
-    .map((r, i) => ({ ...r, rank: overall && !reconciled ? '—' : r.rank || i + 1 }))
+    .map((r, i) => ({ ...r, rank: r.rank || i + 1 }))
     .filter((r) => r.team.toLowerCase().includes(query.toLowerCase()));
   if (sort === 'attack') rows.sort((a, b) => (b.p ? b.gf / b.p : -1) - (a.p ? a.gf / a.p : -1));
   if (sort === 'defence')
@@ -177,7 +182,7 @@ function matchRow(m) {
 function overview() {
   const done = data.matches.filter((m) => m.hg !== null),
     goals = done.reduce((s, m) => s + m.hg + m.ag, 0),
-    leader = data.quality?.standings?.status === 'matched' ? data.table[0] : null;
+    leader = data.table.find((r) => r.p) || null;
   const scored = [...data.table]
     .filter((r) => r.p)
     .sort((a, b) => b.gf / b.p - a.gf / a.p)
@@ -192,7 +197,7 @@ function overview() {
     )[0];
   return /* HTML */ ` ${data.archive_note ? `<div class="notice">${esc(data.archive_note)}</div>` : ''}
     <div class="metrics">
-      ${metric('RECORDED MATCHES', data.completed, `of ${data.matches.length} scheduled fixtures`)}${metric('GOALS PER MATCH', done.length ? (goals / done.length).toFixed(2) : '—', `${goals} goals in recorded results`)}${metric('TABLE LEADER', esc(short(leader?.team || '—')), leader ? `${leader.pts} points · ${leader.p} matches played` : 'Waiting for standings reconciliation', true)}${metric('TEAMS IN FOCUS', data.table.length, `${esc(manifest.leagues.find((l) => l.id === leagueId).country)} · ${seasonId.replace('-', '/')}`)}
+      ${metric('RECORDED MATCHES', data.completed, `of ${data.matches.length} scheduled fixtures`)}${metric('GOALS PER MATCH', done.length ? (goals / done.length).toFixed(2) : '—', `${goals} goals in recorded results`)}${metric('MOST MATCH POINTS', esc(short(leader?.team || '—')), leader ? `${leader.pts} points · ${leader.p} matches played` : 'No completed matches', true)}${metric('TEAMS IN FOCUS', data.table.length, `${esc(manifest.leagues.find((l) => l.id === leagueId).country)} · ${seasonId.replace('-', '/')}`)}
     </div>
     <div class="dashboard-grid">
       <section class="panel">
@@ -202,7 +207,7 @@ function overview() {
               ${venue === 'all' && data.quality?.standings?.status === 'matched' ? 'League standings' : 'Results summary'}
             </h2>
             <p>
-              ${venue === 'all' && data.quality?.standings?.status === 'matched' ? 'Published points and ranking · ESPN' : venue === 'all' ? 'Match points · competition ranking withheld' : 'Match points · rank within this venue only'}
+              ${venue === 'all' && data.quality?.standings?.status === 'matched' ? 'Provider supplied standings' : venue === 'all' ? 'Computed match points · excludes deductions and official tie-breaks' : 'Match points · rank within this venue only'}
             </p>
           </div>
           <div class="segmented" role="group" aria-label="Standings venue">
@@ -250,7 +255,7 @@ function overview() {
           </table>
         </div>
         <p class="table-note">
-          ${venue === 'all' && data.quality?.standings?.status === 'matched' ? `Points and rank follow the <a href="${esc(data.quality.standings.source_url)}">ESPN table</a>, including administrative adjustments and provider tie-break ordering. Played, W/D/L and goals reconcile with the recorded results. Checked ${stamp(data.quality.checked_at)}.` : 'These are points earned from recorded results. Administrative deductions are not allocated to home/away splits. A competition ranking is shown only when the full table reconciles with the provider.'}
+          ${venue === 'all' && data.quality?.standings?.status === 'matched' ? `Points and rank follow the <a href="${esc(data.quality.standings.source_url)}">provider table</a>, including administrative adjustments and provider tie-break ordering. Played, W/D/L and goals reconcile with the recorded results. Checked ${stamp(data.quality.checked_at)}.` : 'These are points earned from recorded results. Administrative deductions are not allocated to home/away splits. Ranks here order the sample by match points, goal difference and goals for; official competition rankings may differ.'}
           Form runs oldest to newest.
         </p>
       </section>
@@ -391,128 +396,21 @@ function compareView() {
 }
 function qualityPanel() {
   const q = data.quality || {},
-    r = q.results || {},
-    t = q.standings || {};
-  const issues = [
-    ...(r.conflicts || []).map((x) => `${x.home} vs ${x.away}: providers disagree`),
-    ...(t.issues || []).map(
-      (x) => `${x.team}: ${x.field} differs (${x.results} results / ${x.provider} provider)`,
-    ),
-  ];
+    r = q.results || {};
   return wbPanel(
-    'Verification for this season',
-    `<p><strong>${esc(leagueId)} · ${esc(seasonId)}</strong> · Checked ${stamp(q.checked_at)}</p><div class="metrics">${metric('Scores and dates agree', `${r.matched ?? 0} / ${data.completed}`, 'Compared with Football-Data.co.uk')}${metric('Reviewed differences', r.reviewed?.length || 0, 'Administrative decisions with source evidence')}${metric('Score/date conflicts', r.conflicts?.length || 0, 'Conflicting records block publication')}${metric('Standings', t.status === 'matched' ? 'Reconciled' : 'Withheld', 'Points and rank supplied by ESPN')}</div><p>Agreement between providers is a cross-check, not a guarantee of error-free source data. ${r.status === 'partial' ? `${r.unmatched.length} fixtures have not been matched across both result sources; recent feeds may update at different times.` : ['unavailable', 'unchecked'].includes(r.status) ? 'The second-source check is currently unavailable.' : ''}</p>${
-      issues.length
-        ? `<details open><summary>Records requiring reconciliation</summary><ul>${issues
-            .slice(0, 20)
-            .map((i) => `<li>${esc(i)}</li>`)
-            .join('')}</ul></details>`
-        : ''
-    }${r.reviewed?.length ? `<details><summary>Reviewed administrative results</summary>${r.reviewed.map((x) => `<p>${esc(x.home)} vs ${esc(x.away)}: ${esc(x.review.reason)} ${x.review.sources.map((url, i) => `<a href="${esc(url)}">Source ${i + 1}</a>`).join(' · ')}</p>`).join('')}</details>` : ''}<p>${t.source_url ? `<a href="${esc(t.source_url)}">Standings source</a> · ` : ''}${r.source_url ? `<a href="${esc(r.source_url)}">Result cross-check source</a> · ` : ''}<a href="data/${leagueId}_${seasonId}.json">Download data and verification record</a> · <a href="docs/DATA_QUALITY.html">Verification policy and corrections</a></p>`,
+    'Source quality and coverage',
+    `<p><strong>${esc(leagueId)} · ${esc(seasonId)}</strong> · Checked ${stamp(q.checked_at)}</p><div class="metrics">${metric('Recorded results', data.completed, 'OpenFootball community source')}${metric('Missing past results', data.overdue, 'Before today; not assumed to be draws')}${metric('Quarantined rows', data.quarantined?.length || 0, 'Invalid source rows are excluded')}${metric('Independent verification', 'Unavailable', 'Structural checks are not a second provider')}</div><p>${esc(r.note || '')} The table is computed from recorded results. Official deductions, disciplinary outcomes and competition tie-breaks are not independently verified.</p>${data.quarantined?.length ? `<details><summary>Excluded source records</summary><ul>${data.quarantined.map((m) => `<li>${esc(m.date)} · ${esc(m.home)} / ${esc(m.away)}: ${esc(m.reason)}</li>`).join('')}</ul></details>` : ''}<p><a href="${esc(data.source_url)}">Original source</a> · <a href="data/${leagueId}_${seasonId}.json">Download snapshot and quality record</a> · <a href="docs/DATA_QUALITY.html">Quality policy</a></p>`,
   );
 }
-
 function coverageView() {
-  return /* HTML */ `${qualityPanel()}
-    <section class="panel">
-      <div class="panel-head">
-        <h2>Coverage across the five leagues</h2>
-        <span class="pill">${esc(manifest.current_season.replace('-', '/'))}</span>
-      </div>
-      ${manifest.leagues
-        .map((l) => {
-          const s = l.seasons.find((s) => s.id === manifest.current_season);
-          return /* HTML */ `<div class="coverage-card">
-            <div class="coverage-identity">
-              ${leagueLogo(l.id)}
-              <div>
-                <h3>${esc(l.name)}</h3>
-                <p>
-                  ${s ? `${s.completed} recorded results · Latest result ${day(s.last_result)}<br>Fetched ${stamp(s.fetched_at)}` : 'Current season unavailable'}
-                </p>
-              </div>
-            </div>
-            <div>
-              <span class="status-tag ${s && !s.overdue && s.refresh_ok ? 'good' : ''}"
-                >${s ? (s.overdue ? `${s.overdue} past results missing` : s.refresh_ok ? 'Snapshot available' : 'Refresh failed') : 'Unavailable'}</span
-              >
-              <p>${l.seasons.length} seasons available</p>
-            </div>
-          </div>`;
-        })
-        .join('')}
-    </section>
-    <div class="method-grid">
-      <section class="panel prose">
-        <div class="panel-body">
-          <h2>What is in the data</h2>
-          <p>
-            <strong>Available:</strong> scheduled match dates, teams, full-time results, calculated
-            standings where reconciled, recent form, home/away splits, goals per match, clean sheets
-            and head-to-head results.
-          </p>
-          <p>
-            <strong>More workspaces:</strong> Players & squads and Match centre provide current ESPN
-            lineups, appearance totals, possession and box scores. Event & scouting lab supplies
-            historical StatsBomb shots and player profiles. Forecast lab has rolling validation and
-            a prospective forecast record. Current reliable player minutes, shot xG, injuries and
-            continuous tracking are unavailable. Missing values are never filled with invented
-            metrics.
-          </p>
-          <p>
-            <a href="docs/DATA_DICTIONARY.html">Full data dictionary and coverage ↗</a> ·
-            <a href="data/football.sqlite" download>Download the SQL warehouse ↓</a>
-          </p>
-          <h3>Source and update cadence</h3>
-          <p>
-            <a href="https://github.com/openfootball/football.json">OpenFootball / football.json</a>
-            supplies the CC0 schedule and historical results. Recent completed matches are checked
-            against ESPN’s public scoreboard, with explicit team mappings and fixture-date
-            validation. ESPN’s endpoint is unofficial and has no availability guarantee; its results
-            are subject to ESPN’s terms, not the CC0 schedule license.
-          </p>
-          <p>
-            We check every six hours. If a feed fails, the last verified results remain available.
-            Scores and dates are cross-checked against Football-Data.co.uk; this source can lag
-            recent games. Reviewed administrative decisions retain their evidence. Past fixtures
-            without scores are listed separately. Selected feed:
-            <strong>${esc(data.source)}</strong>.
-          </p>
-          <p>
-            <a href="${esc(data.source_url)}">Inspect the schedule source ↗</a> ·
-            <a href="data/${esc(leagueId)}_${esc(seasonId)}.json"
-              >Download data with per-result provenance ↗</a
-            >
-          </p>
-        </div>
-      </section>
-      <section class="panel prose">
-        <div class="panel-body">
-          <h2>What the numbers mean</h2>
-          <p>
-            <strong>Standings:</strong> Overall points and ranking use ESPN only after the played,
-            win/draw/loss and goal totals reconcile with the result archive. Deductions are shown
-            beside the total. Unreconciled rankings are withheld. Home/away splits and team
-            comparisons show match points, with awarded outcomes explicitly annotated.
-          </p>
-          <p>
-            <strong>Form:</strong> last five recorded results, oldest on the left. Home/away and
-            sample filters apply before form is calculated. The comparison view uses per-match rates
-            and displays the sample size.
-          </p>
-          <p>
-            <strong>Forecasts:</strong> experimental probabilities with historical evaluation.
-            Unvalidated season finishing projections and the separate match simulator are not part
-            of the public product. Injuries and confirmed lineups are unavailable.
-          </p>
-          <p>
-            <strong>Historical research:</strong> StatsBomb event data is limited to specific
-            competitions and seasons. A result from that archive is not a current player or team
-            assessment.
-          </p>
-        </div>
-      </section>
-    </div>`;
+  return `${qualityPanel()}<section class="panel"><div class="panel-head"><h2>Current result coverage</h2><span class="pill">${esc(manifest.current_season)}</span></div>${manifest.leagues
+    .map((l) => {
+      const s = l.seasons.find((s) => s.id === manifest.current_season);
+      return `<div class="coverage-card"><div class="coverage-identity">${leagueLogo(l.id)}<div><h3>${esc(l.name)}</h3><p>${s ? `${s.completed} recorded results · Latest ${day(s.last_result)}<br>Fetched ${stamp(s.fetched_at)}` : 'Current season unavailable'}</p></div></div><div><span class="status-tag">${s ? `${s.overdue} past results missing` : 'Unavailable'}</span><p>${l.seasons.length} seasons</p></div></div>`;
+    })
+    .join(
+      '',
+    )}</section><div class="method-grid">${wbPanel('What is available', `<p><strong>Results:</strong> OpenFootball schedules, scores, form and comparisons across five European leagues. A fresh fetch does not mean every recent match has been entered by the community.</p><p><strong>Historical events:</strong> the complete 2017/18 five-league Pappalardo/Wyscout research archive: action locations, shots, pass counts, lineups and estimated regulation minutes. This is not current squad or recruitment data.</p><p><strong>Your analyst workspace:</strong> import permitted events, attach a local video, record evidence and export a decision brief. Your files are not uploaded.</p><p><strong>Unavailable:</strong> current granular events, provider xG, injuries, reliable possession, continuous tracking, independent official standings verification and verified betting odds. These are never substituted with invented values.</p><p><a href="docs/DATA_DICTIONARY.html">Data dictionary</a> · <a href="data/football.sqlite" download>SQL warehouse</a> · <a href="docs/ANALYST_GUIDE.html">Analyst guide</a></p>`)}${wbPanel('Sources, rights and uncertainty', `<p><a href="https://github.com/openfootball/football.json">OpenFootball</a> publishes under CC0. <a href="https://doi.org/10.6084/m9.figshare.c.4415000">Pappalardo and colleagues (2019)</a> publish the Wyscout research dataset under CC BY 4.0. Names and coordinates are normalized; counts and grids are derived. No endorsement is implied.</p><p>Only these allowlisted sources enter the public build. ESPN, Football-Data.co.uk, and the restricted StatsBomb archive are excluded from the public package.</p><p>Results refresh attempts run every six hours. Invalid rows are quarantined; a failed fetch retains the last available snapshot. Forecasts are withheld on incomplete schedules, missing past results, quarantine or stale inputs.</p><p>Historical model comparisons include league frequency, equal probabilities, Elo and a fitted Poisson challenger. The model is experimental, has no demonstrated live edge, and does not include injury or lineup information.</p><p><a href="data/source_registry.json">License registry</a> · <a href="data/wyscout_sources.json">Archive fingerprints</a> · <a href="docs/ASSET_CREDITS.html">Full attribution</a> · <a href="docs/PRIVACY.html">Privacy</a></p>`)}</div>`;
 }
 function render() {
   const [label, title, desc] = titles[view];
@@ -525,7 +423,8 @@ function render() {
     .map((id) => `<option value="${id}" ${id === view ? 'selected' : ''}>${titles[id][0]}</option>`)
     .join('');
   const workbench = WORKBENCH_VIEWS.has(view);
-  const archive = view === 'research';
+  const archive = view === 'analyst';
+  $('.context-bar').hidden = archive;
   $('#league-tabs').hidden = archive;
   $('.context-controls').hidden = archive;
   $('.heading .eyebrow').textContent =
@@ -548,12 +447,21 @@ function render() {
     : workbench
       ? ['events', 'heatmap'].includes(view)
         ? 'Historical event datasets'
-        : 'Current-season workspace'
+        : view === 'forecast'
+          ? 'Experimental forecast evaluation'
+          : 'Historical 2017/18 archive'
       : `${seasonId === manifest?.current_season ? 'Current season' : 'Historical season'}`;
   document.querySelectorAll('#navigation button').forEach((b) => {
     b.classList.toggle('active', b.dataset.view === view);
     b.setAttribute('aria-current', b.dataset.view === view ? 'page' : 'false');
   });
+  if (archive) {
+    content.innerHTML = analystView();
+    decorateIcons(content);
+    content.setAttribute('aria-busy', 'false');
+    analystMount();
+    return;
+  }
   if (!data) return;
   content.innerHTML = workbench
     ? workbenchView(view)
@@ -561,7 +469,7 @@ function render() {
         overview,
         matches: matchesView,
         compare: compareView,
-        research: researchView,
+
         coverage: coverageView,
       }[view]();
   decorateIcons(content);
@@ -650,7 +558,7 @@ async function loadLeague(push = false) {
     $('#data-status').innerHTML =
       `<span class="status-tag ${warning ? '' : 'good'}">${seasonId !== manifest.current_season ? 'HISTORICAL SNAPSHOT' : overdue ? 'PARTIAL RESULTS' : oldFetch ? 'STALE SNAPSHOT' : data.refresh_ok === false ? 'REFRESH FAILED' : 'CURRENT-SEASON SNAPSHOT'}</span> Latest recorded result <strong>${day(data.last_result)}</strong> <span aria-hidden="true">·</span> Fetched ${stamp(data.fetched_at)}${overdue ? ` <span aria-hidden="true">·</span> <strong>${overdue} past fixtures have no recorded result.</strong>` : ''}${data.refresh_ok === false ? ' · Last refresh failed; showing the last successful snapshot.' : ''}${oldFetch ? ' · Fetch is older than 36 hours.' : ''}`;
     $('#data-status').innerHTML +=
-      `<br><a href="#view=coverage&league=${leagueId}&season=${seasonId}">${data.quality?.standings?.status === 'matched' ? 'Standings reconciled' : 'Competition ranking unavailable'} · ${data.quality?.results?.matched ?? 0}/${data.completed} scores and dates agree with the second provider</a>`;
+      `<br><a href="#view=coverage&league=${leagueId}&season=${seasonId}">Computed table · community source · independent verification unavailable${data.quarantined?.length ? ' · ' + data.quarantined.length + ' quarantined rows' : ''}</a>`;
     $('#export').disabled = false;
     render();
   } catch (error) {
@@ -674,6 +582,11 @@ async function start() {
     await loadLeague();
   } catch (error) {
     content.setAttribute('aria-busy', 'false');
+    if (new URLSearchParams(location.hash.slice(1)).get('view') === 'analyst') {
+      view = 'analyst';
+      render();
+      return;
+    }
     $('#data-status').textContent = 'Could not load the league catalogue.';
     content.innerHTML = empty(
       `<p class="error">${esc(error.message)}</p><button class="secondary" data-retry>Try again</button>`,

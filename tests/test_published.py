@@ -10,18 +10,22 @@ sys.path.insert(0, str(SITE.parent / "src"))
 
 
 class PublishedTests(unittest.TestCase):
-    def test_sql_export_preserves_administrative_result_semantics(self):
+    def test_sql_export_contains_only_approved_sources_and_no_invented_xg(self):
         import sqlite3
         from contextlib import closing
 
         with closing(sqlite3.connect(SITE / "data/football.sqlite")) as db:
-            row = db.execute(
-                "SELECT home_goals,away_goals,status,awarded_winner,exclude_from_model,review_json "
-                "FROM results WHERE league='FL1' AND season='2016-17' AND date='2017-04-16' "
-                "AND awarded_winner IS NOT NULL"
-            ).fetchone()
-        self.assertEqual(row[:5], (0, 0, "awarded", "Olympique Lyonnais", 1))
-        self.assertTrue(json.loads(row[5])["sources"])
+            self.assertEqual(
+                db.execute("SELECT DISTINCT source FROM results").fetchall(), [("OpenFootball",)]
+            )
+            self.assertEqual(
+                db.execute("SELECT count(*) FROM shots WHERE xg IS NOT NULL").fetchone()[0], 0
+            )
+            self.assertGreater(db.execute("SELECT count(*) FROM shots").fetchone()[0], 20000)
+            self.assertIn(
+                "CC-BY-4.0",
+                db.execute("SELECT value FROM metadata WHERE key='sources'").fetchone()[0],
+            )
 
     def test_all_five_leagues_and_consistent_snapshots(self):
         manifest = json.loads((SITE / "data/manifest.json").read_text(encoding="utf-8"))
@@ -76,7 +80,8 @@ class PublishedTests(unittest.TestCase):
         for row in sources:
             source = SITE.parent / "frontend/assets/leagues" / row["file"]
             published = SITE / "assets/leagues" / row["file"]
-            self.assertGreater(source.stat().st_size, 1000)
+            self.assertIn("<svg", source.read_text())
+            self.assertNotIn("<script", source.read_text())
             self.assertEqual(source.read_bytes(), published.read_bytes())
 
     def test_public_build_has_no_personal_pages_or_broken_document_links(self):

@@ -1,5 +1,4 @@
 name: Validate, refresh and deploy
-
 on:
   push:
     branches: [main]
@@ -7,85 +6,78 @@ on:
   schedule:
     - cron: '17 */6 * * *'
   workflow_dispatch:
-
 permissions:
   contents: read
-
 concurrency:
   group: football-${{ github.event.pull_request.number || 'production' }}
   cancel-in-progress: false
-
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.13'
           cache: pip
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install backend and test dependencies
-        run: pip install -r requirements.txt -r requirements-dev.txt
-      - name: Install frontend development tools
-        run: npm ci
-      - name: Build bundled snapshots for validation
-        # Publication tests also inspect generated files excluded from Git.
-        run: python src/build_site.py
-      - name: Test data integrity and backend
+          cache: npm
+      - name: Install locked dependencies
         run: |
-          python -m unittest discover -s tests -v
-          node --check frontend/dashboard.js
-          node --check frontend/workbench.js
-          node --check frontend/spatial.js
-          node --check frontend/icons.js
-          npm test
-          npm run format:check
-          python -m black --check .
-      - name: Refresh current season (keep last good snapshots on failure)
+          pip install -r requirements-lock.txt
+          pip check
+          npm ci
+      - name: Restore separately versioned snapshots
+        if: github.event_name != 'pull_request'
+        run: python scripts/snapshot_branch.py restore
+      - name: Refresh permitted community results
         if: github.event_name != 'pull_request'
         id: refresh
         continue-on-error: true
-        run: python src/dashboard_data.py
-      - name: Surface source failure
+        run: python src/open_results.py
+      - name: Surface refresh failure
         if: steps.refresh.outcome == 'failure'
-        run: echo '::warning::Some data sources failed. Existing snapshots are retained and marked in the dashboard.'
-      - name: Restore public API response cache
-        if: github.event_name != 'pull_request'
-        uses: actions/cache@v4
-        with:
-          path: data/api_cache
-          key: football-api-${{ github.run_id }}
-          restore-keys: football-api-
-      - name: Refresh squads and match reports
-        if: github.event_name != 'pull_request'
-        continue-on-error: true
-        run: python src/workbench_data.py
-      - name: Reconcile standings and cross-check current results
-        if: github.event_name != 'pull_request'
-        run: python src/data_quality.py
-      - name: Rebuild auditable forecasts
+        run: echo '::warning::Result source unavailable. Last snapshots are retained with visible freshness warnings.'
+      - name: Rebuild models using earlier data only
         env:
           FOOTLYZER_RECORD_FORECASTS: ${{ github.event_name != 'pull_request' && '1' || '0' }}
+          OPENBLAS_NUM_THREADS: '1'
+          OMP_NUM_THREADS: '1'
         run: python src/forecast_lab.py
-      - name: Build the shared dashboard
+      - name: Package explicitly licensed data
         run: python src/build_site.py
-      - name: Verify published data contracts
-        run: python -m unittest discover -s tests -v
-      - name: Save refreshed snapshots
+      - name: Validate data, import safety and public contracts
+        run: |
+          python -m unittest discover -s tests -v
+          npm test
+          npm run format:check
+          python -m black --check .
+          for file in frontend/*.js; do node --check "$file"; done
+      - name: Browser journeys
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:browser
+      - name: Save browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-evidence
+          path: test-results/
+          retention-days: 7
+      - name: Version refreshed data separately from code
         if: github.event_name != 'pull_request'
         run: |
-          git config user.name 'Sabin_Raut'
-          git config user.email '84139464+sabin901@users.noreply.github.com'
-          git add data/live data/workbench site
-          if ! git diff --cached --quiet; then
-            git commit -m 'chore: update league snapshots [skip ci]'
-            git push
-          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          python scripts/snapshot_branch.py save
+      - name: Stamp data revision into final package
+        if: github.event_name != 'pull_request'
+        run: python src/build_site.py
       - name: Upload Pages artifact
         if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3

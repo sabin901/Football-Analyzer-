@@ -177,7 +177,7 @@ def supplement_results(matches, league, season, previous=None, fetch=fetch_json,
 
 
 ROOT = Path(__file__).resolve().parents[1]
-LIVE = ROOT / "data" / "live"
+LIVE = ROOT / "data" / "open" / "results"
 LEAGUES = [
     {"id": "PL", "name": "Premier League", "country": "England", "file": "en.1", "teams": 20},
     {"id": "PD", "name": "La Liga", "country": "Spain", "file": "es.1", "teams": 20},
@@ -467,11 +467,8 @@ def snapshot(league, season, live_dir=LIVE):
 
 
 if __name__ == "__main__":
+    from open_results import sync as sync_open
+
     parser = argparse.ArgumentParser()
-    parser.add_argument("--seasons", nargs="+")
-    args = parser.parse_args()
-    failed = sync(args.seasons)
-    if failed:
-        raise SystemExit(
-            f"Refresh incomplete for {', '.join(failed)}; last good snapshots retained"
-        )
+    parser.add_argument("--archive", action="store_true")
+    raise SystemExit(bool(sync_open(parser.parse_args().archive)))

@@ -1,45 +1,38 @@
 # Forecast model card
 
-Version: `venue-poisson-365d-prior8-v2`. Research model, not betting advice or an elite-club performance system.
+## Intended use
 
-## Question and inputs
+Experimental football outcome probabilities for learning and analysis. No reliable live prediction edge, betting profitability or club decision benefit has been demonstrated. Forecasts exclude injuries, lineups, player quality, tracking, weather and market odds.
 
-Estimate home win, draw and away win probabilities for a league fixture using recorded goals in the preceding 365 days. Home and away scoring/conceding rates are smoothed with eight pseudo-matches at that training window's league mean. The product of the attacking and conceding rates, divided by the corresponding league mean, defines each team's Poisson goal rate. A 0–19 score grid is normalized to obtain outcome probabilities. No shot-based xG enters this model.
+## Primary model
 
-An unseen/promoted team receives the league-mean prior for an unobserved venue. Club identities use reviewed explicit equivalences; unknown names are never fuzzy-matched. Minimum league training sample: 50 matches. Parameters are fixed, not selected by optimizing the displayed evaluation results.
+The venue Poisson model uses results from the preceding 365 days, strictly before each prediction date. Eight league-average pseudo-matches shrink each venue rate. Home and away goal counts are independently Poisson distributed. The score grid includes 0–19 goals and is normalized. Promoted teams with little history receive strong prior influence; team sample sizes and prior weights are exposed.
 
-## Validation protocol
+The public model version is venue-poisson-365d-prior8-open-v3. The version change marks the move to exclusively CC0 result inputs. Old restricted-source forecast logs are not represented as evidence for this model.
 
-- Evaluation fixtures start on 1 July 2024. Each fixture uses only training dates strictly before its date, within 365 days. All matches on the test date are excluded, even earlier kickoffs.
-- The same fixtures and training windows are used for the rolling empirical home/draw/away frequency baseline (Laplace smoothing), and an equal-probability baseline.
-- Report multiclass log loss, summed multiclass Brier score (0–2), and normalized ranked probability score (home/draw/away order). Lower is better. Accuracy is retained in JSON but is secondary to proper probability scores; uniform ties select home deterministically.
-- Calibration pools the three outcome probabilities in ten bins. It is a diagnostic, not an independently fitted calibration model.
-- A seeded 1,000-replicate bootstrap resamples date blocks for the model-minus-frequency log-loss difference. Dependence across dates/seasons remains; intervals are descriptive, not proof of future superiority.
-- Evaluation by season and every forecast's training bounds, sample counts and probabilities are downloadable. Source files are corrected snapshots available at import time. This is a reconstructed backtest, **not a vintage-feed replay or prospective test**.
+## Fixed challengers
 
-## Future outputs
+- League frequency: smoothed home/draw/away frequencies from the same 365-day training sample.
+- Equal probabilities: one third per outcome. Tied classification scores use fractional credit, not an arbitrary home-win tie-break.
+- Elo / Davidson: initial rating 1500, K=20, home advantage 70, draw parameter 0.7. Results on the same calendar date update ratings simultaneously; all prediction-date results are excluded.
+- Fitted attack/defence Poisson: a 730-day training window, exponential half-life 180 days, ridge penalty 2 on team parameters, monthly fits using dates strictly before month start. Unknown teams use zero team effect. Fitting failure stops the build rather than substituting a successful-looking estimate.
 
-Upcoming fixtures within 14 days use a single exclusive cutoff date. Only dates after today are displayed: kickoff times are not reliable enough for same-day publication. Inputs must pass the data-quality gate and be no older than 36 hours. Fixtures with fewer than five relevant venue observations carry a limited-sample label. The eight-game prior contribution is shown explicitly; it describes data volume, not calibrated confidence.
+Parameters are fixed in code before reporting this comparison. They are not optimized against the reported evaluation seasons. A challenger is not automatically promoted when it wins a retrospective comparison. No licensed odds benchmark is available in this free release; outperforming simple baselines is not outperforming betting markets or commercial systems.
 
-The separate simulator and season finishing-position projections are withheld from the public product. They remain research functions without a validated public accuracy claim.
+## Evaluation
 
-The first forecast for each fixture date/model is retained in a timestamped record before the fixture date. Later runs cannot overwrite its probabilities. Outcomes are attached separately; date changes and administrative decisions are excluded from scoring. No historical forecasts are backfilled into this record. Prospective sample size and accuracy are shown separately from reconstructed backtests.
+Rolling-origin evaluations start in July 2024. Each match excludes all same-day and future results. All available model probabilities are evaluated on the same fixtures. Downloadable rows include dates, training cutoffs and the fitted challenger's training end.
 
-Version 2 adds explicit cross-provider club equivalences and excludes awarded/ratified abandoned games from training and evaluation. Reviewed source corrections are included. These repairs do not establish future predictive superiority.
+Log loss, three-outcome Brier score (range 0–2) and ranked probability score (outcome order home, draw, away) are reported. Lower is better. Pooled and outcome-specific calibration show predicted and observed frequencies. Season and limited-sample cohorts are available in JSON.
 
-## Known weaknesses
+Model-minus-comparator log-loss differences have descriptive 95% intervals from 1,000 date-block bootstrap replicates, seed 901. Within-date dependence is preserved. Intervals are not adjusted for trying multiple comparisons, do not represent all sources of uncertainty and do not establish future superiority.
 
-No lineups, injuries, transfers, fatigue, travel, managerial changes, market prices, opponent-strength adjustment, continuous tracking, event quality, correlated score correction or changing team strengths. Early-season and promoted-team priors can be badly wrong. Missing source results and team-name changes affect training. Historical provider corrections may improve data relative to what was known before kickoff. Schedule dates may move; fixture kickoff times are not guaranteed.
+Backtests use corrected community results available now. Historical source delays and corrections cannot be reconstructed; this is not an as-known-at-the-time dataset.
 
-## Reproduce
+## Prospective record
 
-```bash
-python src/import_open_history.py   # one-time CC0 backfill, cached
-python src/dashboard_data.py       # refresh current schedules/results
-python src/data_quality.py         # reconcile current standings and cross-check results
-python src/forecast_lab.py         # build evaluations and future outputs
-python src/build_site.py
-python -m unittest discover -s tests -v
-```
+The first forecast for a model, fixture and date is frozen before the fixture date. Rescheduled and administrative results are excluded from settlement. Settled results receive accuracy, log loss, Brier and RPS. With no settled sample, scores remain null. A new source/model version starts its own record. Publishing timestamps alone are not independent third-party certification.
 
-Inspect `data/workbench/backtest_<league>.json`, `forecast_<league>.json` and the league-season source snapshots in `data/live/`. Raw ESPN response caches are local and excluded from Git. See DATA_DICTIONARY.md for the data boundaries.
+## Publication conditions
+
+A complete schedule, no missing past results, no quarantined rows, a matching quality digest and fresh inputs are required. The current open source may fail these checks; withheld forecasts are intentional. See the [quality policy](DATA_QUALITY.html). Official standings and league disciplinary decisions are not independently verified.

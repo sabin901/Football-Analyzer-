@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "sha256": "b9eff734f41233087d06c917cc83b89e4fa71f56125d0461372e56c69f468b9b",
+  "files": 3685,
+  "uncompressed_bytes": 89700853,
+  "note": "Derived from approved sources. Per-file provenance and source fingerprints are inside the bundle. Reproduce with open_events.py and forecast_lab.py; then bundle_data.py pack."
+}

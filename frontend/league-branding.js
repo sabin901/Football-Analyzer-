@@ -1,11 +1,11 @@
 'use strict';
 // Local assets keep the league selector usable when an external image host is down.
 const leagueBrands = {
-  PL: { file: 'PL.png', country: 'EN' },
-  PD: { file: 'PD.png', country: 'ES' },
-  SA: { file: 'SA.png', country: 'IT' },
-  BL1: { file: 'BL1.png', country: 'DE' },
-  FL1: { file: 'FL1.png', country: 'FR' },
+  PL: { file: 'PL.svg', country: 'EN' },
+  PD: { file: 'PD.svg', country: 'ES' },
+  SA: { file: 'SA.svg', country: 'IT' },
+  BL1: { file: 'BL1.svg', country: 'DE' },
+  FL1: { file: 'FL1.svg', country: 'FR' },
 };
 
 function leagueLogo(id) {

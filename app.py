@@ -47,12 +47,12 @@ def workbench_file(kind, key):
         "current": r"(PL|PD|SA|BL1|FL1)",
         "forecast": r"(PL|PD|SA|BL1|FL1)",
         "events": r"\d{1,5}_\d{1,5}",
-        "spatial": r"(\d{1,5}_\d{1,5}|manifest)",
+        "spatial": r"((?:PL|PD|SA|BL1|FL1)_20\d{2}_\d{2}|manifest)",
         "backtest": r"(PL|PD|SA|BL1|FL1)",
     }
     if kind not in patterns or not re.fullmatch(patterns[kind], key):
         raise HTTPException(400, "Invalid workbench dataset")
-    path = Path(HERE) / "data" / "workbench" / f"{kind}_{key}.json"
+    path = Path(HERE) / "data" / "open" / "workbench" / f"{kind}_{key}.json"
     if not path.exists():
         raise HTTPException(404, "Dataset has not been imported")
     return dashboard_data.read_json(path)
@@ -60,7 +60,7 @@ def workbench_file(kind, key):
 
 @app.get("/api/workbench/catalogue")
 def workbench_catalogue():
-    path = Path(HERE) / "data/workbench/catalogue.json"
+    path = Path(HERE) / "data/open/workbench/catalogue.json"
     if not path.exists():
         raise HTTPException(404, "Build the workbench first")
     return dashboard_data.read_json(path)
@@ -98,7 +98,7 @@ def workbench_players(
 def workbench_event_match(match_id: int):
     if not 0 < match_id < 10**10:
         raise HTTPException(400, "Invalid match ID")
-    path = Path(HERE) / "data/workbench/event_matches" / f"{match_id}.json"
+    path = Path(HERE) / "data/open/workbench/event_matches" / f"{match_id}.json"
     if not path.exists():
         raise HTTPException(404, "Event match not imported")
     return dashboard_data.read_json(path)
@@ -109,7 +109,7 @@ def workbench_dataset(kind: str, key: str):
     if kind == "spatial-match":
         if not key.isascii() or not key.isdigit() or len(key) > 10 or not 0 < int(key) < 10**10:
             raise HTTPException(400, "Invalid spatial match ID")
-        path = Path(HERE) / "data/workbench/spatial_matches" / f"{int(key)}.json"
+        path = Path(HERE) / "data/open/workbench/spatial_matches" / f"{int(key)}.json"
         if not path.exists():
             raise HTTPException(404, "Spatial match not imported")
         return dashboard_data.read_json(path)
