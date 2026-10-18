@@ -14,7 +14,7 @@ Use it in your browser on desktop or mobile. No installation, account or API key
 - **Teams and players:** team comparisons, current squads, imported appearances, available lineups and match statistics.
 - **Match analysis:** opposition briefings, historical shot maps, expected goals charts and player profiles.
 - **Heatmaps:** historical player and team action locations, with match, period and action filters and a shared comparison scale.
-- **Forecasts:** experimental match probabilities and season scenarios, alongside historical evaluation and baseline comparisons.
+- **Forecasts:** experimental match probabilities with historical evaluation, baseline comparisons and a prospective prediction record.
 - **Exports:** tables, heatmaps, reports and prediction records for your own analysis.
 
 ## Get started
