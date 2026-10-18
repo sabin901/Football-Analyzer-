@@ -1152,3 +1152,247 @@ footer a {
 .heat-source {
   border-color: #2e435a;
 }
+
+/* Touchline identity: original Footlyzer mark, pitch geometry and match-programme type.
+   Decoration is separate from analytical marks and never encodes a statistic. */
+:root {
+  --radius: 8px;
+  --sport-coral: #f17e64;
+  --sport-chalk: #f5f1e6;
+}
+body {
+  background: radial-gradient(ellipse at 85% 0, #1c302e 0, transparent 48%), #101819;
+}
+.sidebar {
+  background: #111c1c;
+  border-right-color: #33413f;
+}
+.brand {
+  font-style: italic;
+  font-weight: 850;
+  letter-spacing: -1.4px;
+}
+.brand .mark {
+  width: 46px;
+  height: 46px;
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
+  flex: 0 0 46px;
+}
+.brand .mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.brand-sub {
+  color: #bdc7bb;
+  font-style: normal;
+  letter-spacing: 2px;
+  font-size: 8px;
+}
+.topbar {
+  background: #101a19f2;
+  border-color: #33413f;
+}
+.nav-item {
+  border-radius: 3px;
+}
+.nav-item.active {
+  background: #263b36;
+  border-color: #4b6359;
+  box-shadow: inset 3px 0 var(--sport-coral);
+  color: var(--sport-chalk);
+}
+.nav-caption {
+  color: #a1b2a9;
+}
+.heading {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 180px;
+  padding: 26px 24px 28px;
+  margin-bottom: 24px;
+  border-top: 2px solid var(--sport-chalk);
+  border-bottom: 1px solid #495a51;
+  background: linear-gradient(110deg, #21362f, #152423);
+  align-items: center;
+}
+.heading::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 24px;
+  width: 5px;
+  height: 35px;
+  background: var(--sport-coral);
+}
+.heading > div,
+.heading > button {
+  position: relative;
+  z-index: 1;
+}
+.heading h1 {
+  font-family: 'Avenir Next Condensed', 'Arial Narrow', Impact, sans-serif;
+  font-stretch: condensed;
+  text-transform: uppercase;
+  font-weight: 850;
+  font-style: italic;
+  letter-spacing: -1px;
+  font-size: clamp(34px, 3.6vw, 52px);
+  line-height: 1;
+  color: var(--sport-chalk);
+  max-width: 810px;
+}
+.heading .eyebrow {
+  color: #f3a48f;
+  letter-spacing: 2.4px;
+}
+.heading p:not(.eyebrow) {
+  color: #becfc4;
+  max-width: 610px;
+}
+.touchline-art {
+  position: absolute;
+  z-index: 0;
+  right: -25px;
+  top: 0;
+  width: 320px;
+  height: 100%;
+  fill: none;
+  stroke: #85b5a5;
+  stroke-width: 1;
+  opacity: 0.17;
+  pointer-events: none;
+}
+.touchline-art .touchline-run {
+  stroke: var(--sport-coral);
+  stroke-width: 3;
+  stroke-dasharray: 6 6;
+}
+.touchline-art .touchline-ball {
+  fill: var(--sport-chalk);
+  stroke: none;
+}
+.touchline-art .touchline-arrow {
+  stroke: var(--sport-coral);
+  stroke-width: 3;
+}
+.league-tab {
+  border-radius: 4px;
+  background: #192524;
+  border-color: #34453f;
+}
+.league-tab.active {
+  background: #2a4037;
+  border-color: #92b7a2;
+  box-shadow: inset 0 -3px var(--sport-coral);
+  color: var(--sport-chalk);
+}
+.panel,
+.metric {
+  background: #192526;
+  border-color: #344441;
+  box-shadow: none;
+}
+.panel-head {
+  background: #1c2b29;
+  border-color: #394c44;
+}
+.panel-head h2 {
+  color: var(--sport-chalk);
+  font-weight: 750;
+}
+.metric {
+  border-top: 3px solid #a0c9b5;
+}
+.metric:nth-child(3) {
+  border-top-color: var(--sport-coral);
+}
+.metric::after {
+  display: none;
+}
+.metric-value,
+.comparison-team-stats strong,
+.scoreboard > strong {
+  font-variant-numeric: tabular-nums;
+  font-family: 'Avenir Next Condensed', 'Arial Narrow', Impact, sans-serif;
+  font-weight: 800;
+}
+.metric-value {
+  letter-spacing: -0.5px;
+}
+.editorial {
+  background: #273c33;
+  border: 1px solid #5a7865;
+  border-top: 4px solid var(--sport-coral);
+  border-radius: 2px 2px 18px 2px;
+}
+.editorial .eyebrow {
+  color: #f4af98;
+}
+.editorial h2 {
+  color: var(--sport-chalk);
+  font-style: italic;
+}
+.editorial button {
+  background: var(--sport-chalk);
+  color: #172b22;
+  border-radius: 3px;
+}
+.comparison-team,
+.forecast-fixture {
+  border-radius: 6px;
+}
+.comparison-team h2 {
+  font-family: 'Avenir Next Condensed', 'Arial Narrow', Impact, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: -0.4px;
+}
+.scoreboard > strong {
+  color: var(--sport-chalk);
+}
+@media (max-width: 1000px) {
+  .heading {
+    min-height: 160px;
+    padding: 24px 20px;
+  }
+  .heading h1 {
+    font-size: 38px;
+  }
+}
+@media (max-width: 600px) {
+  .heading {
+    padding: 22px 16px;
+  }
+  .heading h1 {
+    font-size: 34px;
+    letter-spacing: -0.5px;
+  }
+  .touchline-art {
+    right: -100px;
+    opacity: 0.1;
+  }
+  .brand {
+    font-size: 25px;
+  }
+}
+@media print {
+  .touchline-art {
+    display: none;
+  }
+  .heading,
+  .panel,
+  .metric,
+  .panel-head {
+    background: white;
+    color: #111;
+  }
+  .heading h1,
+  .heading p,
+  .heading .eyebrow,
+  .panel-head h2 {
+    color: #111;
+  }
+}
