@@ -15,6 +15,7 @@ def build():
     db.executescript("""
       CREATE TABLE results (league TEXT, season TEXT, date TEXT, home TEXT, away TEXT,
         home_goals INTEGER, away_goals INTEGER, source TEXT, fetched_at TEXT,
+        status TEXT, awarded_winner TEXT, exclude_from_model INTEGER, review_json TEXT,
         PRIMARY KEY(league,season,home,away));
       CREATE INDEX results_date ON results(league,date);
       CREATE TABLE player_appearances (league TEXT, season TEXT, match_id TEXT, player_id TEXT,
@@ -34,7 +35,7 @@ def build():
         if "matches" not in raw:
             continue
         db.executemany(
-            "INSERT INTO results VALUES (?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO results VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
             [
                 (
                     raw["league"],
@@ -46,6 +47,10 @@ def build():
                     m["ag"],
                     m.get("result_source", "OpenFootball"),
                     raw["fetched_at"],
+                    m.get("status"),
+                    m.get("awarded_winner"),
+                    int(bool(m.get("exclude_from_model"))),
+                    json.dumps(m["result_review"]) if m.get("result_review") else None,
                 )
                 for m in raw["matches"]
             ],

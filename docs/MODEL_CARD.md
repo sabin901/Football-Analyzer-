@@ -1,12 +1,12 @@
 # Forecast model card
 
-Version: `venue-poisson-365d-prior8-v1`. Research model, not betting advice or an elite-club performance system.
+Version: `venue-poisson-365d-prior8-v2`. Research model, not betting advice or an elite-club performance system.
 
 ## Question and inputs
 
 Estimate home win, draw and away win probabilities for a league fixture using recorded goals in the preceding 365 days. Home and away scoring/conceding rates are smoothed with eight pseudo-matches at that training window's league mean. The product of the attacking and conceding rates, divided by the corresponding league mean, defines each team's Poisson goal rate. A 0–19 score grid is normalized to obtain outcome probabilities. No shot-based xG enters this model.
 
-An unseen/promoted team receives the league-mean prior for an unobserved venue. Team strings are conservatively normalized; unresolved naming changes can reduce team samples and are not silently fuzzy-matched. Minimum league training sample: 50 matches. Parameters are fixed, not selected by optimizing the displayed evaluation results.
+An unseen/promoted team receives the league-mean prior for an unobserved venue. Club identities use reviewed explicit equivalences; unknown names are never fuzzy-matched. Minimum league training sample: 50 matches. Parameters are fixed, not selected by optimizing the displayed evaluation results.
 
 ## Validation protocol
 
@@ -19,9 +19,13 @@ An unseen/promoted team receives the league-mean prior for an unobserved venue. 
 
 ## Future outputs
 
-Upcoming fixtures within 14 days use a single explicit exclusive cutoff date. The season simulation uses 2,000 seeded runs, fixed current strengths and independent Poisson scores for remaining dated fixtures. It sorts by points, goal difference and goals scored, then deterministic team order. Administrative deductions, league-specific head-to-head rules and sporting decisions are omitted. Top-four rank is not synonymous with Champions League qualification. If any unresolved fixture is omitted, finishing-position probabilities are withheld and the remaining points are labelled as a partial scenario. Fixtures with fewer than five home or away venue observations carry a limited-sample label; the eight-game prior weight is shown explicitly. These sample labels describe data volume, not calibrated confidence.
+Upcoming fixtures within 14 days use a single exclusive cutoff date. Only dates after today are displayed: kickoff times are not reliable enough for same-day publication. Inputs must pass the data-quality gate and be no older than 36 hours. Fixtures with fewer than five relevant venue observations carry a limited-sample label. The eight-game prior contribution is shown explicitly; it describes data volume, not calibrated confidence.
 
-The 10th–90th points range expresses simulation variability, not total real-world uncertainty. Long-horizon projections have not been independently validated.
+The separate simulator and season finishing-position projections are withheld from the public product. They remain research functions without a validated public accuracy claim.
+
+The first forecast for each fixture date/model is retained in a timestamped record before the fixture date. Later runs cannot overwrite its probabilities. Outcomes are attached separately; date changes and administrative decisions are excluded from scoring. No historical forecasts are backfilled into this record. Prospective sample size and accuracy are shown separately from reconstructed backtests.
+
+Version 2 adds explicit cross-provider club equivalences and excludes awarded/ratified abandoned games from training and evaluation. Reviewed source corrections are included. These repairs do not establish future predictive superiority.
 
 ## Known weaknesses
 
@@ -32,6 +36,7 @@ No lineups, injuries, transfers, fatigue, travel, managerial changes, market pri
 ```bash
 python src/import_open_history.py   # one-time CC0 backfill, cached
 python src/dashboard_data.py       # refresh current schedules/results
+python src/data_quality.py         # reconcile current standings and cross-check results
 python src/forecast_lab.py         # build evaluations and future outputs
 python src/build_site.py
 python -m unittest discover -s tests -v

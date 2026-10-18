@@ -68,14 +68,7 @@ def build():
         for path in sorted(data.LIVE.glob(f"dashboard_{league['id']}_*.json"), reverse=True):
             raw = data.read_json(path)
             snapshot = data.snapshot(league["id"], raw["season"])
-            teams = [r["team"] for r in snapshot["table"]]
-            snapshot["predictions"] = [
-                p
-                for h in teams
-                for a in teams
-                if h != a
-                if (p := data.baseline_prediction(snapshot["matches"], h, a))
-            ]
+            snapshot["predictions"] = []  # Unvalidated simulator is not published.
             file = f"data/{league['id']}_{raw['season']}.json"
             data.write_json(site / file, snapshot)
             seasons.append(

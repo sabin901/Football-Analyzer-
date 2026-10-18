@@ -65,7 +65,12 @@ jobs:
         if: github.event_name != 'pull_request'
         continue-on-error: true
         run: python src/workbench_data.py
+      - name: Reconcile standings and cross-check current results
+        if: github.event_name != 'pull_request'
+        run: python src/data_quality.py
       - name: Rebuild auditable forecasts
+        env:
+          FOOTLYZER_RECORD_FORECASTS: ${{ github.event_name != 'pull_request' && '1' || '0' }}
         run: python src/forecast_lab.py
       - name: Build the shared dashboard
         run: python src/build_site.py

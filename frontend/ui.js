@@ -29,6 +29,11 @@ const stamp = (value) =>
     : 'Not fetched';
 const pct = (v) => `${(100 * v).toFixed(1)}%`;
 const decimal = (v) => (v == null ? '—' : Number(v).toFixed(2));
+function matchOutcome(match, team) {
+  if (match.awarded_winner) return match.awarded_winner === team ? 'W' : 'L';
+  const [gf, ga] = match.home === team ? [match.hg, match.ag] : [match.ag, match.hg];
+  return gf > ga ? 'W' : gf === ga ? 'D' : 'L';
+}
 const wbFold = (s) =>
   String(s)
     .normalize('NFD')

@@ -3,11 +3,26 @@ import json
 import re
 import hashlib
 import unittest
+import sys
 
 SITE = Path(__file__).resolve().parents[1] / "site"
+sys.path.insert(0, str(SITE.parent / "src"))
 
 
 class PublishedTests(unittest.TestCase):
+    def test_sql_export_preserves_administrative_result_semantics(self):
+        import sqlite3
+        from contextlib import closing
+
+        with closing(sqlite3.connect(SITE / "data/football.sqlite")) as db:
+            row = db.execute(
+                "SELECT home_goals,away_goals,status,awarded_winner,exclude_from_model,review_json "
+                "FROM results WHERE league='FL1' AND season='2016-17' AND date='2017-04-16' "
+                "AND awarded_winner IS NOT NULL"
+            ).fetchone()
+        self.assertEqual(row[:5], (0, 0, "awarded", "Olympique Lyonnais", 1))
+        self.assertTrue(json.loads(row[5])["sources"])
+
     def test_all_five_leagues_and_consistent_snapshots(self):
         manifest = json.loads((SITE / "data/manifest.json").read_text(encoding="utf-8"))
         self.assertEqual({l["id"] for l in manifest["leagues"]}, {"PL", "PD", "SA", "BL1", "FL1"})
@@ -86,3 +101,32 @@ class PublishedTests(unittest.TestCase):
             self.assertFalse(any(word in text for word in forbidden), path.name)
             for name in re.findall(r"(?<![\w/])docs/([A-Z_]+\.html)", text):
                 self.assertTrue((SITE / "docs" / name).is_file(), f"{path.name}: {name}")
+
+    def test_every_published_season_has_matching_verification_and_no_unresolved_conflicts(self):
+        from data_quality import results_digest
+
+        manifest = json.loads((SITE / "data/manifest.json").read_text())
+        for league in manifest["leagues"]:
+            for season in league["seasons"]:
+                snapshot = json.loads((SITE / season["file"]).read_text())
+                quality = snapshot["quality"]
+                self.assertEqual(quality["results_digest"], results_digest(snapshot["matches"]))
+                self.assertNotEqual(quality["results"]["status"], "conflict", season["file"])
+                self.assertFalse(quality["results"].get("conflicts"), season["file"])
+                if quality["standings"]["status"] == "matched":
+                    reference = {r["team"]: r for r in quality["standings"]["rows"]}
+                    for row in snapshot["table"]:
+                        for field in ("p", "w", "d", "l", "gf", "ga", "pts", "rank"):
+                            self.assertEqual(row[field], reference[row["team"]][field])
+
+    def test_public_forecasts_do_not_include_unvalidated_season_rankings(self):
+        html = (SITE / "index.html").read_text()
+        self.assertNotIn('data-view="predict"', html)
+        for league in ("PL", "PD", "SA", "BL1", "FL1"):
+            forecast = json.loads((SITE / f"data/workbench/forecast_{league}.json").read_text())
+            self.assertNotIn("scenarios", forecast)
+            if not forecast["publication"]["allowed"]:
+                self.assertEqual(forecast["upcoming"], [])
+            log = json.loads((SITE / f"data/workbench/forecast_log_{league}.json").read_text())
+            for row in log["records"]:
+                self.assertLess(row["recorded_at"][:10], row["date"])

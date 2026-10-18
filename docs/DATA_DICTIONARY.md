@@ -22,7 +22,7 @@ This project imports the available data needed for the five-league analysis work
 - Key passes count `shot_assist`. Pressure counts do not measure successful pressures. Interceptions and tackles count tagged attempts, not a guaranteed successful regain. Recoveries exclude explicitly failed recoveries.
 - Per-90 values require positive estimated minutes. Percentiles compare the same position group in one dataset above the selected threshold; at least five eligible peers are required. Higher event activity is not universally better. Provider-selected matches create substantial selection bias.
 - Player identities are **not** joined across ESPN and StatsBomb. Different IDs, dates and samples remain separate. Multiple clubs create multiple player records.
-- Results tables use points/GD/GF ordering and omit deductions; they are calculated tables. The curtailed French 2019/20 season's unplayed fixtures are marked cancelled.
+- Overall standings use reconciled ESPN points and rank, including administrative adjustments. Unreconciled competition ranks are withheld; filtered comparisons use match points. Reviewed awarded outcomes may differ from the numeric on-field score. The curtailed French 2019/20 season's unplayed fixtures are marked cancelled.
 
 ### Sources, rights and update policy
 
@@ -34,6 +34,10 @@ Current data refreshes with the six-hour deployment schedule. Cached older summa
 
 ### Rebuildable SQL warehouse
 
-`python src/warehouse.py` rebuilds `data/football.sqlite`; deployment copies it into `site/data/football.sqlite`. Tables: `results`, `player_appearances`, `event_players`, `shots`, `metadata`. Provider IDs remain strings for ESPN and integers for StatsBomb. `stats_json` retains variable player box-score fields; missing keys are not zero. Use SQLite's JSON functions carefully and never divide current player totals by invented minutes.
+`python src/warehouse.py` rebuilds `data/football.sqlite`; deployment copies it into `site/data/football.sqlite`. Tables: `results`, `player_appearances`, `event_players`, `shots`, `metadata`. The results table preserves `status`, `awarded_winner`, `exclude_from_model` and `review_json`; an awarded winner takes precedence over the numeric score when deriving W/D/L. Provider IDs remain strings for ESPN and integers for StatsBomb. `stats_json` retains variable player box-score fields; missing keys are not zero. Use SQLite's JSON functions carefully and never divide current player totals by invented minutes.
 
 The current-workbench envelope timestamp records a pipeline build. Each squad and match summary separately retains its actual HTTP acquisition timestamp, including across cache reads; the Match centre shows the selected summary timestamp. Cached records are not described as newly acquired merely because the page was rebuilt.
+
+## Verification records
+
+`quality_<league>_<season>.json` records provider URLs, response digests, input digests, standings reconciliation and match-level cross-check coverage. `result_corrections.json` contains reviewed corrections with original values and evidence. Football-Data.co.uk is an additional results cross-check, not a guarantee of independent underlying collection. See [Data verification and corrections](DATA_QUALITY.md).

@@ -3,6 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from dashboard_data import LEAGUES, LIVE, parse_openfootball, read_json, write_json, utc_now
 from workbench_data import cached_fetch, OUT
+from result_corrections import apply_corrections
 
 
 def run():
@@ -28,7 +29,7 @@ def run():
             result = {'league': league['id'], 'season': season, 'source': 'OpenFootball', 'source_url': url,
                       'license': 'CC0-1.0', 'fetched_at': utc_now(), 'matches': matches,
                       'archive_note': 'Season curtailed; played results only.' if not complete else None}
-            write_json(path, result)
+            write_json(path, apply_corrections(result))
             return {'league': league['id'], 'season': season, 'ok': True, 'matches': len(matches), 'url': url}
         except Exception as exc:
             return {'league': league['id'], 'season': season, 'ok': False, 'error': str(exc), 'url': url}

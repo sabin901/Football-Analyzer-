@@ -46,3 +46,13 @@ The existing 365-day venue-Poisson formula was retained. Better source completen
 - [Dixon and Coles, 1997](https://academic.oup.com/jrsssc/article-abstract/46/2/265/6990546): reviewed as a modelling reference; this release does not claim to implement that model or reproduce club forecasting systems.
 
 Current player event feeds, continuous tracking, injuries and confirmed future lineups remain outside the available data. The historical heatmaps must not be presented as current player movement.
+
+## Public data-quality release
+
+The follow-up release adds a separate verification layer for every one of the 76 league-season snapshots. At review, 25,768 scores and dates agree with Football-Data.co.uk, two administrative differences have explicit evidence, and 44 recent results await that provider's update. There are no unresolved score/date conflicts. ESPN's W/D/L and goals reconcile for 75 tables; the 2025/26 Ligue 1 ranking is withheld because the archived provider table omits the ratified Nantes–Toulouse draw.
+
+The correction registry records 89 changes or annotations: 66 July 2020 Premier League dates, 20 missing 2024/25 final-round results, and three administrative outcomes. Overall tables retain provider points, deductions and ordering; comparison samples use match points. The downloadable JSON, CSV and SQL retain administrative outcome semantics and source notes.
+
+The unvalidated simulator and season-finishing projections are removed from the public product. Experimental upcoming probabilities require fresh, reconciled inputs. Their browser expiry is tied to the oldest input timestamp, so rebuilding cannot extend stale data's life. Production builds freeze the first eligible prediction before its fixture date; local and PR builds do not backfill this prospective record. Historical evaluations remain explicitly reconstructed.
+
+Validation: 63 Python tests and 11 JavaScript tests, including publication contracts, administrative SQL exports, corrections, identity mapping, stale-input gating and prospective-log immutability. Format and whitespace checks run with the release. Desktop and mobile browser verification covers corrected standings, disclosed table discrepancies, forecast presentation and responsive layout.
