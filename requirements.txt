@@ -8,3 +8,5 @@ fastapi>=0.110
 uvicorn[standard]>=0.27
 pyarrow>=14.0
 
+requests>=2.34
+scipy>=1.18

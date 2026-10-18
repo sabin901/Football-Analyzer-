@@ -3,7 +3,7 @@
 import json
 import sqlite3
 from dashboard_data import ROOT, LIVE, read_json
-from workbench_data import OUT
+from open_policy import WORKBENCH as OUT
 
 
 def build():
@@ -123,7 +123,7 @@ def build():
         "INSERT INTO metadata VALUES (?,?)",
         (
             "sources",
-            "OpenFootball CC0; ESPN public API subject to provider terms; StatsBomb Open Data research license and attribution.",
+            "OpenFootball CC0-1.0; Pappalardo/Wyscout research dataset CC-BY-4.0. Attribution and transformations: source_registry.json.",
         ),
     )
     db.commit()

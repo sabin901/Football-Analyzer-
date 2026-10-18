@@ -75,9 +75,8 @@ function playersView(d) {
           'Sort by totals',
           [
             ['totalGoals', 'Goals'],
-            ['goalAssists', 'Assists'],
+
             ['totalShots', 'Shots'],
-            ['shotsOnTarget', 'Shots on target'],
           ],
           wb.sort,
         )}
@@ -90,7 +89,7 @@ function playersView(d) {
             (p) =>
               `<tr><td><button class="player-link" data-player="${p.id}:${p.team_id}">${portrait(p, d)}<span>${esc(p.name)}<small>${esc(p.team)}</small></span></button></td><td>${esc(p.position || '—')}</td><td>${p.matches}</td><td>${p.starts}</td><td>${p.stats.totalGoals ?? '—'}</td><td>${p.stats.goalAssists ?? '—'}</td><td>${p.stats.totalShots ?? '—'}</td></tr>`,
           ),
-        'Current player statistics',
+        'Historical player statistics',
       )}
       <div class="pagination">
         <button class="secondary" data-wb-page="${wb.page - 1}" ${wb.page <= 1 ? 'disabled' : ''}>
@@ -231,13 +230,10 @@ function matchLabView(d) {
     ${oppositionBrief(d, wb.briefTeam)}`;
 }
 const eventMetrics = [
-  ['npxg', 'Non-penalty xG'],
   ['shots', 'Non-penalty shots'],
-  ['key_passes', 'Shot assists'],
+  ['key_passes', 'Key passes / assists'],
   ['progressive_passes', 'Progressive passes'],
-  ['progressive_carries', 'Progressive carries'],
-  ['pressures', 'Pressure events'],
-  ['recoveries', 'Ball recoveries'],
+  ['progressive_carries', 'Progressive accelerations'],
   ['interceptions', 'Interception attempts'],
 ];
 function eventProfile(d) {
@@ -271,7 +267,7 @@ function shotMap(m, teamId) {
       class="shot-pitch"
       viewBox="-4 -4 128 88"
       role="img"
-      aria-label="Shot locations; all teams attack toward the right. Circles sized by expected goals; lime indicates a goal."
+      aria-label="Shot locations; all teams attack toward the right. Equal circle sizes; lime indicates a goal."
     >
       <rect
         x="0"
@@ -290,50 +286,36 @@ function shotMap(m, teamId) {
         stroke-width=".5"
       />
       <circle cx="60" cy="40" r="10" fill="none" stroke="#89ac91" stroke-width=".5" />
-      ${shots.map((s) => `<circle cx="${s.x}" cy="${s.y}" r="${1 + 4 * Math.sqrt(s.xg)}" fill="${s.goal ? '#c6f36b' : '#fff'}" fill-opacity=".8" stroke="#101e18" stroke-width=".4"><title>${esc(s.player)} · ${s.minute}′ · ${esc(s.outcome)} · xG ${decimal(s.xg)}</title></circle>`).join('')}
+      ${shots.map((s) => `<circle cx="${s.x}" cy="${s.y}" r="2" fill="${s.goal ? '#c6f36b' : '#fff'}" fill-opacity=".8" stroke="#101e18" stroke-width=".4"><title>${esc(s.player)} · ${s.minute}′ · ${esc(s.outcome)}</title></circle>`).join('')}
     </svg>
     <p class="muted">
-      Attack → · Circle area increases with xG · Lime = goal · White = other outcome. Coordinates
-      use the provider’s 120 × 80 pitch.
+      Attack → · Equal marker sizes · Lime = goal · White = other outcome. Coordinates are rescaled
+      from 0–100 to 120 × 80 display units. This dataset has no xG.
     </p>`;
 }
 function eventMatchView(m) {
   if (!m) return empty('Loading event detail…');
   if (m.error) return empty(esc(m.error));
-  return (
-    wbPanel(
-      `${esc(m.home)} ${m.hg}–${m.ag} ${esc(m.away)}`,
-      `<p class="muted">${day(m.date)} · ${m.events.toLocaleString()} recorded events · StatsBomb provider xG</p><div class="method-grid">${[
-        [m.home_id, m.home],
-        [m.away_id, m.away],
-      ]
-        .map(([id, name]) => {
-          const shots = m.shots.filter((s) => s.team_id === id);
-          return /* HTML */ `<div>
-            <h3>${esc(name)} · ${decimal(shots.reduce((n, s) => n + s.xg, 0))} xG</h3>
-            ${shotMap(m, id)}
-          </div>`;
-        })
-        .join(
-          '',
-        )}</div><details><summary>Accessible shot table · ${m.shots.length} shots</summary>${wbTable(
-        ['Minute', 'Player', 'Outcome', 'xG', 'Type'],
-        m.shots.map(
-          (s) =>
-            `<tr><td>${s.minute}′</td><td>${esc(s.player)}</td><td>${esc(s.outcome)}</td><td>${decimal(s.xg)}</td><td>${s.penalty ? 'Penalty' : esc(s.play_pattern)}</td></tr>`,
-        ),
-        'Historical shots',
-      )}</details><details><summary>Most frequent completed pass connections</summary>${wbTable(
-        ['From', 'To', 'Passes'],
-        m.pass_links
-          .slice(0, 16)
-          .map(
-            (l) =>
-              `<tr><td>${esc(m.players.find((p) => p.id === l.from)?.name || l.from)}</td><td>${esc(m.players.find((p) => p.id === l.to)?.name || l.to)}</td><td>${l.count}</td></tr>`,
-          ),
-        'Pass connections',
-      )}</details><p class="muted">xG describes shot quality, not a deserved result. Penalties are included in match xG; player npxG excludes them. Pass counts do not measure line-breaking or pressure resistance.</p>`,
-    ) + xgFlow(m)
+  return wbPanel(
+    `${esc(m.home)} ${m.hg}–${m.ag} ${esc(m.away)}`,
+    `<p class="muted">${day(m.date)} · ${m.events.toLocaleString()} historical events · Pappalardo / Wyscout · CC BY 4.0</p><div class="method-grid">${[
+      [m.home_id, m.home],
+      [m.away_id, m.away],
+    ]
+      .map(
+        ([id, name]) =>
+          `<div><h3>${esc(name)} · ${m.shots.filter((s) => s.team_id === id).length} located shots</h3>${shotMap(m, id)}</div>`,
+      )
+      .join(
+        '',
+      )}</div><details><summary>Accessible shot table · ${m.shots.length} shots</summary>${wbTable(
+      ['Minute', 'Player', 'Outcome', 'Body part', 'Type'],
+      m.shots.map(
+        (s) =>
+          `<tr><td>${s.minute.toFixed(1)}′</td><td>${esc(s.player)}</td><td>${esc(s.outcome)}</td><td>${esc(s.body_part)}</td><td>${s.penalty ? 'Penalty' : esc(s.play_pattern)}</td></tr>`,
+      ),
+      'Historical shots',
+    )}</details><p class="muted">This archive does not provide xG or explicit pass recipients. Shot counts do not measure chance quality. Coordinates describe recorded actions, not off-ball positions.</p><a href="${esc(m.source_url)}">Original licensed event archive</a>`,
   );
 }
 function eventView() {
@@ -366,12 +348,7 @@ function eventView() {
         <h2>See the actions behind the result.</h2>
         <p>${esc(d.coverage_note)}</p>
       </div>
-      <img
-        src="https://raw.githubusercontent.com/statsbomb/open-data/master/img/SB%20-%20Icon%20Lockup%20-%20Colour%20positive.png"
-        alt="StatsBomb"
-        width="150"
-        loading="lazy"
-      />
+      <span class="pill">2017/18 · CC BY 4.0</span>
     </div>
     <div class="toolbar">
       ${wbSelect(
@@ -382,13 +359,14 @@ function eventView() {
       )}
     </div>
     <div class="metrics">
-      ${metric('Imported matches', d.imported_matches, `${d.available_matches} available from provider`)}${metric('Recorded events', d.events.toLocaleString(), 'Passes, carries, shots and more')}${metric('Player-club records', d.players, 'Stable provider IDs')}${metric('Season', esc(d.season), 'Historical research, not current')}
+      ${metric('Imported matches', d.imported_matches, `${d.available_matches} available from provider`)}${metric('Recorded events', d.events.toLocaleString(), 'Passes, duels, shots and more')}${metric('Player-club records', d.players, 'Stable provider IDs')}${metric('Season', esc(d.season), 'Historical research, not current')}
     </div>
     <div class="notice">
-      ${esc(d.minutes_note)} Progression: ≥10 provider units closer to goal, ending at x ≥72; only
-      completed progressive passes. Pressure counts describe activity, not effectiveness.
+      ${esc(d.minutes_note)} Progression: ≥10 display units closer to goal, ending in the attacking
+      40%; only completed progressive passes. Accelerations are a provider event type, not all
+      carries.
     </div>
-    ${eventProfile(d)}
+    ${scoutingPlot(d)} ${eventProfile(d)}
     <section class="panel">
       <div class="panel-head">
         <h2>Player scouting workspace</h2>
@@ -426,12 +404,12 @@ function eventView() {
         )}${wbSelect('wb-event-sort', 'Per-90 ranking', eventMetrics, wb.eventSort)}
       </div>
       ${wbTable(
-        ['Player / club', 'Role', 'Min.', 'npxG/90', 'Key passes/90', 'Prog. passes/90'],
+        ['Player / club', 'Role', 'Min.', 'Shots/90', 'Key passes/90', 'Prog. passes/90'],
         players
           .slice((wb.eventPage - 1) * 30, wb.eventPage * 30)
           .map(
             (p) =>
-              `<tr><td><button class="player-link" data-event-player="${p.id}:${p.team_id}"><span>${esc(p.name)}<small>${esc(p.team)}</small></span></button></td><td>${p.position}</td><td>${p.minutes.toFixed(0)}</td><td>${decimal(p.per90.npxg)}</td><td>${decimal(p.per90.key_passes)}</td><td>${decimal(p.per90.progressive_passes)}</td></tr>`,
+              `<tr><td><button class="player-link" data-event-player="${p.id}:${p.team_id}"><span>${esc(p.name)}<small>${esc(p.team)}</small></span></button></td><td>${p.position}</td><td>${p.minutes.toFixed(0)}</td><td>${decimal(p.per90.shots)}</td><td>${decimal(p.per90.key_passes)}</td><td>${decimal(p.per90.progressive_passes)}</td></tr>`,
           ),
         'Historical scouting players',
       )}
@@ -470,7 +448,7 @@ function eventView() {
 }
 function forecastFixture(p) {
   const limited = Math.min(p.home_sample, p.away_sample) < 5;
-  return `<article class="forecast-fixture"><div><span class="eyebrow">${day(p.date)}</span><h3>${esc(short(p.home))} <span class="muted">vs</span> ${esc(short(p.away))}</h3><small>${p.home_sample} home / ${p.away_sample} away venue matches · ${p.sample} league results</small>${limited ? '<div><span class="forecast-quality">Limited team sample · stronger reliance on league averages</span></div>' : ''}<details><summary>Model inputs & sample</summary><p>Training: ${day(p.training_start)}–${day(p.training_end)}. Cut-off: ${day(p.cutoff_exclusive)}, exclusive. Goal rates: ${p.home_rate.toFixed(2)} home / ${p.away_rate.toFixed(2)} away. These rates are based on results, not shot xG.</p><p>The eight-game prior contributes ${Math.round(800 / (p.home_sample + 8))}% of the home venue rate and ${Math.round(800 / (p.away_sample + 8))}% of the away venue rate. A larger prior share means less team-specific evidence.</p></details></div><div class="forecast-distribution"><div class="forecast-chances">${['Home win', 'Draw', 'Away win'].map((n, i) => `<div><strong>${pct(p.probabilities[i])}</strong><span>${n}</span></div>`).join('')}</div><div class="prob-bar" aria-hidden="true">${p.probabilities.map((p) => `<span style="width:${p * 100}%"></span>`).join('')}</div></div></article>`;
+  return `<article class="forecast-fixture"><div><span class="eyebrow">${day(p.date)}</span><h3>${esc(short(p.home))} <span class="muted">vs</span> ${esc(short(p.away))}</h3><small>${p.home_sample} home / ${p.away_sample} away venue matches · ${p.sample} training results</small>${limited ? '<p class="forecast-quality">Limited team sample · substantial prior influence</p>' : ''}<details><summary>Model inputs & explanation</summary><p>Training: ${day(p.training_start)}–${day(p.training_end)}. Prediction cutoff ${day(p.cutoff_exclusive)}, exclusive. Expected goals from result rates: ${p.home_rate.toFixed(2)} home / ${p.away_rate.toFixed(2)} away. These are not shot xG.</p><p>Eight prior games contribute ${Math.round(800 / (p.home_sample + 8))}% of the home venue rate and ${Math.round(800 / (p.away_sample + 8))}% of the away venue rate. The model excludes lineups, injuries and market odds.</p></details></div><div class="forecast-distribution"><div class="forecast-gauges">${p.probabilities.map((prob, i) => `<div class="forecast-gauge"><svg viewBox="0 0 120 80" role="img" aria-label="${['Home win', 'Draw', 'Away win'][i]} ${pct(prob)}"><path d="M15 65A45 45 0 0 1 105 65" fill="none" stroke="#2c3d54" stroke-width="8" pathLength="100"/><path d="M15 65A45 45 0 0 1 105 65" fill="none" stroke="${['#75decd', '#9bb4d6', '#eab174'][i]}" stroke-width="8" stroke-linecap="round" pathLength="100" stroke-dasharray="${100 * prob} 100"/></svg><strong>${pct(prob)}</strong><span>${['Home win', 'Draw', 'Away win'][i]}</span></div>`).join('')}</div></div></article>`;
 }
 function forecastView(d) {
   const expiry = Date.parse(d.publication?.valid_until);
@@ -489,6 +467,7 @@ function forecastView(d) {
     };
   d = { ...d, upcoming: d.upcoming.filter((p) => p.date > new Date().toISOString().slice(0, 10)) };
   const e = d.by_season[wb.evalSeason] || d.evaluation;
+  const replay = !d.upcoming.length ? wbLoad(`backtest_${leagueId}.json`)?.records?.at(-1) : null;
   const improvement = e.n
     ? (100 * (e.metrics.baseline.log_loss - e.metrics.probabilities.log_loss)) /
       e.metrics.baseline.log_loss
@@ -497,6 +476,7 @@ function forecastView(d) {
     <div class="metrics">${metric('Results in the archive', d.history_matches.toLocaleString(), 'Training uses the preceding 365 days')}${metric('Evaluation matches', e.n.toLocaleString(), e.n ? `${day(e.first_date)} – ${day(e.last_date)}` : 'No evaluation available')}${metric('Model log loss', e.n ? e.metrics.probabilities.log_loss.toFixed(3) : '—', 'Lower is better')}${metric('Frequency baseline', e.n ? e.metrics.baseline.log_loss.toFixed(3) : '—', 'Same fixtures, same training window')}</div>
     ${e.n ? `<div class="forecast-evidence"><div><strong>${improvement > 0 ? 'Lower historical error than the league-frequency baseline' : 'The model does not beat the league-frequency baseline'}</strong><p>Reconstructed evaluation · ${e.n.toLocaleString()} matches. This is historical evidence, not a guarantee of future accuracy.</p></div><div class="evidence-value">${Math.abs(improvement).toFixed(1)}%<small>${improvement > 0 ? 'lower' : 'higher'} log loss</small></div></div>` : ''}
     ${d.publication?.allowed === false ? `<div class="notice"><strong>Upcoming probabilities withheld.</strong> ${esc(d.publication.reason)}</div>` : ''}
+    ${replay ? wbPanel('Historical fixture replay', `<span class="replay-label">RETROSPECTIVE BACKTEST · NOT A LIVE PREDICTION</span>${forecastFixture(replay)}<p class="muted">Recorded outcome: ${['home win', 'draw', 'away win'][replay.actual]}. Probabilities were reconstructed with results strictly before the fixture date. They were not published before this match. Experimental model; no demonstrated live edge.</p>`) : ''}
     ${wbPanel('Upcoming fixtures', d.upcoming.length ? d.upcoming.slice(0, 6).map(forecastFixture).join('') + (d.upcoming.length > 6 ? `<details class="forecast-more"><summary>Show ${d.upcoming.length - 6} more scheduled fixtures</summary>${d.upcoming.slice(6).map(forecastFixture).join('')}</details>` : '') : empty(d.publication?.allowed === false ? 'Probabilities will return when the data checks pass.' : 'No eligible fixtures within the next 14 days.'), 'Next 14 days · Home / Draw / Away')}
     <div class="toolbar">${wbSelect('wb-eval-season', 'Evaluation period', [['', 'All evaluation seasons'], ...Object.keys(d.by_season).map((s) => [s, s])], wb.evalSeason)}</div>
     ${
@@ -509,13 +489,17 @@ function forecastView(d) {
                 ['probabilities', 'Venue Poisson'],
                 ['baseline', 'League frequency'],
                 ['uniform', 'Equal probabilities'],
-              ].map(
-                ([key, name]) =>
-                  `<tr><td>${name}</td><td>${e.metrics[key].log_loss.toFixed(3)}</td><td>${e.metrics[key].brier.toFixed(3)}</td><td>${e.metrics[key].rps.toFixed(3)}</td></tr>`,
-              ),
+                ['elo', 'Elo / Davidson'],
+                ['fitted_poisson', 'Fitted attack / defence'],
+              ]
+                .filter(([key]) => e.metrics[key])
+                .map(
+                  ([key, name]) =>
+                    `<tr><td>${name}</td><td>${e.metrics[key].log_loss.toFixed(3)}</td><td>${e.metrics[key].brier.toFixed(3)}</td><td>${e.metrics[key].rps.toFixed(3)}</td></tr>`,
+                ),
               'Forecast validation metrics',
             ) +
-              `<p>Model minus frequency log-loss difference, 95% date-block bootstrap interval: <strong>${e.log_loss_delta_95ci.map((n) => n.toFixed(3)).join(' to ')}</strong>.</p><p class="muted">${esc(e.note)} Brier sums three outcomes (0–2). RPS order: home, draw, away. Lower is better for all three scores.</p>`,
+              `<p>Challengers use fixed specifications and earlier data only. No model is promoted on these retrospective scores.</p><p>Model minus frequency log-loss difference, 95% date-block bootstrap interval: <strong>${e.log_loss_delta_95ci.map((n) => n.toFixed(3)).join(' to ')}</strong>.</p><p class="muted">${esc(e.note)} Brier sums three outcomes (0–2). RPS order: home, draw, away. Lower is better for all three scores.</p>`,
           )}${wbPanel(
             'Calibration · predicted vs observed',
             `<svg class="calibration-chart" viewBox="0 0 320 270" role="img" aria-label="Forecast calibration; points on the dashed diagonal match the observed rate"><g stroke="#e3e9e4">${[0, 0.25, 0.5, 0.75, 1].map((v) => `<path d="M45 ${225 - v * 200}H295M${45 + v * 250} 25V225"/>`).join('')}</g><path d="M45 225L295 25" stroke="#81998b" stroke-dasharray="5 5"/>${e.calibration.map((b) => `<circle cx="${45 + 250 * b.predicted}" cy="${225 - 200 * b.observed}" r="${3 + Math.min(7, Math.sqrt(b.n) / 8)}" fill="#147d67" fill-opacity=".8" stroke="white"><title>${pct(b.predicted)} predicted; ${pct(b.observed)} observed; ${b.n} outcome probabilities</title></circle>`).join('')}<g fill="#63716d" font-size="10">${[0, 0.5, 1].map((v) => `<text x="${45 + v * 250}" y="243" text-anchor="middle">${v * 100}%</text><text x="36" y="${229 - v * 200}" text-anchor="end">${v * 100}%</text>`).join('')}<text x="170" y="262" text-anchor="middle">Predicted probability</text><text x="45" y="13">Observed frequency</text></g></svg><p class="muted">Home/draw/away probabilities pooled into ten bins. Circle size reflects sample count. This is a diagnostic, not a calibration adjustment.</p><details><summary>Calibration values</summary>${wbTable(
@@ -528,6 +512,35 @@ function forecastView(d) {
             )}</details>`,
           )}</div>`
         : empty('Insufficient historical matches for evaluation in this period.')
+    }
+    ${
+      e.n
+        ? wbPanel(
+            'Outcome calibration and challenger uncertainty',
+            `<details><summary>Home, draw and away calibration</summary>${Object.entries(
+              e.calibration_by_outcome || {},
+            )
+              .map(
+                ([label, bins]) =>
+                  `<h3>${esc(label)}</h3>${wbTable(
+                    ['Predicted', 'Observed', 'Count'],
+                    bins.map(
+                      (b) =>
+                        `<tr><td>${pct(b.predicted)}</td><td>${pct(b.observed)}</td><td>${b.n}</td></tr>`,
+                    ),
+                    'Calibration for ' + label,
+                  )}`,
+              )
+              .join('')}</details>${wbTable(
+              ['Comparator', 'Model minus comparator log loss · 95% interval'],
+              Object.entries(e.comparison_95ci || {}).map(
+                ([name, ci]) =>
+                  `<tr><td>${esc(name)}</td><td>${ci.map((v) => v.toFixed(3)).join(' to ')}</td></tr>`,
+              ),
+              'Challenger uncertainty',
+            )}<p class="muted">Negative favors the displayed venue model. These descriptive intervals do not adjust for multiple comparisons. See the downloadable predictions for exact fixtures and training cutoffs.</p>`,
+          )
+        : ''
     }
     ${wbPanel('Published before the match', `<p><strong>${d.prospective?.settled || 0} settled forecasts</strong> from ${(d.prospective?.recorded || 0).toLocaleString()} stored predictions. Forecasts are fixed before the fixture date; revised dates and administrative results are excluded from scoring.</p>${d.prospective?.settled ? `<p>Observed outcome accuracy: ${pct(d.prospective.accuracy)}. Small samples are not evidence of reliable future performance.</p>` : '<p>Not enough prospective evidence yet. The historical evaluation above must not be described as a live prediction record.</p>'}<a href="data/workbench/forecast_log_${leagueId}.json" download>Download the timestamped forecast record</a>`)}
     ${wbPanel('Method & reproducibility', `<p>${esc(d.methodology)}</p><p>The backtest uses corrected results available now. It cannot reproduce every historical data delay or correction.</p><a href="data/workbench/backtest_${leagueId}.json" download>Download evaluation predictions ↓</a> · <a href="docs/MODEL_CARD.html">Model card ↗</a>`)}`;

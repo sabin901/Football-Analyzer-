@@ -22,7 +22,7 @@ const wb = {
   eventPlayer: '',
   eventMatch: '',
   minutes: 450,
-  eventSort: 'npxg',
+  eventSort: 'progressive_passes',
   eventPosition: '',
   briefTeam: '',
   eventSearch: '',
@@ -47,7 +47,7 @@ function portrait(p, d) {
     : crest(d.teams.find((t) => t.id === p.team_id));
 }
 function wbSource(d) {
-  return `<div class="notice source-note"><strong>${esc(d.season)} · ${esc(d.source)}</strong> · Snapshot built ${stamp(d.fetched_at)}${!d.refresh_ok ? ' · Some refresh requests failed. Retained data may be older.' : ''}${Date.now() - Date.parse(d.fetched_at) > 36 * 3600000 ? ' · STALE: this snapshot is older than 36 hours.' : ''}<br>${d.coverage.match_summaries} imported match summaries / ${d.coverage.schedule_results} recorded schedule results.</div>`;
+  return `<div class="notice source-note"><strong>HISTORICAL ${esc(d.season)} · ${esc(d.source)}</strong> · Snapshot built ${stamp(d.fetched_at)}${!d.refresh_ok ? ' · Some refresh requests failed. Retained data may be older.' : ''}${!d.historical && Date.now() - Date.parse(d.fetched_at) > 36 * 3600000 ? ' · STALE: this snapshot is older than 36 hours.' : ''}<br>${d.coverage.match_summaries} imported match summaries / ${d.coverage.schedule_results} recorded schedule results.</div>`;
 }
 function workbenchView(kind) {
   if (kind === 'heatmap') return heatmapView();
@@ -136,7 +136,7 @@ document.addEventListener('click', (e) => {
       games = d.matches.filter((m) => m.teams.some((t) => t.id === id)).slice(-5);
     downloadFile(
       `footlyzer-${leagueId}-${id}-brief.md`,
-      `# Opposition research: ${team.name}\n\nSource: ESPN. Snapshot: ${d.fetched_at}. Season: ${d.season}.\n\n## Evidence\n` +
+      `# Opposition research: ${team.name}\n\nSource: ${d.source}. License: ${d.license}. Historical archive. Snapshot: ${d.fetched_at}. Season: ${d.season}.\n\n## Evidence\n` +
         games
           .map((m) => {
             const t = m.teams.find((t) => t.id === id),

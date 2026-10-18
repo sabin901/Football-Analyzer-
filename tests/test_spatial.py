@@ -76,7 +76,7 @@ class SpatialTests(unittest.TestCase):
             summarize_spatial([self.event([1, 1], player=999)], self.match())
 
     def test_archive_contract_and_season_totals(self):
-        base = ROOT / "data/workbench"
+        base = ROOT / "data/open/workbench"
         manifest = json.loads((base / "spatial_manifest.json").read_text(encoding="utf8"))
         self.assertEqual({s["league"] for s in manifest["sets"]}, {"PL", "PD", "SA", "BL1", "FL1"})
         for s in manifest["sets"]:
@@ -111,7 +111,7 @@ class SpatialTests(unittest.TestCase):
     def test_api_validates_spatial_paths(self):
         client = TestClient(app)
         self.assertEqual(client.get("/api/workbench/spatial/manifest").status_code, 200)
-        self.assertEqual(client.get("/api/workbench/spatial/2_27").status_code, 200)
+        self.assertEqual(client.get("/api/workbench/spatial/PL_2017_18").status_code, 200)
         for key in ("-1", "abc", "9999999999999999999"):
             self.assertEqual(client.get("/api/workbench/spatial-match/" + key).status_code, 400)
         self.assertEqual(client.get("/api/workbench/spatial-match/99999999").status_code, 404)

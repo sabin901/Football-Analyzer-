@@ -247,6 +247,12 @@ def apply_standings(snapshot, quality):
 
 
 if __name__ == "__main__":
+    import os
+
+    if os.environ.get("FOOTLYZER_LICENSED_RESEARCH") != "1":
+        raise SystemExit(
+            "Legacy restricted feed disabled. Public workflows use src/open_results.py and src/open_events.py. Local research requires your own provider authorization."
+        )
     parser = argparse.ArgumentParser()
     parser.add_argument("--all", action="store_true")
     parser.add_argument("--source-dir")

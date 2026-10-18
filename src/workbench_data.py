@@ -120,7 +120,8 @@ def parse_summary(raw, event_id, season):
                     "id": str(a["id"]),
                     "name": a.get("displayName"),
                     "team_id": str(roster["team"]["id"]),
-                    "position": r.get("position", {}).get("displayName"),
+                    "position": playing_position(a.get("position", {}).get("displayName"))
+                    or playing_position(r.get("position", {}).get("displayName")),
                     "starter": bool(r.get("starter")),
                     "stats": stat_map(r.get("stats", [])),
                 }
@@ -151,6 +152,20 @@ def parse_summary(raw, event_id, season):
     }
 
 
+def playing_position(value):
+    """Roster participation labels must never become playing positions."""
+    if not isinstance(value, str) or value.strip().lower() in {
+        "substitute",
+        "sub",
+        "bench",
+        "reserve",
+        "unknown",
+        "",
+    }:
+        return None
+    return value.strip()
+
+
 def aggregate_players(matches, squads):
     players = {}
     for squad in squads:
@@ -179,6 +194,9 @@ def aggregate_players(matches, squads):
                     "stats": {},
                     "stat_samples": {},
                 },
+            )
+            row["position"] = playing_position(row.get("position")) or playing_position(
+                p.get("position")
             )
             appearance = p["stats"].get("appearances")
             if appearance is None or appearance <= 0:
@@ -345,6 +363,12 @@ def sync_league(league):
 
 
 if __name__ == "__main__":
+    import os
+
+    if os.environ.get("FOOTLYZER_LICENSED_RESEARCH") != "1":
+        raise SystemExit(
+            "Legacy restricted feed disabled. Public workflows use src/open_results.py and src/open_events.py. Local research requires your own provider authorization."
+        )
     parser = argparse.ArgumentParser()
     parser.add_argument("--league", choices=[l["id"] for l in LEAGUES])
     args = parser.parse_args()

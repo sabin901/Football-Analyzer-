@@ -19,11 +19,14 @@ from dashboard_data import (
     standings,
     utc_now,
 )
-from workbench_data import OUT
+from open_policy import WORKBENCH as OUT, provenance, validate_public
+from forecast_benchmarks import Challengers, SPECIFICATIONS
+import hashlib
+import json
 from club_identity import club_key
 from data_quality import quality_for
 
-MODEL = "venue-poisson-365d-prior8-v2"
+MODEL = "venue-poisson-365d-prior8-open-v3"
 
 
 def probabilities(lam, mu):
@@ -82,8 +85,27 @@ def losses(p, actual):
         "log_loss": -math.log(max(1e-15, p[actual])),
         "brier": sum((v - int(i == actual)) ** 2 for i, v in enumerate(p)),
         "rps": sum((sum(p[: i + 1]) - int(actual <= i)) ** 2 for i in (0, 1)) / 2,
-        "accuracy": int(max(range(3), key=lambda i: p[i]) == actual),
+        "accuracy": (
+            (1 / sum(abs(v - max(p)) < 1e-12 for v in p)) if abs(p[actual] - max(p)) < 1e-12 else 0
+        ),
     }
+
+
+def comparison_intervals(records, scores):
+    output = {}
+    for name, competitor in scores.items():
+        if name == "probabilities":
+            continue
+        groups = defaultdict(list)
+        for r, model, challenger in zip(records, scores["probabilities"], competitor):
+            groups[r["date"]].append(model["log_loss"] - challenger["log_loss"])
+        totals = np.array([sum(v) for v in groups.values()])
+        sizes = np.array([len(v) for v in groups.values()])
+        idx = np.random.default_rng(901).integers(0, len(totals), size=(1000, len(totals)))
+        output[name] = np.quantile(
+            totals[idx].sum(axis=1) / sizes[idx].sum(axis=1), [0.025, 0.975]
+        ).tolist()
+    return output
 
 
 def evaluate(records):
@@ -91,7 +113,8 @@ def evaluate(records):
         return {"n": 0}
     scores = {
         name: [losses(r[name], r["actual"]) for r in records]
-        for name in ("probabilities", "baseline", "uniform")
+        for name in ("probabilities", "baseline", "uniform", "elo", "fitted_poisson")
+        if all(name in r for r in records)
     }
     metrics = {
         name: {k: round(sum(s[k] for s in rows) / len(rows), 5) for k in rows[0]}
@@ -129,6 +152,26 @@ def evaluate(records):
         "last_date": records[-1]["date"],
         "metrics": metrics,
         "calibration": bins,
+        "calibration_by_outcome": {
+            label: [
+                {
+                    "bin": i,
+                    "n": len(pairs),
+                    "predicted": sum(p for p, y in pairs) / len(pairs),
+                    "observed": sum(y for p, y in pairs) / len(pairs),
+                }
+                for i in range(10)
+                if (
+                    pairs := [
+                        (r["probabilities"][j], int(r["actual"] == j))
+                        for r in records
+                        if min(9, int(r["probabilities"][j] * 10)) == i
+                    ]
+                )
+            ]
+            for j, label in enumerate(["home", "draw", "away"])
+        },
+        "comparison_95ci": comparison_intervals(records, scores),
         "log_loss_delta_95ci": [float(x) for x in np.quantile(delta, [0.025, 0.975])],
         "note": "Negative model-minus-frequency log-loss difference is better. Date-block bootstrap, 1,000 replicates; descriptive interval only.",
     }
@@ -195,6 +238,34 @@ def season_scenarios(snapshot, history, cutoff):
 
 def publication_gate(snapshot, quality, now=None):
     now = now or datetime.now(timezone.utc)
+    if snapshot.get("source_id") == "openfootball":
+        try:
+            validate_public(snapshot)
+            times = [
+                datetime.fromisoformat(snapshot["fetched_at"]),
+                datetime.fromisoformat(quality["checked_at"]),
+            ]
+            from data_quality import results_digest
+
+            if quality.get("results_digest") != results_digest(snapshot["matches"]):
+                raise ValueError("Quality record does not match results")
+            if any(not 0 <= (now - t).total_seconds() <= 36 * 3600 for t in times):
+                raise ValueError("Snapshot older than 36 hours")
+            if snapshot.get("quarantined"):
+                raise ValueError("Source contains quarantined records")
+            if len(snapshot["matches"]) != snapshot.get("expected_fixtures"):
+                raise ValueError("Source schedule is incomplete")
+            if quality.get("results", {}).get("past_missing"):
+                raise ValueError("Past fixtures have missing results")
+            if quality.get("results", {}).get("status") != "structural_checks_passed":
+                raise ValueError("Structural checks unavailable")
+        except (ValueError, KeyError, TypeError) as exc:
+            return {"allowed": False, "reason": str(exc)}
+        return {
+            "allowed": True,
+            "valid_until": (min(times) + timedelta(hours=36)).isoformat(),
+            "reason": "Structurally checked community source; not independently verified or suitable for betting decisions.",
+        }
     if quality.get("standings", {}).get("status") != "matched":
         return {
             "allowed": False,
@@ -231,7 +302,7 @@ def update_forecast_log(previous, upcoming, snapshot, recorded_at):
     """Freeze the first pre-date forecast; never reconstruct one after the outcome."""
     import copy
 
-    rows = copy.deepcopy(previous.get("records", []))
+    rows = copy.deepcopy([r for r in previous.get("records", []) if r.get("model") == MODEL])
     known = {(r["model"], r["date"], r["home"], r["away"]) for r in rows}
     for p in upcoming:
         key = (MODEL, p["date"], p["home"], p["away"])
@@ -260,6 +331,14 @@ def update_forecast_log(previous, upcoming, snapshot, recorded_at):
     return {"schema_version": 1, "records": rows}, {
         "recorded": len(rows),
         "settled": len(settled),
+        "metrics": (
+            {
+                k: sum(losses(r["probabilities"], r["actual"])[k] for r in settled) / len(settled)
+                for k in ("log_loss", "brier", "rps")
+            }
+            if settled
+            else None
+        ),
         "accuracy": (
             sum(losses(r["probabilities"], r["actual"])["accuracy"] for r in settled) / len(settled)
             if settled
@@ -273,7 +352,7 @@ def run():
     for league in LEAGUES:
         history = []
         for path in sorted(LIVE.glob(f"dashboard_{league['id']}_*.json")):
-            raw = read_json(path)
+            raw = validate_public(read_json(path))
             history.extend(
                 {**m, "season": raw["season"]}
                 for m in raw["matches"]
@@ -281,6 +360,7 @@ def run():
             )
         history.sort(key=lambda m: m["date"])
         records = []
+        challengers = Challengers(history)
         for m in history:
             if m["date"] < "2024-07-01" or m["date"] >= cutoff:
                 continue
@@ -291,6 +371,7 @@ def run():
                     uniform=[1 / 3] * 3,
                     season=m["season"],
                 )
+                p.update(challengers.predict(m, m["date"]))
                 records.append(p)
         snapshot = read_json(LIVE / f"dashboard_{league['id']}_{current_season()}.json")
         quality = quality_for(snapshot)
@@ -308,6 +389,7 @@ def run():
             ):
                 p = forecast(history, m, cutoff)
                 if p:
+                    p.update(challengers.predict(m, cutoff))
                     upcoming.append(p)
         built_at = utc_now()
         log_path = OUT / f"forecast_log_{league['id']}.json"
@@ -317,8 +399,26 @@ def run():
             snapshot,
             built_at,
         )
-        write_json(log_path, log)
+        write_json(
+            log_path,
+            {
+                **provenance("openfootball"),
+                "source_url": snapshot["source_url"],
+                "source_sha256": snapshot["source_sha256"],
+                **log,
+            },
+        )
+        provenance_record = {
+            **provenance("openfootball"),
+            "source_url": "https://github.com/openfootball/football.json",
+            "source_sha256": hashlib.sha256(
+                json.dumps(history, sort_keys=True).encode()
+            ).hexdigest(),
+            "source_hash_scope": "normalized historical training rows",
+            "benchmark_specs": SPECIFICATIONS,
+        }
         payload = {
+            **provenance_record,
             "model": MODEL,
             "league": league["id"],
             "season": current_season(),
@@ -328,6 +428,10 @@ def run():
             "prospective": prospective,
             "history_matches": len(history),
             "evaluation": evaluate(records),
+            "by_sample": {
+                label: evaluate([r for r in records if r["sample_status"] == label])
+                for label in ("limited", "established")
+            },
             "by_season": {
                 s: evaluate([r for r in records if r["season"] == s])
                 for s in sorted({r["season"] for r in records})
@@ -340,7 +444,10 @@ def run():
             "methodology": "365 preceding days; eight league-average prior venue games. Every evaluation date excludes all results on that date and later. Fixed parameters; no optimization on evaluation seasons. Current corrected results, not archived as-known-at-time feeds. No lineup, injury, tracking or market inputs.",
         }
         write_json(OUT / f"forecast_{league['id']}.json", payload)
-        write_json(OUT / f"backtest_{league['id']}.json", {"model": MODEL, "records": records})
+        write_json(
+            OUT / f"backtest_{league['id']}.json",
+            {**provenance_record, "model": MODEL, "records": records},
+        )
         print(
             league["id"],
             len(history),

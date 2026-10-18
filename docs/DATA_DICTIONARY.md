@@ -1,43 +1,37 @@
-# Data dictionary and import scope
+# Data dictionary and coverage
 
-This project imports the available data needed for the five-league analysis workflows. It does **not** claim every football API field, every world competition, complete current events, or unlimited free access.
+Footlyzer is a public analysis tool with an explicitly licensed historical archive and an optional private browser workspace. It is not an official league service or a current scouting database.
 
-| Layer | Grain / identity | Fields and null policy | Coverage |
-|---|---|---|---|
-| OpenFootball results | league + season + ordered home/away pair | Date, final goals, round; absent score remains null | Available top-five files from 2010/11 onward; 404s recorded in `history_import.json` |
-| Current squads | ESPN player ID + club ID + season | Name, supplied position, age, jersey, optional photo; no invented values | Current-season rosters from returned team lists; expected club count displayed |
-| Current appearances | ESPN match ID + player ID + club ID | Starter and every supplied numeric player box-score statistic | Completed imported summaries only; no reliable minutes; no per-90 |
-| Current match reports | ESPN match ID | Teams, score, supplied team box-score fields, lineups, goal/red-card moments | Discovered completed fixtures on schedule dates plus the last 14 calendar days |
-| Historical events | StatsBomb match ID / event UUID | Entire event file processed; source SHA-256, source update marker, event count | All available men's Premier League, La Liga, Serie A, Bundesliga and Ligue 1 match selections in the provider catalogue |
-| Event player totals | dataset + player ID + team ID | Estimated minutes, position group, non-penalty shots/goals/xG, key passes, pass counts, progression, pressures, recoveries, interception/tackle attempts | Imported event matches only; not assumed to represent a whole league |
-| Shot detail | StatsBomb event UUID | Provider x/y, provider xG, outcome, minute, player/team, penalty/body part/play pattern | Historical imported shots; shootouts excluded |
-| Forecast audit | league + date + home + away | Probabilities, actual outcome, training cutoff and samples | Rolling tests from July 2024; corrected source snapshots |
+## Results
 
-### Definitions that matter
+OpenFootball (CC0) supplies dates, home and away clubs, scheduled fixtures and full-time scores. Null goals mean missing results, not zero goals. Result IDs use league, season and both teams. Provider rows outside the season or containing invalid scores are quarantined with reasons. No restricted provider supplements are used.
 
-- Historical player **npxG** uses the provider's shot xG and excludes penalties. It is not the legacy project-trained xG model. Match shot-map totals include penalties.
-- Shot coordinates retain the original provider values. Two imported corner shots have x=120.2, just beyond the nominal 120-unit touchline; they are not clamped or discarded. Import validation permits a one-unit boundary tolerance and rejects nonfinite or grossly out-of-range coordinates.
-- Historical minutes are estimated from Starting XI, substitution and dismissal events. Regulation clock is capped at 90; extra-time clock at 120. Stoppage time is excluded. A player's position group is the group accumulating most estimated minutes across appearances, not a precise tactical role.
-- Progressive passes/carries move at least 10 units closer to the goal at (120,40), finishing at x ≥72. Passes must be completed. This is a project definition, not an industry standard.
-- Key passes count `shot_assist`. Pressure counts do not measure successful pressures. Interceptions and tackles count tagged attempts, not a guaranteed successful regain. Recoveries exclude explicitly failed recoveries.
-- Per-90 values require positive estimated minutes. Percentiles compare the same position group in one dataset above the selected threshold; at least five eligible peers are required. Higher event activity is not universally better. Provider-selected matches create substantial selection bias.
-- Player identities are **not** joined across ESPN and StatsBomb. Different IDs, dates and samples remain separate. Multiple clubs create multiple player records.
-- Overall standings use reconciled ESPN points and rank, including administrative adjustments. Unreconciled competition ranks are withheld; filtered comparisons use match points. Reviewed awarded outcomes may differ from the numeric on-field score. The curtailed French 2019/20 season's unplayed fixtures are marked cancelled.
+Tables are computed from recorded results: three points per win and one per draw; sorted by points, goal difference, goals for and name. These are match points and sample ranks, not independently verified official standings. Administrative deductions, disciplinary outcomes and league-specific tie-breaks may differ. Clean sheets include only recorded matches. Form is ordered oldest to newest. Comparisons use the same filters and match-weighted league averages.
 
-### Sources, rights and update policy
+## Event archive
 
-[OpenFootball](https://github.com/openfootball/football.json) provides CC0 schedules/results. [ESPN](https://www.espn.com/soccer/) provides the public unofficial current feed without credentials; public access is not an open redistribution/commercial license. Provider terms apply and availability can change. This is a football analysis project; review rights before commercial distribution. No videos or media articles are copied into the data warehouse.
+The Pappalardo/Wyscout research dataset covers 2017/18 in England, Spain, Italy, Germany and France: 1,826 matches and 3,071,395 source events. It is licensed CC BY 4.0. These player records are historical, including club membership and positions. They are not current squads or transfer recommendations.
 
-[StatsBomb Open Data](https://github.com/statsbomb/open-data) is made available for research and football analytics interest. The repository requests source attribution and its logo on published analyses. The event lab identifies StatsBomb and displays its supplied logo. Review the provider's LICENSE.pdf before using the data outside that scope. The data's license is independent of the code license. We do not ingest paid feeds or claim free tracking coverage.
+Player and team IDs come from the source. A transfer creates separate player-club records. Positions use the catalogue's GK, DF, MD and FW groups; unknown remains unknown. Substitute status is never interpreted as a position.
 
-Current data refreshes with the six-hour deployment schedule. Cached older summaries are rechecked after 30 days, recent finals every six hours, squads daily. Import errors are surfaced; last-good match summaries remain available. Historical imports are explicit, resumable backfills: rerun them to discover new releases or source corrections. Large raw event files are processed into compact research aggregates rather than committed wholesale. The complete competition catalogue is recorded; only the five requested men's leagues are imported into the event workspace.
+- Non-penalty shots and goals exclude penalties. Match shot maps include penalties.
+- Pass completion uses the provider's accurate tag. Key passes / assists count events with either tag once. They are provider labels, not an independently reconstructed chance chain.
+- Progressive passes are completed passes that move at least 10 display units closer to the centre of the goal and finish in the attacking 40% of the pitch.
+- Progressive accelerations apply the same geometry to the provider's acceleration events. These are not all ball carries.
+- Interceptions and defensive duels are event counts, not success rates.
+- Regulation minutes are estimated from lineups, substitutions and dismissals; stoppage time is excluded. Unknown participation is not guessed. Per-90 rates require positive minutes.
+- Percentiles compare eligible player-club records in the same broad position and season. They describe activity, not skill or suitability for recruitment.
 
-### Rebuildable SQL warehouse
+Provider xG, possession, pressures, recoveries and explicit pass recipients are unavailable in this public archive. They remain null or are omitted from the interface. Goals from own goals are not credited to a shooting player. Counts of located shots can differ from match goals.
 
-`python src/warehouse.py` rebuilds `data/football.sqlite`; deployment copies it into `site/data/football.sqlite`. Tables: `results`, `player_appearances`, `event_players`, `shots`, `metadata`. The results table preserves `status`, `awarded_winner`, `exclude_from_model` and `review_json`; an awarded winner takes precedence over the numeric score when deriving W/D/L. Provider IDs remain strings for ESPN and integers for StatsBomb. `stats_json` retains variable player box-score fields; missing keys are not zero. Use SQLite's JSON functions carefully and never divide current player totals by invented minutes.
+Coordinates are normalized 0–100 in the source, with the acting team attacking right, then rescaled to 120 by 80 display units. These units are not measured metres. Missing coordinates do not become (0,0).
 
-The current-workbench envelope timestamp records a pipeline build. Each squad and match summary separately retains its actual HTTP acquisition timestamp, including across cache reads; the Match centre shows the selected summary timestamp. Cached records are not described as newly acquired merely because the page was rebuilt.
+## Private workspace
 
-## Verification records
+The CSV template contains id, period, second, team, player, action, x, y, end_x, end_y and outcome. Use one match per project. Import coordinates already normalized to an attacking-right frame. Periods are 1–4; seconds start at zero within each period. Empty coordinate pairs are supported. Event IDs must be unique.
 
-`quality_<league>_<season>.json` records provider URLs, response digests, input digests, standings reconciliation and match-level cross-check coverage. `result_corrections.json` contains reviewed corrections with original values and evidence. Football-Data.co.uk is an additional results cross-check, not a guarantee of independent underlying collection. See [Data verification and corrections](DATA_QUALITY.md).
+User data is not uploaded or independently verified. A SHA-256 fingerprint identifies the imported bytes but does not prove their truth or licensing. Analyst observations, interpretations and recommendations remain distinct from provider evidence.
+
+## Downloads
+
+The JSON manifest lists every published league-season. Snapshot JSON includes the source URL, license, source fingerprint, fetch time and quality record. The SQL warehouse contains only the two approved public sources. Source attribution and transformations are recorded in source_registry.json and the [attribution page](ASSET_CREDITS.html).

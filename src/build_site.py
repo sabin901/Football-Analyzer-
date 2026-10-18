@@ -7,7 +7,10 @@ import shutil
 import dashboard_data as data
 import build_docs
 from warehouse import build as build_warehouse
-from workbench_data import OUT
+from open_policy import WORKBENCH as OUT, OPEN, validate_public
+import json
+import subprocess
+import os
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -52,80 +55,82 @@ def package_frontend(frontend, site):
 
 
 def build():
-    site = ROOT / "site"
-    site.mkdir(exist_ok=True)
-    # dashboard.html is the entry point; index.html is the legacy research UI.
+    from bundle_data import ensure
+
+    ensure()
+    # A clean staging tree prevents retired sources and cached personal pages leaking.
+    site = ROOT / ".artifacts/site-staging"
+    if site.exists():
+        shutil.rmtree(site)
+    site.mkdir(parents=True)
     package_frontend(ROOT / "frontend", site)
     (site / ".nojekyll").touch()
     manifest = {
-        "schema_version": 2,
+        "schema_version": 3,
         "built_at": data.utc_now(),
         "current_season": data.current_season(),
         "leagues": [],
+        "crests": {},
+        "publication_policy": "open-licenses-v1",
+        "commit": subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
+        ).strip(),
+        "dirty": bool(
+            subprocess.check_output(
+                ["git", "status", "--porcelain", "--untracked-files=no", "--", ".", ":!data/open"],
+                cwd=ROOT,
+                text=True,
+            ).strip()
+        ),
+        "data_revision": os.environ.get("FOOTLYZER_DATA_REVISION", "bundled"),
     }
     for league in data.LEAGUES:
         seasons = []
         for path in sorted(data.LIVE.glob(f"dashboard_{league['id']}_*.json"), reverse=True):
-            raw = data.read_json(path)
+            raw = validate_public(data.read_json(path))
             snapshot = data.snapshot(league["id"], raw["season"])
-            snapshot["predictions"] = []  # Unvalidated simulator is not published.
+            snapshot["predictions"] = []
             file = f"data/{league['id']}_{raw['season']}.json"
             data.write_json(site / file, snapshot)
             seasons.append(
                 {
                     "id": raw["season"],
                     "file": file,
-                    "completed": snapshot["completed"],
-                    "last_result": snapshot["last_result"],
-                    "fetched_at": snapshot["fetched_at"],
-                    "overdue": snapshot["overdue"],
-                    "refresh_ok": snapshot["refresh_ok"],
+                    **{
+                        k: snapshot[k]
+                        for k in ("completed", "last_result", "fetched_at", "overdue", "refresh_ok")
+                    },
+                    "quarantined": len(raw.get("quarantined", [])),
                 }
             )
+        if not seasons:
+            raise RuntimeError(f"No permitted results for {league['id']}")
         manifest["leagues"].append({**league, "seasons": seasons})
-    if any(not league["seasons"] for league in manifest["leagues"]):
-        raise RuntimeError("Each of the five leagues needs a snapshot before deployment")
-    manifest["crests"] = {}
-    for l in manifest["leagues"]:
-        teams = data.read_json(OUT / f"current_{l['id']}.json", {}).get("teams", [])
-        by_name = {
-            data.normalized_name(data.ALIASES.get(t["name"], t["name"])): t.get("logo")
-            for t in teams
-        }
-        names = {r["team"] for s in l["seasons"] for r in data.read_json(site / s["file"])["table"]}
-        manifest["crests"][l["id"]] = {
-            name: by_name[data.normalized_name(name)]
-            for name in names
-            if by_name.get(data.normalized_name(name))
-        }
-    data.write_json(site / "data" / "manifest.json", manifest)
-    event_manifest = data.read_json(OUT / "events_manifest.json", {"sets": []})
-    current = [data.read_json(p) for p in OUT.glob("current_*.json")]
+    data.write_json(site / "data/manifest.json", manifest)
+    event_manifest = validate_public(data.read_json(OUT / "events_manifest.json"))
+    current = [validate_public(data.read_json(p)) for p in OUT.glob("current_*.json")]
     catalogue = {
         "built_at": data.utc_now(),
         "league_seasons": sum(len(l["seasons"]) for l in manifest["leagues"]),
         "results": sum(s["completed"] for l in manifest["leagues"] for s in l["seasons"]),
         "current_players": sum(len(d["players"]) for d in current),
+        "player_coverage": "2017/18 historical archive",
         "event_matches": sum(s["imported_matches"] for s in event_manifest["sets"]),
         "events": sum(s["events"] for s in event_manifest["sets"]),
         "event_datasets": len(event_manifest["sets"]),
     }
     data.write_json(OUT / "catalogue.json", catalogue)
-    shutil.copytree(OUT, site / "data" / "workbench", dirs_exist_ok=True)
-    shutil.copyfile(build_warehouse(), site / "data" / "football.sqlite")
-    if (ROOT / "docs").exists():
-        build_docs.package_docs(ROOT, site)
-    assets = site / "assets"
-    assets.mkdir(exist_ok=True)
-    for name in [
-        "report_8658.png",
-        "scout_2_27_Arsenal.png",
-        "model_calibration.png",
-        "model_importance.png",
-    ]:
-        source = ROOT / "output" / name
-        if source.exists():
-            shutil.copyfile(source, assets / name)
+    for path in OUT.rglob("*.json"):
+        relative = path.relative_to(OUT)
+        if relative.as_posix() != "catalogue.json":
+            validate_public(data.read_json(path))
+        target = site / "data/workbench" / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(path, target)
+    shutil.copyfile(OPEN / "source_registry.json", site / "data/source_registry.json")
+    shutil.copyfile(OPEN / "wyscout_sources.json", site / "data/wyscout_sources.json")
+    shutil.copyfile(build_warehouse(), site / "data/football.sqlite")
+    build_docs.package_docs(ROOT, site)
     base = "https://sabin901.github.io/Football-Analyzer-/"
     pages = [""] + [
         "docs/" + name.replace(".md", ".html") for name in sorted(build_docs.PUBLIC_DOCS)
@@ -139,6 +144,13 @@ def build():
     (site / "robots.txt").write_text(
         "User-agent: *\nAllow: /\nSitemap: " + base + "sitemap.xml\n", encoding="utf8"
     )
+    target = ROOT / "site"
+    old = ROOT / ".artifacts/site-previous"
+    if old.exists():
+        shutil.rmtree(old)
+    if target.exists():
+        target.rename(old)
+    site.rename(target)
     print(f"Built dashboard: {sum(len(l['seasons']) for l in manifest['leagues'])} league-seasons")
 
 

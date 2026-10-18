@@ -211,17 +211,12 @@ class QualityTests(unittest.TestCase):
         self.assertEqual(summary["settled"], 0)
         self.assertEqual(moved["records"][0]["status"], "rescheduled")
 
-    def test_historical_regressions_have_evidence_and_correct_totals(self):
+    def test_historical_open_source_does_not_claim_official_deductions(self):
         pl = read_json(LIVE / "dashboard_PL_2023-24.json")
         everton = next(r for r in apply_standings(pl, quality_for(pl)) if r["team"] == "Everton FC")
-        self.assertEqual((everton["pts"], everton["rank"], everton["adjustment"]), (40, 15, -8))
-        sa = read_json(LIVE / "dashboard_SA_2022-23.json")
-        juve = next(r for r in apply_standings(sa, quality_for(sa)) if r["team"] == "Juventus FC")
-        self.assertEqual(juve["pts"], 62)
-        for key in ["PD_2024-25", "SA_2024-25"]:
-            data = read_json(LIVE / f"dashboard_{key}.json")
-            self.assertEqual(sum(m["hg"] is not None for m in data["matches"]), 380)
+        self.assertEqual(everton["pts"], 48)
+        self.assertNotIn("rank", everton)
+        self.assertEqual(quality_for(pl)["standings"]["status"], "computed")
         data = read_json(LIVE / "dashboard_PL_2019-20.json")
-        fixed = [m for m in data["matches"] if m.get("result_review")]
-        self.assertEqual(len(fixed), 66)
-        self.assertTrue(all(m["date"].startswith("2020-07") for m in fixed))
+        self.assertEqual(len(data["quarantined"]), 66)
+        self.assertFalse(any(m.get("result_review") for m in data["matches"]))
