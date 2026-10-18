@@ -61,6 +61,9 @@ def forecast(history, fixture, cutoff):
         "sample": len(train),
         "home_sample": len(h),
         "away_sample": len(a),
+        "sample_status": "limited" if min(len(h), len(a)) < 5 else "established",
+        "prior_weight_home": 8 / (len(h) + 8),
+        "prior_weight_away": 8 / (len(a) + 8),
         "home_rate": lam,
         "away_rate": mu,
         "probabilities": probabilities(lam, mu),
@@ -167,6 +170,7 @@ def season_scenarios(snapshot, history, cutoff):
         "runs": 2000,
         "simulated_fixtures": simulated,
         "omitted_fixtures": omitted,
+        "complete_schedule": omitted == 0,
         "seed": 901,
         "limitations": "Fixed team strengths, independent games. Points/GD/GF ordering; competition-specific head-to-head, deductions and disciplinary decisions not modeled. Top four is a rank, not guaranteed Champions League qualification.",
         "teams": [
@@ -175,8 +179,8 @@ def season_scenarios(snapshot, history, cutoff):
                 "mean_points": round(float(points[:, i].mean()), 1),
                 "points_10": float(np.quantile(points[:, i], 0.1)),
                 "points_90": float(np.quantile(points[:, i], 0.9)),
-                "first": float((order[:, 0] == i).mean()),
-                "top_four": float((order[:, :4] == i).any(axis=1).mean()),
+                "first": float((order[:, 0] == i).mean()) if omitted == 0 else None,
+                "top_four": float((order[:, :4] == i).any(axis=1).mean()) if omitted == 0 else None,
             }
             for i, name in enumerate(names)
         ],

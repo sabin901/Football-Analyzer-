@@ -33,6 +33,9 @@ jobs:
         run: pip install -r requirements.txt -r requirements-dev.txt
       - name: Install frontend development tools
         run: npm ci
+      - name: Build bundled snapshots for validation
+        # Publication tests also inspect generated files excluded from Git.
+        run: python src/build_site.py
       - name: Test data integrity and backend
         run: |
           python -m unittest discover -s tests -v

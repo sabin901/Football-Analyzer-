@@ -365,44 +365,6 @@
   font-size: 10px;
   fill: #657169;
 }
-.portfolio-hero {
-  padding: 38px;
-  background: radial-gradient(ellipse at 90% 100%, #335733, transparent 60%), #13281d;
-  color: #eaf3e4;
-  position: relative;
-  overflow: hidden;
-}
-.portfolio-hero:after {
-  content: '';
-  width: 250px;
-  height: 250px;
-  border: 1px solid #c6f36b22;
-  border-radius: 50%;
-  position: absolute;
-  right: -100px;
-  top: -130px;
-  pointer-events: none;
-}
-.portfolio-hero .eyebrow {
-  color: var(--lime);
-}
-.portfolio-hero h2 {
-  font-size: clamp(27px, 3vw, 40px);
-  line-height: 1.2;
-  letter-spacing: -1px;
-}
-.portfolio-hero > p:not(.eyebrow) {
-  max-width: 650px;
-  color: #bfd0bc;
-  line-height: 1.8;
-}
-.portfolio-hero .toolbar {
-  margin-bottom: 0;
-  margin-top: 24px;
-}
-.portfolio-hero a {
-  text-decoration: none;
-}
 .panel details {
   margin-top: 16px;
   border-top: 1px solid var(--line);
@@ -525,9 +487,6 @@
     grid-template-columns: 110px 38px 1fr 30px;
     gap: 7px;
     font-size: 10px;
-  }
-  .portfolio-hero {
-    padding: 25px;
   }
   .mini-stats {
     grid-template-columns: repeat(2, 1fr);

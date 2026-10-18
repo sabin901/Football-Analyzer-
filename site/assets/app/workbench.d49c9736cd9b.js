@@ -1,13 +1,6 @@
 'use strict';
 // Lazy, same-origin snapshots keep the public site independent of API uptime.
-const WORKBENCH_VIEWS = new Set([
-  'players',
-  'matchlab',
-  'events',
-  'heatmap',
-  'forecast',
-  'portfolio',
-]);
+const WORKBENCH_VIEWS = new Set(['players', 'matchlab', 'events', 'heatmap', 'forecast']);
 const snapshotStore = createSnapshotStore(
   (file) => fetchJson(`data/workbench/${file}`),
   () => {
@@ -57,7 +50,6 @@ function wbSource(d) {
   return `<div class="notice source-note"><strong>${esc(d.season)} · ${esc(d.source)}</strong> · Snapshot built ${stamp(d.fetched_at)}${!d.refresh_ok ? ' · Some refresh requests failed. Retained data may be older.' : ''}${Date.now() - Date.parse(d.fetched_at) > 36 * 3600000 ? ' · STALE: this snapshot is older than 36 hours.' : ''}<br>${d.coverage.match_summaries} imported match summaries / ${d.coverage.schedule_results} recorded schedule results.</div>`;
 }
 function workbenchView(kind) {
-  if (kind === 'portfolio') return portfolioView();
   if (kind === 'heatmap') return heatmapView();
   if (kind === 'events') return eventView();
   const d = wbLoad(`${kind === 'forecast' ? 'forecast' : 'current'}_${leagueId}.json`);

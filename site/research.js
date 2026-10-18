@@ -12,8 +12,8 @@ function researchView() {
           assumptions, then continue with the interactive historical archive.
         </p>
       </div>
-      <a class="secondary" href="docs/PORTFOLIO_PLAYBOOK.html"
-        >Build your own case study ${icon('arrow-up-right')}</a
+      <a class="secondary" href="docs/DATA_DICTIONARY.html"
+        >Read the data guide ${icon('arrow-up-right')}</a
       >
     </section>
     <div class="research-library">

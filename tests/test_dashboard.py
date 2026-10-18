@@ -241,6 +241,52 @@ class DataTests(unittest.TestCase):
         )
         self.assertIsNone(matches[0]["hg"])
 
+    def test_explicit_levante_and_atalanta_aliases_import_verified_results(self):
+        for league, provider, canonical in [
+            ("PD", "Levante", "Levante UD"),
+            ("SA", "Atalanta", "Atalanta BC"),
+        ]:
+            with self.subTest(team=provider):
+                matches = [
+                    {
+                        "home": canonical,
+                        "away": "Opponent FC",
+                        "date": "2026-10-12",
+                        "hg": None,
+                        "ag": None,
+                    }
+                ]
+                event = {
+                    "date": "2026-10-12T18:00Z",
+                    "status": {"type": {"completed": True}},
+                    "competitions": [
+                        {
+                            "competitors": [
+                                {
+                                    "homeAway": "home",
+                                    "team": {"displayName": provider},
+                                    "score": "2",
+                                },
+                                {
+                                    "homeAway": "away",
+                                    "team": {"displayName": "Opponent"},
+                                    "score": "1",
+                                },
+                            ]
+                        }
+                    ],
+                }
+                errors = d.supplement_results(
+                    matches,
+                    league,
+                    "2026-27",
+                    fetch=lambda _: {"events": [event]},
+                    today=date(2026, 10, 18),
+                )
+                self.assertFalse(errors)
+                self.assertEqual((matches[0]["hg"], matches[0]["ag"]), (2, 1))
+                self.assertEqual(matches[0]["result_source"], "ESPN")
+
 
 if __name__ == "__main__":
     unittest.main()

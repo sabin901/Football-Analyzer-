@@ -17,6 +17,8 @@ import unicodedata
 ESPN_CODES = {"PL": "eng.1", "PD": "esp.1", "SA": "ita.1", "BL1": "ger.1", "FL1": "fra.1"}
 # Explicit identity mapping; never fuzzy-match a result to a different club.
 ALIASES = {
+    "Levante": "Levante UD",
+    "Atalanta": "Atalanta BC",
     "Atlético Madrid": "Club Atlético de Madrid",
     "Alavés": "Deportivo Alavés",
     "Celta Vigo": "RC Celta de Vigo",

@@ -19,7 +19,9 @@ An unseen/promoted team receives the league-mean prior for an unobserved venue. 
 
 ## Future outputs
 
-Upcoming fixtures within 14 days use a single explicit exclusive cutoff date. The season simulation uses 2,000 seeded runs, fixed current strengths and independent Poisson scores for remaining dated fixtures. It sorts by points, goal difference and goals scored, then deterministic team order. Administrative deductions, league-specific head-to-head rules and sporting decisions are omitted. Top-four rank is not synonymous with Champions League qualification. The 10th–90th points range expresses simulation variability, not total real-world uncertainty. Long-horizon projections have not been independently validated.
+Upcoming fixtures within 14 days use a single explicit exclusive cutoff date. The season simulation uses 2,000 seeded runs, fixed current strengths and independent Poisson scores for remaining dated fixtures. It sorts by points, goal difference and goals scored, then deterministic team order. Administrative deductions, league-specific head-to-head rules and sporting decisions are omitted. Top-four rank is not synonymous with Champions League qualification. If any unresolved fixture is omitted, finishing-position probabilities are withheld and the remaining points are labelled as a partial scenario. Fixtures with fewer than five home or away venue observations carry a limited-sample label; the eight-game prior weight is shown explicitly. These sample labels describe data volume, not calibrated confidence.
+
+The 10th–90th points range expresses simulation variability, not total real-world uncertainty. Long-horizon projections have not been independently validated.
 
 ## Known weaknesses
 

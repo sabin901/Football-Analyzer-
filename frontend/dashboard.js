@@ -4,32 +4,27 @@ const today = () => new Date().toISOString().slice(0, 10);
 const titles = {
   overview: [
     'League overview',
-    'Every league. A clearer picture.',
+    'The season at a glance',
     'Follow the table, read the form, and find the story behind the score.',
   ],
   matches: [
     'Matches & results',
-    'The season, match by match.',
+    'Matches & results',
     'Explore recorded results and the published schedule.',
   ],
   compare: [
     'Team comparison',
-    'Find the differences that matter.',
+    'Team comparison',
     'Compare like for like: the same league, season, venue and sample window.',
   ],
   predict: [
     'Match simulator',
-    'Explore a possible matchup.',
+    'Match simulator',
     'A transparent goals-based estimate, with its assumptions in view.',
-  ],
-  research: [
-    'Research archive',
-    'Go deeper. Keep the context.',
-    'Historical event-level analysis, separate from current-season results.',
   ],
   coverage: [
     'Data & methodology',
-    'Trust starts with the source.',
+    'Data & methodology',
     'See exactly what is available, what is missing, and how we calculate it.',
   ],
 };
@@ -51,33 +46,28 @@ let manifest,
 Object.assign(titles, {
   heatmap: [
     'Player & team heatmaps',
-    'Find the spaces that matter.',
+    'The game, mapped',
     'Player and team activity maps from real historical event locations.',
   ],
   players: [
     'Players & squads',
-    'The people behind the performance.',
+    'Players & squads',
     'Explore current squads and imported match appearances across five leagues.',
   ],
   matchlab: [
     'Match centre',
-    'From the result to the review.',
+    'Match centre',
     'Read the match, inspect the lineups and prepare your opposition questions.',
   ],
   events: [
     'Event & scouting lab',
-    'Every action has a context.',
+    'Historical event analysis',
     'Historical shot maps, player profiles and positional comparisons.',
   ],
   forecast: [
     'Forecast lab',
-    'Test the model. Then look ahead.',
+    'Match forecasts',
     'Auditable backtests, upcoming probabilities and season scenarios.',
-  ],
-  portfolio: [
-    'Portfolio & careers',
-    'Make the evidence count.',
-    'Club workflows, reproducible analysis and a route to a stronger portfolio.',
   ],
 });
 const content = $('#content');
@@ -196,30 +186,7 @@ function overview() {
         b.form.reduce((s, x) => s + (x === 'W' ? 3 : x === 'D' ? 1 : 0), 0) -
         a.form.reduce((s, x) => s + (x === 'W' ? 3 : x === 'D' ? 1 : 0), 0),
     )[0];
-  return /* HTML */ `<section class="desk-feature">
-      <div>
-        <p class="eyebrow">YOUR MATCHDAY WORKSPACE</p>
-        <h2>Go beyond the table.</h2>
-        <p>Prepare the opponent. Explore the players.<br />Put every prediction to the test.</p>
-        <div class="toolbar">
-          <button class="secondary" data-view="matchlab">Analyse a match ↗</button
-          ><button class="secondary" data-view="forecast">Explore forecasts ↗</button>
-        </div>
-      </div>
-      <div class="feature-pitch" aria-hidden="true">
-        <svg viewBox="0 0 260 170">
-          <rect x="10" y="10" width="240" height="150" rx="2" />
-          <path d="M130 10V160M10 45H50V125H10M250 45H210V125H250" />
-          <circle cx="130" cy="85" r="28" />
-          <path class="run-line" d="M55 100L105 45L160 75L219 85" />
-          <circle class="player-dot" cx="55" cy="100" r="6" />
-          <circle class="player-dot" cx="105" cy="45" r="6" />
-          <circle class="player-dot" cx="160" cy="75" r="6" />
-          <circle class="player-dot" cx="219" cy="85" r="6" /></svg
-        ><span>RESULTS → ACTIONS → INSIGHT</span>
-      </div>
-    </section>
-    ${data.archive_note ? `<div class="notice">${esc(data.archive_note)}</div>` : ''}
+  return /* HTML */ ` ${data.archive_note ? `<div class="notice">${esc(data.archive_note)}</div>` : ''}
     <div class="metrics">
       ${metric('RECORDED MATCHES', data.completed, `of ${data.matches.length} scheduled fixtures`)}${metric('GOALS PER MATCH', done.length ? (goals / done.length).toFixed(2) : '—', `${goals} goals in recorded results`)}${metric('TABLE LEADER', esc(short(leader?.team || '—')), leader ? `${leader.pts} points · ${leader.p} matches played` : 'No results', true)}${metric('TEAMS IN FOCUS', data.table.length, `${esc(manifest.leagues.find((l) => l.id === leagueId).country)} · ${seasonId.replace('-', '/')}`)}
     </div>
@@ -376,6 +343,20 @@ function matchesView() {
       </div>
     </section>`;
 }
+function comparisonMetric(label, fn, a, b, table, options = {}) {
+  const x = fn(a),
+    y = fn(b);
+  const eligible = table.filter((r) => r.p);
+  const average = eligible.length
+    ? eligible.reduce((sum, r) => sum + fn(r) * r.p, 0) / eligible.reduce((sum, r) => sum + r.p, 0)
+    : null;
+  // Each metric has one common axis for both teams and the league benchmark.
+  const maximum =
+    options.maximum || Math.max(1, Math.ceil(Math.max(...eligible.map(fn), 0) * 2) / 2);
+  const value = (v) => (v === null ? '—' : options.percent ? `${v.toFixed(1)}%` : v.toFixed(2));
+  const pos = (v) => (100 * (v || 0)) / maximum;
+  return `<div class="comparison-row"><div class="comparison-label"><h3>${label}</h3><span>${options.lower ? 'Lower is better' : 'Higher is better'}</span></div><strong class="comparison-number team-a-color">${value(x)}</strong><div class="comparison-plot" role="img" aria-label="${esc(short(a.team))}: ${value(x)}; ${esc(short(b.team))}: ${value(y)}; league average: ${value(average)}; axis 0 to ${maximum}${options.percent ? '%' : ''}"><div class="comparison-axis"></div>${average !== null ? `<span class="comparison-average" style="left:${pos(average)}%" title="League average: ${value(average)}"></span>` : ''}${x !== null && y !== null ? `<span class="comparison-connector" style="left:${Math.min(pos(x), pos(y))}%;width:${Math.abs(pos(x) - pos(y))}%"></span>` : ''}${x !== null ? `<span class="comparison-dot dot-a" style="left:${pos(x)}%" title="${esc(short(a.team))}: ${value(x)}"></span>` : ''}${y !== null ? `<span class="comparison-dot dot-b" style="left:${pos(y)}%" title="${esc(short(b.team))}: ${value(y)}"></span>` : ''}<div class="comparison-ticks"><span>0</span><span>${maximum}${options.percent ? '%' : ''}</span></div></div><strong class="comparison-number team-b-color">${value(y)}</strong><span class="comparison-benchmark">${value(average)}<small>League avg.</small></span></div>`;
+}
 function compareView() {
   const table = filteredTable(),
     a = table.find((t) => t.team === home),
@@ -384,62 +365,22 @@ function compareView() {
   const cards = [a, b]
     .map(
       (r, i) =>
-        `<section class="panel compare-team"><span class="pill">${i ? 'SECOND TEAM' : 'FIRST TEAM'}</span><h2>${esc(short(r.team))}</h2><div class="team-stats"><div><strong>${r.p}</strong><span>Matches</span></div><div><strong>${decimal(r.ppg)}</strong><span>Points / game</span></div><div><strong>${r.pts}</strong><span>Points</span></div></div><p>${form(r.form)}</p></section>`,
+        `<section class="panel comparison-team ${i ? 'team-b' : 'team-a'}"><div class="comparison-identity">${badge(r.team)}<div><span class="eyebrow">TEAM ${i ? 'B' : 'A'} · ${venue === 'all' ? 'ALL VENUES' : venue.toUpperCase()}</span><h2>${esc(short(r.team))}</h2></div><span class="comparison-rank" title="Rank within the selected filters">#${table.findIndex((t) => t.team === r.team) + 1}</span></div><div class="comparison-stats"><div><strong>${r.p}</strong><span>Played</span></div><div><strong>${r.pts}</strong><span>Points</span></div><div><strong>${decimal(r.ppg)}</strong><span>Points / match</span></div><div><strong>${r.gd > 0 ? '+' : ''}${r.gd}</strong><span>Goal difference</span></div></div><div class="comparison-form"><span>Recent form</span>${form(r.form)}<small>Oldest → latest</small></div></section>`,
     )
     .join('');
   const measures = [
-    ['Goals scored / match', (r) => (r.p ? r.gf / r.p : null)],
-    ['Goals conceded / match', (r) => (r.p ? r.ga / r.p : null)],
-    ['Points / match', (r) => r.ppg],
-    ['Clean-sheet rate', (r) => (r.p ? (r.cs / r.p) * 100 : null)],
+    ['Goals scored / match', (r) => (r.p ? r.gf / r.p : null), {}],
+    ['Goals conceded / match', (r) => (r.p ? r.ga / r.p : null), { lower: true }],
+    ['Points / match', (r) => r.ppg, { maximum: 3 }],
+    ['Clean-sheet rate', (r) => (r.p ? (100 * r.cs) / r.p : null), { maximum: 100, percent: true }],
+    ['Win rate', (r) => (r.p ? (100 * r.w) / r.p : null), { maximum: 100, percent: true }],
   ];
   const h2h = data.matches.filter(
     (m) =>
       m.hg !== null &&
       ((m.home === home && m.away === away) || (m.home === away && m.away === home)),
   );
-  return /* HTML */ `${selectorToolbar(true)}${home === away ? '<div class="notice">Choose different teams for a meaningful comparison.</div>' : ''}
-    <div class="compare-grid">${cards}</div>
-    <section class="panel">
-      <div class="panel-head">
-        <h2>Performance, in proportion</h2>
-        <span class="muted"
-          >${venue === 'all' ? 'All venues' : venue + ' only'} ·
-          ${windowSize === 'all' ? 'Full season' : 'Last ' + windowSize + ' matches'}</span
-        >
-      </div>
-      <div class="bars">
-        ${measures
-          .map(([label, fn]) => {
-            const x = fn(a),
-              y = fn(b),
-              max = Math.max(x || 0, y || 0, 1);
-            return /* HTML */ `<div class="bar-row">
-              <span>${decimal(x)}</span>
-              <div class="bar-track left">
-                <div class="bar-fill" style="width:${(100 * (x || 0)) / max}%"></div>
-              </div>
-              <span>${label}${label === 'Clean-sheet rate' ? ' (%)' : ''}</span>
-              <div class="bar-track right">
-                <div class="bar-fill" style="width:${(100 * (y || 0)) / max}%"></div>
-              </div>
-              <span>${decimal(y)}</span>
-            </div>`;
-          })
-          .join('')}
-      </div>
-      <p class="table-note">
-        Per-match rates help compare unequal samples. Opponent strength and game state are not
-        adjusted. Lower goals conceded is better.
-      </p>
-    </section>
-    <section class="panel">
-      <div class="panel-head">
-        <h2>Head to head</h2>
-        <span class="muted">Selected season · all venues</span>
-      </div>
-      ${h2h.map(matchRow).join('') || empty('No recorded meeting between these teams in this season.')}
-    </section>`;
+  return `${selectorToolbar(true)}${home === away ? '<div class="notice">Choose different teams for a meaningful comparison.</div>' : ''}<div class="compare-grid">${cards}</div><section class="panel comparison-panel"><div class="panel-head"><div><p class="eyebrow">TEAM METRICS</p><h2>Performance comparison</h2></div><span class="muted">${windowSize === 'all' ? 'Full season' : 'Last ' + windowSize + ' matches'} · ${venue === 'all' ? 'All venues' : venue + ' only'}</span></div><div class="comparison-legend"><span><i class="dot-a"></i>${esc(short(a.team))}</span><span><i class="dot-b"></i>${esc(short(b.team))}</span><span><i class="average-key"></i>League average</span></div><div class="comparison-chart">${measures.map(([label, fn, options]) => comparisonMetric(label, fn, a, b, table, options)).join('')}</div><p class="table-note">League average is weighted by matches in the same filters. Each row has its own labelled scale. Rates are not adjusted for opponent strength. ${a.p < 5 || b.p < 5 ? '<strong>Small sample: fewer than five matches for at least one team.</strong>' : ''}</p></section><section class="panel"><div class="panel-head"><h2>Head to head</h2><span class="muted">Selected season · all venues</span></div>${h2h.length ? h2h.map(matchRow).join('') : '<div class="h2h-empty"><span aria-hidden="true">↔</span><div><strong>No meeting recorded this season</strong><p>Use the season selector to explore previous encounters.</p></div></div>'}</section>`;
 }
 function predictionView() {
   const p = data.predictions.find((p) => p.home === home && p.away === away);
@@ -589,14 +530,22 @@ function render() {
   $('#breadcrumb').textContent = label;
   $('#page-title').textContent = title;
   $('#page-description').textContent = desc;
-  $('#view-select').innerHTML = Object.entries(titles)
-    .map(([id, t]) => `<option value="${id}" ${id === view ? 'selected' : ''}>${t[0]}</option>`)
+  $('#view-select').innerHTML = [...document.querySelectorAll('#navigation button')]
+    .map((b) => b.dataset.view)
+    .map((id) => `<option value="${id}" ${id === view ? 'selected' : ''}>${titles[id][0]}</option>`)
     .join('');
   const workbench = WORKBENCH_VIEWS.has(view);
   const archive = view === 'research';
   $('#league-tabs').hidden = archive;
   $('.context-controls').hidden = archive;
-  $('.heading .eyebrow').textContent = archive ? 'THE RESEARCH LIBRARY' : 'THE BIG PICTURE';
+  $('.heading .eyebrow').textContent =
+    {
+      overview: 'SEASON INTELLIGENCE',
+      compare: 'SIDE BY SIDE',
+      heatmap: 'SPATIAL ANALYSIS',
+      forecast: 'PROBABILITY & EVIDENCE',
+      events: 'EVENT ANALYSIS',
+    }[view] || 'FOOTBALL ANALYTICS';
   $('#league-title').textContent = archive
     ? 'Historical research library'
     : manifest?.leagues.find((l) => l.id === leagueId)?.name || '';
@@ -609,9 +558,7 @@ function render() {
     : workbench
       ? ['events', 'heatmap'].includes(view)
         ? 'Historical event datasets'
-        : view === 'portfolio'
-          ? 'Analyst portfolio'
-          : 'Current-season workspace'
+        : 'Current-season workspace'
       : `${seasonId === manifest?.current_season ? 'Current season' : 'Historical season'}`;
   document.querySelectorAll('#navigation button').forEach((b) => {
     b.classList.toggle('active', b.dataset.view === view);

@@ -63,3 +63,26 @@ class PublishedTests(unittest.TestCase):
             published = SITE / "assets/leagues" / row["file"]
             self.assertGreater(source.stat().st_size, 1000)
             self.assertEqual(source.read_bytes(), published.read_bytes())
+
+    def test_public_build_has_no_personal_pages_or_broken_document_links(self):
+        from src.build_docs import PUBLIC_DOCS, PUBLIC_FILES
+
+        allowed = PUBLIC_FILES | {p.replace(".md", ".html") for p in PUBLIC_DOCS}
+        self.assertEqual({p.name for p in (SITE / "docs").iterdir()}, allowed)
+        forbidden = (
+            "PROJECT_REVIEW",
+            "CAREER_RESEARCH",
+            "APPLICATION_GUIDE",
+            "PORTFOLIO_PLAYBOOK",
+            "BUILT FOR THE FOOTBALL QUESTION",
+        )
+        for path in [
+            SITE / "index.html",
+            SITE / "sitemap.xml",
+            *SITE.glob("*.js"),
+            *(SITE / "assets/app").glob("*.js"),
+        ]:
+            text = path.read_text(encoding="utf-8")
+            self.assertFalse(any(word in text for word in forbidden), path.name)
+            for name in re.findall(r"(?<![\w/])docs/([A-Z_]+\.html)", text):
+                self.assertTrue((SITE / "docs" / name).is_file(), f"{path.name}: {name}")

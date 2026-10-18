@@ -29,6 +29,7 @@
     />
     <link rel="stylesheet" href="dashboard.css" />
     <link rel="stylesheet" href="workbench.css" />
+    <link rel="stylesheet" href="interface.css" />
     <script defer src="ui.js"></script>
     <script defer src="snapshot-store.js"></script>
     <script defer src="league-branding.js"></script>
@@ -42,11 +43,11 @@
   <body>
     <a class="skip" href="#main">Skip to analysis</a>
     <aside class="sidebar">
-      <a class="brand" href="#overview" aria-label="Footlyzer home"
+      <a class="brand" href="#view=overview" aria-label="Footlyzer home"
         ><span class="mark">F<span>↗</span></span
-        ><span>footlyzer<span class="brand-sub">THE FOOTBALL INTELLIGENCE DESK</span></span></a
+        ><span>footlyzer<span class="brand-sub">FOOTBALL ANALYTICS</span></span></a
       >
-      <div class="nav-caption">WORKSPACE</div>
+      <div class="nav-caption">EXPLORE</div>
       <nav aria-label="Analysis views" id="navigation">
         <button data-view="overview" class="nav-item active">
           <span data-icon="layout-dashboard"></span>League overview
@@ -63,6 +64,7 @@
         <button data-view="matchlab" class="nav-item">
           <span data-icon="clipboard-list"></span>Match centre
         </button>
+        <div class="nav-caption nav-section">ANALYSE</div>
         <button data-view="heatmap" class="nav-item">
           <span data-icon="scan-line"></span>Player & team heatmaps
         </button>
@@ -75,24 +77,17 @@
         <button data-view="predict" class="nav-item">
           <span data-icon="sliders-horizontal"></span>Match simulator
         </button>
-        <button data-view="research" class="nav-item">
-          <span data-icon="book-open"></span>Research archive
-        </button>
         <button data-view="coverage" class="nav-item">
           <span data-icon="database"></span>Data & methodology
-        </button>
-        <button data-view="portfolio" class="nav-item">
-          <span data-icon="briefcase-business"></span>Portfolio & careers
         </button>
       </nav>
       <label class="mobile-view" for="view-select"
         >Workspace<select id="view-select" aria-label="Choose workspace"></select
       ></label>
       <div class="sidebar-note">
-        <span class="small-dot"></span> Better context. Better analysis.
-        <p>Five leagues. One workspace.<br />Know what the numbers can tell you.</p>
-        <a href="https://github.com/sabin901/Football-Analyzer-">View the project ↗</a
-        ><a class="sidebar-method" href="docs/PROJECT_REVIEW.html">Project review ↗</a>
+        <span class="small-dot"></span> Five leagues. One workspace.
+        <p>Results, patterns and probabilities.<br />With the source in view.</p>
+        <a href="#view=coverage">Data & methodology ↗</a>
       </div>
     </aside>
     <div class="workspace">
@@ -105,7 +100,7 @@
       <main id="main" tabindex="-1">
         <section class="heading">
           <div>
-            <p class="eyebrow">THE BIG PICTURE</p>
+            <p class="eyebrow" id="page-kicker">SEASON INTELLIGENCE</p>
             <h1 id="page-title">Every league. A clearer picture.</h1>
             <p id="page-description">
               Follow the table, read the form, and find the story behind the score.
@@ -140,8 +135,8 @@
             snapshots. Source updates may lag.</span
           >
           <span
-            ><a href="docs/DEVELOPMENT.html">Developer guide</a> ·
-            <a href="docs/ASSET_CREDITS.html">Asset credits</a></span
+            ><a href="docs/MODEL_CARD.html">Forecast method</a> ·
+            <a href="docs/ASSET_CREDITS.html">Attribution</a></span
           >
         </footer>
       </main>

@@ -26,7 +26,7 @@ This project imports the available data needed for the five-league analysis work
 
 ### Sources, rights and update policy
 
-[OpenFootball](https://github.com/openfootball/football.json) provides CC0 schedules/results. [ESPN](https://www.espn.com/soccer/) provides the public unofficial current feed without credentials; public access is not an open redistribution/commercial license. Provider terms apply and availability can change. This repository is a research portfolio; review rights before commercial distribution. No videos or media articles are copied into the data warehouse.
+[OpenFootball](https://github.com/openfootball/football.json) provides CC0 schedules/results. [ESPN](https://www.espn.com/soccer/) provides the public unofficial current feed without credentials; public access is not an open redistribution/commercial license. Provider terms apply and availability can change. This is a football analysis project; review rights before commercial distribution. No videos or media articles are copied into the data warehouse.
 
 [StatsBomb Open Data](https://github.com/statsbomb/open-data) is made available for research and football analytics interest. The repository requests source attribution and its logo on published analyses. The event lab identifies StatsBomb and displays its supplied logo. Review the provider's LICENSE.pdf before using the data outside that scope. The data's license is independent of the code license. We do not ingest paid feeds or claim free tracking coverage.
 
