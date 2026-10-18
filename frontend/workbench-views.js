@@ -1,6 +1,6 @@
 'use strict';
 // View functions return HTML from validated snapshots and the current filters.
-// Current summaries and historical event data deliberately remain separate.
+// Historical player summaries and event profiles retain their documented definitions.
 function currentPlayerCard(d) {
   const p = d.players.find((p) => `${p.id}:${p.team_id}` === wb.player);
   if (!p) return '';
@@ -12,11 +12,9 @@ function currentPlayerCard(d) {
     .reverse();
   return wbPanel(
     `${esc(p.name)} <span class="muted">${esc(p.team)} · ${esc(p.position || 'Position unavailable')}</span>`,
-    `<div class="profile-head">${portrait(p, d)}<p>${p.matches} imported appearances · ${p.starts} starts. Squad age: ${p.age ?? 'unavailable'}. Provider ID ${esc(p.id)}.</p></div><div class="mini-stats">${[
+    `<div class="profile-head">${portrait(p, d)}<p>${p.matches} imported appearances · ${p.starts} starts. Provider ID ${esc(p.id)}.</p></div><div class="mini-stats">${[
       ['Goals', 'totalGoals'],
-      ['Assists', 'goalAssists'],
       ['Shots', 'totalShots'],
-      ['Shots on target', 'shotsOnTarget'],
     ]
       .map(
         ([label, key]) =>
@@ -24,7 +22,7 @@ function currentPlayerCard(d) {
       )
       .join(
         '',
-      )}</div><h3>Recent imported appearances</h3>${games.map((m) => `<button class="fixture-button" data-current-match="${m.id}">${day(m.date.slice(0, 10))}<span>${esc(m.teams.find((t) => t.venue === 'home').name)} vs ${esc(m.teams.find((t) => t.venue === 'away').name)}</span>Open report ↗</button>`).join('') || '<p>No recorded appearance yet.</p>'}<p class="muted">No reliable minutes in this feed. Totals are not a talent ranking and are not adjusted for playing time, opposition or team style.</p>`,
+      )}</div><h3>Recent imported appearances</h3>${games.map((m) => `<button class="fixture-button" data-current-match="${m.id}">${day(m.date.slice(0, 10))}<span>${esc(m.teams.find((t) => t.venue === 'home').name)} vs ${esc(m.teams.find((t) => t.venue === 'away').name)}</span>Open report ↗</button>`).join('') || '<p>No recorded appearance yet.</p>'}<p class="muted">These are appearance totals. Estimated regulation-minute rates are available in Event & scouting lab; neither view adjusts for opposition or team style.</p>`,
   );
 }
 function playersView(d) {
@@ -82,12 +80,12 @@ function playersView(d) {
         )}
       </div>
       ${wbTable(
-        ['Player / club', 'Position', 'Apps', 'Starts', 'Goals', 'Assists', 'Shots'],
+        ['Player / club', 'Position', 'Apps', 'Starts', 'Goals', 'Shots'],
         rows
           .slice((wb.page - 1) * 40, wb.page * 40)
           .map(
             (p) =>
-              `<tr><td><button class="player-link" data-player="${p.id}:${p.team_id}">${portrait(p, d)}<span>${esc(p.name)}<small>${esc(p.team)}</small></span></button></td><td>${esc(p.position || '—')}</td><td>${p.matches}</td><td>${p.starts}</td><td>${p.stats.totalGoals ?? '—'}</td><td>${p.stats.goalAssists ?? '—'}</td><td>${p.stats.totalShots ?? '—'}</td></tr>`,
+              `<tr><td><button class="player-link" data-player="${p.id}:${p.team_id}">${portrait(p, d)}<span>${esc(p.name)}<small>${esc(p.team)}</small></span></button></td><td>${esc(p.position || '—')}</td><td>${p.matches}</td><td>${p.starts}</td><td>${p.stats.totalGoals ?? '—'}</td><td>${p.stats.totalShots ?? '—'}</td></tr>`,
           ),
         'Historical player statistics',
       )}
@@ -105,9 +103,9 @@ function playersView(d) {
       </div>
       ${rows.length ? '' : empty('No players match these filters. Try a lower appearance threshold.')}
       <p class="table-note">
-        A dash means unavailable. Totals cover imported appearances. Reliable minutes and current
-        shot xG are unavailable; no per-90 ranking is calculated. Select a player for field-level
-        coverage.
+        A dash means unavailable. Totals cover imported historical appearances. For estimated per-90
+        rates, open Event & scouting lab. This source has no shot xG. Select a player for
+        field-level coverage.
       </p>
     </section>`;
 }
@@ -125,14 +123,12 @@ function oppositionBrief(d, id) {
     };
   };
   const sf = average('totalShots'),
-    sa = average('totalShots', true),
-    pos = average('possessionPct');
+    sa = average('totalShots', true);
   return wbPanel(
     'Opposition briefing',
     `<div class="profile-head">${crest(team)}<div><h3>${esc(team.name)}</h3><p class="muted">Last ${games.length} imported completed matches · descriptive evidence</p></div></div><div class="mini-stats">${[
       ['Shots for / match', sf],
       ['Shots against / match', sa],
-      ['Possession %', pos],
     ]
       .map(
         ([l, v]) =>
@@ -199,13 +195,15 @@ function matchLabView(d) {
         'The game in numbers',
         wbTable(
           [esc(h.name), 'Metric', esc(a.name)],
-          metrics.map(
-            ([name, key]) =>
-              `<tr><td>${h.stats[key] ?? '—'}</td><td>${name}</td><td>${a.stats[key] ?? '—'}</td></tr>`,
-          ),
+          metrics
+            .filter(([, key]) => h.stats[key] != null || a.stats[key] != null)
+            .map(
+              ([name, key]) =>
+                `<tr><td>${h.stats[key] ?? '—'}</td><td>${name}</td><td>${a.stats[key] ?? '—'}</td></tr>`,
+            ),
           'Team match statistics',
         ),
-      )}${wbPanel('Decisive moments', m.moments.map((e) => `<div class="timeline-row"><strong>${esc(e.clock)}</strong><span class="moment-dot ${e.red_card ? 'red' : ''}"></span><div><strong>${e.red_card ? 'Red card' : e.own_goal ? 'Own goal' : 'Goal'}</strong><p>${esc(e.players.filter(Boolean).join(' · '))}</p></div></div>`).join('') || '<p>No goals or dismissals recorded.</p>', 'Goals and dismissals only')}
+      )}${wbPanel('Decisive moments', m.moments.map((e) => `<div class="timeline-row"><strong>${esc(e.clock)}</strong><span class="moment-dot ${e.red_card ? 'red' : ''}"></span><div><strong>${e.red_card ? 'Red card' : e.own_goal ? 'Own goal' : 'Goal'}</strong><p>${esc(e.players.filter(Boolean).join(' · '))}</p></div></div>`).join('') || '<p>Timeline detail is not imported in this summary. The final score above comes from the match record; inspect the event shot maps for located shots.</p>', 'Goals and dismissals only')}
     </div>
     ${wbPanel(
       'Lineups & appearances',
