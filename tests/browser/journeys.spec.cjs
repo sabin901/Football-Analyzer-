@@ -90,3 +90,46 @@ test('Local video metadata and evidence seeking work without an upload', async (
   await expect.poll(() => page.locator('#analysis-video').evaluate((v) => v.currentTime)).toBe(120);
   await expect(page.locator('#note-evidence')).toHaveValue('demo-1');
 });
+
+for (const width of [320, 600, 768, 1024, 1920]) {
+  test(`All workspaces reflow at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    for (const view of [
+      'overview',
+      'matches',
+      'compare',
+      'players',
+      'matchlab',
+      'events',
+      'heatmap',
+      'forecast',
+      'coverage',
+      'analyst',
+    ]) {
+      await page.goto(`/#view=${view}&league=PL&season=2026-27`);
+      await expect(page.locator('#content')).toHaveAttribute('aria-busy', 'false');
+      await expect(page.locator('#content')).not.toContainText('Loading');
+      await expect(page.locator('#view-guide summary')).toBeVisible();
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1),
+      ).toBeTruthy();
+    }
+  });
+}
+test('Guided historical comparison and forecast explorer use actual archive examples', async ({
+  page,
+}) => {
+  await page.goto('/#view=compare&league=PD&season=2026-27');
+  await expect(page.locator('#content')).toHaveAttribute('aria-busy', 'false');
+  await page.locator('#view-guide summary').click();
+  await page.getByRole('button', { name: 'Compare two historical teams' }).click();
+  await expect(page.getByLabel('Season', { exact: true })).toHaveValue('2017-18');
+  await expect(page.locator('.comparison-team .team-emblem')).toHaveCount(2);
+  await page.goto('/#view=forecast&league=PD');
+  await expect(page.locator('#content')).toHaveAttribute('aria-busy', 'false');
+  await expect(page.getByLabel('Historical fixture example')).toBeVisible();
+  await page.getByLabel('Historical fixture example').selectOption({ index: 1 });
+  await page.getByText('Explore scorelines & model disagreement', { exact: true }).first().click();
+  await expect(page.locator('.score-cells').first()).toBeVisible();
+  await expect(page.locator('.replay-label')).toContainText('NOT A LIVE PREDICTION');
+});

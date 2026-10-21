@@ -4,7 +4,7 @@ on:
     branches: [main]
   pull_request:
   schedule:
-    - cron: '17 */6 * * *'
+    - cron: '17 * * * *'
   workflow_dispatch:
 permissions:
   contents: read
@@ -43,6 +43,12 @@ jobs:
       - name: Surface refresh failure
         if: steps.refresh.outcome == 'failure'
         run: echo '::warning::Result source unavailable. Last snapshots are retained with visible freshness warnings.'
+      - name: Refresh optional delayed provider
+        if: github.event_name != 'pull_request'
+        continue-on-error: true
+        env:
+          FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+        run: python src/current_provider.py
       - name: Rebuild models using earlier data only
         env:
           FOOTLYZER_RECORD_FORECASTS: ${{ github.event_name != 'pull_request' && '1' || '0' }}

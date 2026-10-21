@@ -29,6 +29,7 @@
     <link rel="stylesheet" href="interface.css" />
     <link rel="stylesheet" href="analyst.css" />
     <link rel="stylesheet" href="studio.css" />
+    <link rel="stylesheet" href="responsive.css" />
     <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
@@ -44,6 +45,7 @@
     <script defer src="workbench-views.js"></script>
     <script defer src="analyst-core.js"></script>
     <script defer src="analyst-workspace.js"></script>
+    <script defer src="experience.js"></script>
     <script defer src="dashboard.js"></script>
   </head>
   <body>
@@ -104,6 +106,10 @@
           <strong id="breadcrumb">League overview</strong></span
         ><span class="top-tag">EUROPE · TOP 5</span>
       </header>
+      <div id="release-update" class="release-update" role="status" hidden>
+        A newer publication is available.
+        <button class="secondary" data-refresh-publication>Load update</button>
+      </div>
       <main id="main" tabindex="-1">
         <section class="heading">
           <svg class="touchline-art" viewBox="0 0 320 180" aria-hidden="true" focusable="false">
@@ -139,7 +145,9 @@
           </div>
         </section>
         <div id="data-status" role="status" class="data-status">Loading data coverage…</div>
+        <section id="view-guide" class="view-guide" aria-label="Workspace quick start"></section>
         <div id="content" aria-busy="true"><div class="empty">Loading the football desk…</div></div>
+        <p id="current-attribution" class="muted"></p>
         <footer>
           <span>Footlyzer · Evidence before opinion.</span
           ><span

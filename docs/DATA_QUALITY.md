@@ -6,7 +6,7 @@ The public build allows OpenFootball CC0 results and the CC BY 4.0 Pappalardo/Wy
 
 Results are checked for season membership, valid dates and integer scores, team count, duplicate fixtures and future completed matches. Invalid rows are quarantined without silently rewriting their dates. The quality record is tied to a digest of the normalized results. These checks detect structural problems; they do not independently confirm that a score is true.
 
-The free community source can lag. The latest recorded result date and missing past fixtures are shown separately from the fetch time. Refreshes are attempted every six hours; failures retain the last available snapshot and display its age. A recent download is not a live feed.
+The free community source can lag. The latest recorded result date and missing past fixtures are shown separately from the fetch time. Refreshes are attempted hourly; failures retain the last available snapshot and display its age. A recent download is not a live feed.
 
 Official standings are not independently verified. Tables show computed match points, without claiming official disciplinary deductions or competition tie-break rules. The 2019/20 Premier League source contains out-of-season dates; rejected rows remain visible in the quarantine report rather than being silently repaired from a restricted feed.
 
@@ -25,3 +25,7 @@ Upcoming probabilities require a source snapshot and quality record at most 36 h
 The build uses a fresh staging directory and validates provenance before copying data. Retired assets cannot leak through a directory overlay. Generated site files are not maintained as source code. The manifest records the code revision, data revision and build time. Automated checks cover import boundaries, temporal leakage, probability scores, source contracts and public packaging.
 
 The current public package excludes restricted legacy datasets. Historical Git commits may still contain prior data; this release does not rewrite repository history or certify removal from third-party caches.
+
+## Optional delayed current-season layer
+
+An optional Football-Data.org adapter publishes current fixtures and reconciled tables under the provider's subscription terms. It is separate from the CC0 archive. The free tier has delayed scores; hourly GitHub Actions refreshes are scheduled attempts, not a real-time guarantee. The source label and fetch timestamp identify which layer is shown. See the repository's API_SETUP.md for activation. Missing credentials leave the openly licensed community source active.

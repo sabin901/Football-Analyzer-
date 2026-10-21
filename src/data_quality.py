@@ -217,6 +217,11 @@ def refresh(path, source_dir=None):
 
 
 def quality_for(snapshot, live_dir=LIVE):
+    if snapshot.get("source_id") == "football_data_org":
+        quality = snapshot.get("quality", {})
+        if quality.get("results_digest") == results_digest(snapshot["matches"]):
+            return quality
+        return {}
     quality = read_json(
         live_dir / f"quality_{snapshot.get('league')}_{snapshot.get('season')}.json", {}
     )
