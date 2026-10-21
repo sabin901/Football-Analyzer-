@@ -23,3 +23,7 @@ Interface icons derive from Lucide under its ISC license. The license is include
 Users must have permission to use their own imported event files and videos. They remain in their browser and are not redistributed by this application. No permission to use a third-party video is granted by a data license.
 
 Public source code availability is separate from dataset rights. This release does not grant a new blanket license over all repository code or third-party material. Individual notices continue to apply. Restricted legacy research artifacts are excluded from the public build; historical Git revisions are not purged by this release.
+
+## Team identifiers
+
+Footlyzer generates its own shield identifiers from each team name. These are navigation aids, not official club crests, and their colours are not a claim about club colours. No club endorsement is implied. The shared renderer supports reviewed local assets under `assets/clubs/`; an asset must have documented permission before being added. Football-Data.org's subscription does not itself grant permission to use team graphics.

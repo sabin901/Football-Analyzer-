@@ -444,9 +444,24 @@ function eventView() {
     </div>
     ${eventMatchView(match)}`;
 }
+function forecastDetails(p) {
+  const summary = p.score_summary;
+  const models = [
+    ['probabilities', 'Venue Poisson'],
+    ['baseline', 'League frequency'],
+    ['elo', 'Elo / Davidson'],
+    ['fitted_poisson', 'Fitted Poisson'],
+  ].filter(([key]) => Array.isArray(p[key]));
+  const spread =
+    models.length > 1
+      ? Math.max(...models.map(([key]) => p[key][0])) -
+        Math.min(...models.map(([key]) => p[key][0]))
+      : null;
+  return `<details class="score-explorer"><summary>Explore scorelines & model disagreement</summary>${summary ? `<div class="score-cells">${summary.scorelines.map((s) => `<div class="score-cell"><strong>${s.home}–${s.away}</strong><span>${pct(s.probability)}</span></div>`).join('')}</div><p>All other scores: <strong>${pct(summary.other_scorelines)}</strong> · Both teams score: ${pct(summary.both_score)} · Three or more goals: ${pct(summary.over_2_5)}.</p><p class="muted">Home score first. Outcomes from the same independent Poisson goal model, not betting advice or shot-based xG.</p>` : '<p>Scoreline detail unavailable for this older record.</p>'}<div class="model-disagreement">${models.map(([key, label]) => `<div><strong>${label}</strong><span>${p[key].map(pct).join(' / ')}</span><small>Home / Draw / Away</small></div>`).join('')}</div>${spread !== null ? `<p>Home-win estimates span ${(spread * 100).toFixed(1)} percentage points across these models. This is model disagreement, not a statistical confidence interval.</p>` : ''}</details>`;
+}
 function forecastFixture(p) {
   const limited = Math.min(p.home_sample, p.away_sample) < 5;
-  return `<article class="forecast-fixture"><div><span class="eyebrow">${day(p.date)}</span><h3>${esc(short(p.home))} <span class="muted">vs</span> ${esc(short(p.away))}</h3><small>${p.home_sample} home / ${p.away_sample} away venue matches · ${p.sample} training results</small>${limited ? '<p class="forecast-quality">Limited team sample · substantial prior influence</p>' : ''}<details><summary>Model inputs & explanation</summary><p>Training: ${day(p.training_start)}–${day(p.training_end)}. Prediction cutoff ${day(p.cutoff_exclusive)}, exclusive. Expected goals from result rates: ${p.home_rate.toFixed(2)} home / ${p.away_rate.toFixed(2)} away. These are not shot xG.</p><p>Eight prior games contribute ${Math.round(800 / (p.home_sample + 8))}% of the home venue rate and ${Math.round(800 / (p.away_sample + 8))}% of the away venue rate. The model excludes lineups, injuries and market odds.</p></details></div><div class="forecast-distribution"><div class="forecast-gauges">${p.probabilities.map((prob, i) => `<div class="forecast-gauge"><svg viewBox="0 0 120 80" role="img" aria-label="${['Home win', 'Draw', 'Away win'][i]} ${pct(prob)}"><path d="M15 65A45 45 0 0 1 105 65" fill="none" stroke="#2c3d54" stroke-width="8" pathLength="100"/><path d="M15 65A45 45 0 0 1 105 65" fill="none" stroke="${['#75decd', '#9bb4d6', '#eab174'][i]}" stroke-width="8" stroke-linecap="round" pathLength="100" stroke-dasharray="${100 * prob} 100"/></svg><strong>${pct(prob)}</strong><span>${['Home win', 'Draw', 'Away win'][i]}</span></div>`).join('')}</div></div></article>`;
+  return `<article class="forecast-fixture"><div><span class="eyebrow">${day(p.date)}</span><h3>${teamIdentity(p.home)} ${esc(short(p.home))} <span class="muted">vs</span> ${teamIdentity(p.away)} ${esc(short(p.away))}</h3><small>${p.home_sample} home / ${p.away_sample} away venue matches · ${p.sample} training results</small>${limited ? '<p class="forecast-quality">Limited team sample · substantial prior influence</p>' : ''}<details><summary>Model inputs & explanation</summary><p>Training: ${day(p.training_start)}–${day(p.training_end)}. Prediction cutoff ${day(p.cutoff_exclusive)}, exclusive. Expected goals from result rates: ${p.home_rate.toFixed(2)} home / ${p.away_rate.toFixed(2)} away. These are not shot xG.</p><p>Eight prior games contribute ${Math.round(800 / (p.home_sample + 8))}% of the home venue rate and ${Math.round(800 / (p.away_sample + 8))}% of the away venue rate. The model excludes lineups, injuries and market odds.</p></details></div><div class="forecast-distribution"><div class="forecast-gauges">${p.probabilities.map((prob, i) => `<div class="forecast-gauge"><svg viewBox="0 0 120 80" role="img" aria-label="${['Home win', 'Draw', 'Away win'][i]} ${pct(prob)}"><path d="M15 65A45 45 0 0 1 105 65" fill="none" stroke="#2c3d54" stroke-width="8" pathLength="100"/><path d="M15 65A45 45 0 0 1 105 65" fill="none" stroke="${['#75decd', '#9bb4d6', '#eab174'][i]}" stroke-width="8" stroke-linecap="round" pathLength="100" stroke-dasharray="${100 * prob} 100"/></svg><strong>${pct(prob)}</strong><span>${['Home win', 'Draw', 'Away win'][i]}</span></div>`).join('')}</div></div>${forecastDetails(p)}</article>`;
 }
 function forecastView(d) {
   const expiry = Date.parse(d.publication?.valid_until);
@@ -465,16 +480,25 @@ function forecastView(d) {
     };
   d = { ...d, upcoming: d.upcoming.filter((p) => p.date > new Date().toISOString().slice(0, 10)) };
   const e = d.by_season[wb.evalSeason] || d.evaluation;
-  const replay = !d.upcoming.length ? wbLoad(`backtest_${leagueId}.json`)?.records?.at(-1) : null;
+  const replays = wbLoad(`backtest_${leagueId}.json`)?.records || [];
+  const replay =
+    replays.find((p) => `${p.date}|${p.home}|${p.away}` === wb.replay) || replays.at(-1);
+  const replayOptions = replays
+    .slice(-150)
+    .reverse()
+    .map((p) => [
+      `${p.date}|${p.home}|${p.away}`,
+      `${day(p.date)} · ${short(p.home)} vs ${short(p.away)}`,
+    ]);
   const improvement = e.n
     ? (100 * (e.metrics.baseline.log_loss - e.metrics.probabilities.log_loss)) /
       e.metrics.baseline.log_loss
     : null;
-  return `<div class="notice"><strong>Experimental forecasts as of ${day(d.as_of)} · ${esc(d.season)}.</strong> Training excludes results on or after this date. ${Date.now() - Date.parse(d.built_at) > 36 * 3600000 ? '<strong>This forecast snapshot is older than 36 hours.</strong> ' : ''}Lineups, injuries and team news are not included.</div>
+  return `${d.current_provider ? `<div class="notice">${esc(d.current_provider.attribution)} · delayed current fixtures, fetched ${stamp(d.current_provider.fetched_at)}. Historical evaluation below uses the separate OpenFootball archive. Provider-fed forecasts do not yet have a prospective published record.</div>` : ''}<div class="notice"><strong>Experimental forecasts as of ${day(d.as_of)} · ${esc(d.season)}.</strong> Training excludes results on or after this date. ${Date.now() - Date.parse(d.built_at) > 36 * 3600000 ? '<strong>This forecast snapshot is older than 36 hours.</strong> ' : ''}Lineups, injuries and team news are not included.</div>
     <div class="metrics">${metric('Results in the archive', d.history_matches.toLocaleString(), 'Training uses the preceding 365 days')}${metric('Evaluation matches', e.n.toLocaleString(), e.n ? `${day(e.first_date)} – ${day(e.last_date)}` : 'No evaluation available')}${metric('Model log loss', e.n ? e.metrics.probabilities.log_loss.toFixed(3) : '—', 'Lower is better')}${metric('Frequency baseline', e.n ? e.metrics.baseline.log_loss.toFixed(3) : '—', 'Same fixtures, same training window')}</div>
     ${e.n ? `<div class="forecast-evidence"><div><strong>${improvement > 0 ? 'Lower historical error than the league-frequency baseline' : 'The model does not beat the league-frequency baseline'}</strong><p>Reconstructed evaluation · ${e.n.toLocaleString()} matches. This is historical evidence, not a guarantee of future accuracy.</p></div><div class="evidence-value">${Math.abs(improvement).toFixed(1)}%<small>${improvement > 0 ? 'lower' : 'higher'} log loss</small></div></div>` : ''}
     ${d.publication?.allowed === false ? `<div class="notice"><strong>Upcoming probabilities withheld.</strong> ${esc(d.publication.reason)}</div>` : ''}
-    ${replay ? wbPanel('Historical fixture replay', `<span class="replay-label">RETROSPECTIVE BACKTEST · NOT A LIVE PREDICTION</span>${forecastFixture(replay)}<p class="muted">Recorded outcome: ${['home win', 'draw', 'away win'][replay.actual]}. Probabilities were reconstructed with results strictly before the fixture date. They were not published before this match. Experimental model; no demonstrated live edge.</p>`) : ''}
+    ${replay ? wbPanel('Historical fixture replay', `${wbSelect('forecast-replay', 'Historical fixture example', replayOptions, `${replay.date}|${replay.home}|${replay.away}`)}<span class="replay-label">RETROSPECTIVE BACKTEST · NOT A LIVE PREDICTION</span>${forecastFixture(replay)}<p class="muted">Recorded outcome: ${['home win', 'draw', 'away win'][replay.actual]}. Probabilities were reconstructed with results strictly before the fixture date. They were not published before this match. Experimental model; no demonstrated live edge.</p>`) : ''}
     ${wbPanel('Upcoming fixtures', d.upcoming.length ? d.upcoming.slice(0, 6).map(forecastFixture).join('') + (d.upcoming.length > 6 ? `<details class="forecast-more"><summary>Show ${d.upcoming.length - 6} more scheduled fixtures</summary>${d.upcoming.slice(6).map(forecastFixture).join('')}</details>` : '') : empty(d.publication?.allowed === false ? 'Probabilities will return when the data checks pass.' : 'No eligible fixtures within the next 14 days.'), 'Next 14 days · Home / Draw / Away')}
     <div class="toolbar">${wbSelect('wb-eval-season', 'Evaluation period', [['', 'All evaluation seasons'], ...Object.keys(d.by_season).map((s) => [s, s])], wb.evalSeason)}</div>
     ${

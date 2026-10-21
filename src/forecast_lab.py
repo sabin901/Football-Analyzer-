@@ -29,12 +29,32 @@ from data_quality import quality_for
 MODEL = "venue-poisson-365d-prior8-open-v3"
 
 
-def probabilities(lam, mu):
-    a = np.array([math.exp(-lam) * lam**i / math.factorial(i) for i in range(20)])
-    b = np.array([math.exp(-mu) * mu**i / math.factorial(i) for i in range(20)])
+def score_grid(lam, mu):
+    if not all(math.isfinite(v) and 0 < v <= 20 for v in (lam, mu)):
+        raise ValueError("Goal rates must be finite and within (0, 20]")
+    # Adaptive tail supports extreme stress tests as well as football-sized rates.
+    size = max(20, int(max(lam, mu) + 12 * math.sqrt(max(lam, mu)) + 1))
+    a = np.array([math.exp(-lam) * lam**i / math.factorial(i) for i in range(size)])
+    b = np.array([math.exp(-mu) * mu**i / math.factorial(i) for i in range(size)])
     grid = np.outer(a, b)
-    grid /= grid.sum()
+    return grid / grid.sum()
+
+
+def probabilities(lam, mu):
+    grid = score_grid(lam, mu)
     return [float(np.tril(grid, -1).sum()), float(np.trace(grid)), float(np.triu(grid, 1).sum())]
+
+
+def score_summary(lam, mu):
+    grid = score_grid(lam, mu)
+    cells = sorted(((i, j, float(p)) for (i, j), p in np.ndenumerate(grid)), key=lambda c: -c[2])
+    top = [{"home": i, "away": j, "probability": p} for i, j, p in cells[:5]]
+    return {
+        "scorelines": top,
+        "other_scorelines": 1 - sum(c["probability"] for c in top),
+        "both_score": float(grid[1:, 1:].sum()),
+        "over_2_5": sum(p for i, j, p in cells if i + j >= 3),
+    }
 
 
 def forecast(history, fixture, cutoff):
@@ -76,6 +96,7 @@ def forecast(history, fixture, cutoff):
         "home_rate": lam,
         "away_rate": mu,
         "probabilities": probabilities(lam, mu),
+        "score_summary": score_summary(lam, mu),
         "baseline": [(n + 1) / (len(train) + 3) for n in counts],
     }
 

@@ -36,3 +36,9 @@ The first forecast for a model, fixture and date is frozen before the fixture da
 ## Publication conditions
 
 A complete schedule, no missing past results, no quarantined rows, a matching quality digest and fresh inputs are required. The current open source may fail these checks; withheld forecasts are intentional. See the [quality policy](DATA_QUALITY.html). Official standings and league disciplinary decisions are not independently verified.
+
+## Score explorer
+
+Historical replay selectors expose up to 150 recent reconstructed fixtures per league. The five displayed scorelines, remaining score mass, both-teams-to-score probability and three-or-more-goals probability come from the same independent Poisson distribution. The numerical tail expands with the goal rates. Rates outside the supported finite range are rejected. Model disagreement is the range of estimates, not a confidence interval, and no challenger is automatically promoted based on the displayed evaluation.
+
+Optional Football-Data.org current-season predictions use provider results in place of overlapping community rows. Historical evaluation remains on OpenFootball, and is not evidence of live provider-fed performance. Provider-fed outputs currently have no persistent prospective record. This release does not claim improved predictive accuracy solely from new visualizations.

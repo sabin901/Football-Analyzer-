@@ -73,16 +73,7 @@ Object.assign(titles, {
 const content = $('#content');
 const form = (letters) =>
   `<span class="form" aria-label="Last ${letters.length} results, oldest first: ${letters.join(', ')}">${letters.map((x) => `<i class="${x}">${x}</i>`).join('')}</span>`;
-const badge = (name) =>
-  manifest?.crests?.[leagueId]?.[name]
-    ? crest({ name, logo: manifest.crests[leagueId][name] })
-    : `<span class="team-badge" aria-hidden="true">${esc(
-        short(name)
-          .split(' ')
-          .map((n) => n[0])
-          .join('')
-          .slice(0, 3),
-      )}</span>`;
+const badge = (name) => teamIdentity(name, manifest?.crests?.[leagueId]?.[name]);
 const metric = (label, value, note, team = false) =>
   `<div class="metric"><div class="metric-label">${label}</div><div class="metric-value ${team ? 'team-value' : ''}">${value}</div><div class="metric-note">${note}</div></div>`;
 const empty = (message) => `<div class="empty">${message}</div>`;
@@ -159,21 +150,26 @@ function standingsRows() {
 }
 function matchRow(m) {
   const state =
-    m.status === 'awarded'
-      ? 'Awarded result'
-      : m.status === 'ratified'
-        ? 'Ratified result'
-        : m.hg !== null
-          ? 'Full time'
-          : interrupted(m)
-            ? m.status[0].toUpperCase() + m.status.slice(1)
-            : m.date && m.date < today()
-              ? 'Result missing'
-              : 'Scheduled';
+    m.status === 'in_play'
+      ? 'In progress · delayed feed'
+      : m.status === 'awarded_pending'
+        ? 'Awaiting ratified score'
+        : m.status === 'awarded'
+          ? 'Awarded result'
+          : m.status === 'ratified'
+            ? 'Ratified result'
+            : m.hg !== null
+              ? 'Full time'
+              : interrupted(m)
+                ? m.status[0].toUpperCase() + m.status.slice(1)
+                : m.date && m.date < today()
+                  ? 'Result missing'
+                  : 'Scheduled';
   return /* HTML */ `<div class="match-row">
-    <span class="match-date">${day(m.date)}</span><span class="home">${esc(short(m.home))}</span
+    <span class="match-date">${day(m.date)}</span
+    ><span class="home">${badge(m.home)}${esc(short(m.home))}</span
     ><span class="score">${m.hg !== null ? `${m.hg}–${m.ag}` : 'vs'}</span
-    ><span class="away">${esc(short(m.away))}</span
+    ><span class="away">${badge(m.away)}${esc(short(m.away))}</span
     ><span class="match-state"
       >${m.result_review ? `<details><summary>${state} · source note</summary><p>${esc(m.result_review.reason)}</p>${m.result_review.sources.map((url, i) => `<a href="${esc(url)}" target="_blank" rel="noopener">Source ${i + 1}</a>`).join(' · ')}</details>` : state}</span
     >
@@ -286,7 +282,7 @@ function overview() {
             <button class="secondary" data-view="matches">View all ↗</button>
           </div>
           <div class="panel-body">
-            ${recent.map((m) => `<div class="compact-match"><div class="match-date">${day(m.date)}</div><div class="sides"><span>${esc(short(m.home))}</span><strong>${m.hg}</strong></div><div class="sides"><span>${esc(short(m.away))}</span><strong>${m.ag}</strong></div></div>`).join('') || '<p class="muted">No results recorded.</p>'}
+            ${recent.map((m) => `<div class="compact-match"><div class="match-date">${day(m.date)}</div><div class="sides"><span>${badge(m.home)}${esc(short(m.home))}</span><strong>${m.hg}</strong></div><div class="sides"><span>${badge(m.away)}${esc(short(m.away))}</span><strong>${m.ag}</strong></div></div>`).join('') || '<p class="muted">No results recorded.</p>'}
           </div>
         </section>
       </aside>
@@ -399,7 +395,7 @@ function qualityPanel() {
     r = q.results || {};
   return wbPanel(
     'Source quality and coverage',
-    `<p><strong>${esc(leagueId)} · ${esc(seasonId)}</strong> · Checked ${stamp(q.checked_at)}</p><div class="metrics">${metric('Recorded results', data.completed, 'OpenFootball community source')}${metric('Missing past results', data.overdue, 'Before today; not assumed to be draws')}${metric('Quarantined rows', data.quarantined?.length || 0, 'Invalid source rows are excluded')}${metric('Independent verification', 'Unavailable', 'Structural checks are not a second provider')}</div><p>${esc(r.note || '')} The table is computed from recorded results. Official deductions, disciplinary outcomes and competition tie-breaks are not independently verified.</p>${data.quarantined?.length ? `<details><summary>Excluded source records</summary><ul>${data.quarantined.map((m) => `<li>${esc(m.date)} · ${esc(m.home)} / ${esc(m.away)}: ${esc(m.reason)}</li>`).join('')}</ul></details>` : ''}<p><a href="${esc(data.source_url)}">Original source</a> · <a href="data/${leagueId}_${seasonId}.json">Download snapshot and quality record</a> · <a href="docs/DATA_QUALITY.html">Quality policy</a></p>`,
+    `<p><strong>${esc(leagueId)} · ${esc(seasonId)}</strong> · Checked ${stamp(q.checked_at)}</p><div class="metrics">${metric('Recorded results', data.completed, esc(data.source || 'OpenFootball'))}${metric('Missing past results', data.overdue, 'Before today; not assumed to be draws')}${metric('Quarantined rows', data.quarantined?.length || 0, 'Invalid source rows are excluded')}${metric('Independent verification', 'Unavailable', 'Structural checks are not a second provider')}</div><p>${esc(r.note || '')} ${data.source_id === 'football_data_org' && q.standings?.status === 'matched' ? 'Provider standings reconcile with result totals; table order and administrative point adjustments follow that provider.' : 'The table is computed from recorded results. Official deductions and tie-breaks are not independently verified.'}</p>${data.quarantined?.length ? `<details><summary>Excluded source records</summary><ul>${data.quarantined.map((m) => `<li>${esc(m.date)} · ${esc(m.home)} / ${esc(m.away)}: ${esc(m.reason)}</li>`).join('')}</ul></details>` : ''}<p><a href="${esc(data.source_url)}">Original source</a> · <a href="data/${leagueId}_${seasonId}.json">Download snapshot and quality record</a> · <a href="docs/DATA_QUALITY.html">Quality policy</a></p>`,
   );
 }
 function coverageView() {
@@ -410,9 +406,10 @@ function coverageView() {
     })
     .join(
       '',
-    )}</section><div class="method-grid">${wbPanel('What is available', `<p><strong>Results:</strong> OpenFootball schedules, scores, form and comparisons across five European leagues. A fresh fetch does not mean every recent match has been entered by the community.</p><p><strong>Historical events:</strong> the complete 2017/18 five-league Pappalardo/Wyscout research archive: action locations, shots, pass counts, lineups and estimated regulation minutes. This is not current squad or recruitment data.</p><p><strong>Your analyst workspace:</strong> import permitted events, attach a local video, record evidence and export a decision brief. Your files are not uploaded.</p><p><strong>Unavailable:</strong> current granular events, provider xG, injuries, reliable possession, continuous tracking, independent official standings verification and verified betting odds. These are never substituted with invented values.</p><p><a href="docs/DATA_DICTIONARY.html">Data dictionary</a> · <a href="data/football.sqlite" download>SQL warehouse</a> · <a href="docs/ANALYST_GUIDE.html">Analyst guide</a></p>`)}${wbPanel('Sources, rights and uncertainty', `<p><a href="https://github.com/openfootball/football.json">OpenFootball</a> publishes under CC0. <a href="https://doi.org/10.6084/m9.figshare.c.4415000">Pappalardo and colleagues (2019)</a> publish the Wyscout research dataset under CC BY 4.0. Names and coordinates are normalized; counts and grids are derived. No endorsement is implied.</p><p>Only these allowlisted sources enter the public build. ESPN, Football-Data.co.uk, and the restricted StatsBomb archive are excluded from the public package.</p><p>Results refresh attempts run every six hours. Invalid rows are quarantined; a failed fetch retains the last available snapshot. Forecasts are withheld on incomplete schedules, missing past results, quarantine or stale inputs.</p><p>Historical model comparisons include league frequency, equal probabilities, Elo and a fitted Poisson challenger. The model is experimental, has no demonstrated live edge, and does not include injury or lineup information.</p><p><a href="data/source_registry.json">License registry</a> · <a href="data/wyscout_sources.json">Archive fingerprints</a> · <a href="docs/ASSET_CREDITS.html">Full attribution</a> · <a href="docs/PRIVACY.html">Privacy</a></p>`)}</div>`;
+    )}</section><div class="method-grid">${wbPanel('What is available', `<p><strong>Results:</strong> OpenFootball schedules, scores, form and comparisons across five European leagues. A fresh fetch does not mean every recent match has been entered by the community.</p><p><strong>Historical events:</strong> the complete 2017/18 five-league Pappalardo/Wyscout research archive: action locations, shots, pass counts, lineups and estimated regulation minutes. This is not current squad or recruitment data.</p><p><strong>Your analyst workspace:</strong> import permitted events, attach a local video, record evidence and export a decision brief. Your files are not uploaded.</p><p><strong>Unavailable:</strong> current granular events, provider xG, injuries, reliable possession, continuous tracking, independent official standings verification and verified betting odds. These are never substituted with invented values.</p><p><a href="docs/DATA_DICTIONARY.html">Data dictionary</a> · <a href="data/football.sqlite" download>SQL warehouse</a> · <a href="docs/ANALYST_GUIDE.html">Analyst guide</a></p>`)}${wbPanel('Sources, rights and uncertainty', `<p><a href="https://github.com/openfootball/football.json">OpenFootball</a> publishes under CC0. <a href="https://doi.org/10.6084/m9.figshare.c.4415000">Pappalardo and colleagues (2019)</a> publish the Wyscout research dataset under CC BY 4.0. Names and coordinates are normalized; counts and grids are derived. No endorsement is implied.</p><p>Open archives remain separate from the optional Football-Data.org delayed current-season display feed, which is governed by provider terms rather than an open-data license. ESPN, Football-Data.co.uk, and the restricted StatsBomb archive are excluded from the public package.</p><p>Results refresh attempts run hourly through GitHub Actions; scheduled jobs can be delayed. The free provider feed is delayed, not real-time. Invalid rows are quarantined; a failed fetch retains the last available snapshot. Forecasts are withheld on incomplete schedules, missing past results, quarantine or stale inputs.</p><p>Historical model comparisons include league frequency, equal probabilities, Elo and a fitted Poisson challenger. The model is experimental, has no demonstrated live edge, and does not include injury or lineup information.</p><p><a href="data/source_registry.json">License registry</a> · <a href="data/wyscout_sources.json">Archive fingerprints</a> · <a href="docs/ASSET_CREDITS.html">Full attribution</a> · <a href="docs/PRIVACY.html">Privacy</a></p>`)}</div>`;
 }
 function render() {
+  renderGuide();
   const [label, title, desc] = titles[view];
   document.title = `${label.replace(/[–—-]/g, ' ')} | Footlyzer Football Analytics`;
   $('#breadcrumb').textContent = label;
@@ -490,7 +487,14 @@ function showView(next) {
   window.scrollTo(0, 0);
 }
 async function fetchJson(url) {
-  const response = await fetch(url, { cache: 'no-cache' });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20000);
+  let response;
+  try {
+    response = await fetch(url, { cache: 'no-cache', signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
   if (!response.ok) throw new Error(`Data request failed (${response.status})`);
   return response.json();
 }
@@ -539,6 +543,8 @@ async function loadLeague(push = false) {
     )
       throw new Error('The snapshot does not match the selected league and season.');
     data = snapshot;
+    $('#current-attribution').textContent =
+      data.source_id === 'football_data_org' ? data.attribution + ' · delayed feed' : '';
     data.predictions = data.predictions || [];
     home = data.table[0]?.team || '';
     away = data.table[1]?.team || '';
@@ -558,7 +564,7 @@ async function loadLeague(push = false) {
     $('#data-status').innerHTML =
       `<span class="status-tag ${warning ? '' : 'good'}">${seasonId !== manifest.current_season ? 'HISTORICAL SNAPSHOT' : overdue ? 'PARTIAL RESULTS' : oldFetch ? 'STALE SNAPSHOT' : data.refresh_ok === false ? 'REFRESH FAILED' : 'CURRENT-SEASON SNAPSHOT'}</span> Latest recorded result <strong>${day(data.last_result)}</strong> <span aria-hidden="true">·</span> Fetched ${stamp(data.fetched_at)}${overdue ? ` <span aria-hidden="true">·</span> <strong>${overdue} past fixtures have no recorded result.</strong>` : ''}${data.refresh_ok === false ? ' · Last refresh failed; showing the last successful snapshot.' : ''}${oldFetch ? ' · Fetch is older than 36 hours.' : ''}`;
     $('#data-status').innerHTML +=
-      `<br><a href="#view=coverage&league=${leagueId}&season=${seasonId}">Computed table · community source · independent verification unavailable${data.quarantined?.length ? ' · ' + data.quarantined.length + ' quarantined rows' : ''}</a>`;
+      `<br><a href="#view=coverage&league=${leagueId}&season=${seasonId}">${data.source_id === 'football_data_org' ? 'Delayed provider feed · ' + (data.quality?.standings?.status === 'matched' ? 'table reconciled within provider' : 'table reconciliation pending') : 'Computed table · community source · independent verification unavailable'}${data.quarantined?.length ? ' · ' + data.quarantined.length + ' quarantined rows' : ''}</a>`;
     $('#export').disabled = false;
     render();
   } catch (error) {
@@ -596,6 +602,10 @@ async function start() {
 document.addEventListener('click', (event) => {
   const b = event.target.closest('button');
   if (!b) return;
+  if (b.hasAttribute('data-refresh-publication')) {
+    $('#release-update').hidden = true;
+    $('#refresh').click();
+  }
   if (b.dataset.view) showView(b.dataset.view);
   if (b.dataset.league) {
     leagueId = b.dataset.league;
@@ -708,7 +718,7 @@ $('#export').addEventListener('click', () => {
         m.away,
         m.hg,
         m.ag,
-        m.result_review ? 'Reviewed correction' : m.result_source || 'OpenFootball',
+        m.result_review ? 'Reviewed correction' : m.result_source || data.source || 'OpenFootball',
         m.result_checked_at || data.fetched_at,
         m.status || 'finished',
         m.awarded_winner || '',

@@ -1,0 +1,307 @@
+/* Layout rules follow the available workspace, including a resized side-by-side tab. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html {
+  min-width: 0;
+  scrollbar-gutter: stable;
+}
+body {
+  min-width: 0;
+}
+.workspace,
+main,
+#content,
+.panel,
+.panel-body,
+.toolbar > *,
+.heading > div {
+  min-width: 0;
+}
+main {
+  width: 100%;
+  container-type: inline-size;
+}
+button,
+input,
+select,
+textarea {
+  max-width: 100%;
+}
+button,
+a,
+select,
+summary {
+  touch-action: manipulation;
+}
+:focus-visible {
+  outline: 3px solid #f2b399;
+  outline-offset: 3px;
+}
+h1,
+h2,
+h3,
+p,
+.metric-value,
+.context-title,
+.team-link {
+  overflow-wrap: anywhere;
+}
+.table-scroll {
+  max-width: 100%;
+  overflow: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+}
+.table-scroll:focus-visible {
+  outline-offset: -3px;
+}
+.table-scroll th:first-child,
+.table-scroll td:first-child {
+  position: sticky;
+  left: 0;
+  background: #1c282b;
+  z-index: 1;
+}
+svg:not(.icon):not(.team-emblem):not(.touchline-art) {
+  max-width: 100%;
+}
+.team-emblem {
+  width: 36px;
+  height: 40px;
+  flex: 0 0 36px;
+  vertical-align: middle;
+}
+.match-row .home,
+.match-row .away {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.match-row .home {
+  justify-content: flex-end;
+}
+.match-row .team-emblem {
+  width: 25px;
+  height: 29px;
+  flex-basis: 25px;
+}
+.comparison-identity .team-emblem {
+  width: 56px;
+  height: 62px;
+  flex-basis: 56px;
+}
+.view-guide {
+  margin: 0 0 20px;
+  border: 1px solid #405252;
+  border-radius: 8px;
+  padding: 12px 16px;
+  background: #1b2829;
+}
+.view-guide summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+.view-guide summary span {
+  color: #aac5bf;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  margin-left: 12px;
+  text-transform: uppercase;
+}
+.view-guide p {
+  max-width: 85ch;
+  line-height: 1.6;
+}
+.release-update {
+  padding: 12px 18px;
+  background: #304940;
+  color: #f5f1e6;
+}
+.release-update button {
+  margin-left: 12px;
+}
+.score-explorer {
+  margin-top: 20px;
+  border-top: 1px solid #405252;
+  padding-top: 16px;
+}
+.score-cells {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin: 14px 0;
+}
+.score-cell {
+  border: 1px solid #536461;
+  border-radius: 8px;
+  padding: 14px;
+  background: #203532;
+}
+.score-cell strong,
+.score-cell span {
+  display: block;
+}
+.score-cell strong {
+  font-size: 24px;
+  color: #f5f1e6;
+}
+.score-cell span {
+  color: #a9d7cb;
+}
+.model-disagreement {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.model-disagreement > div {
+  flex: 1 1 170px;
+  padding: 12px;
+  background: #202f33;
+  border-radius: 6px;
+}
+.model-disagreement strong,
+.model-disagreement span {
+  display: block;
+}
+.forecast-fixture {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 1fr);
+}
+.forecast-fixture > * {
+  min-width: 0;
+}
+.forecast-distribution {
+  width: 100%;
+  min-width: 0;
+}
+@container (max-width: 960px) {
+  .dashboard-grid,
+  .method-grid,
+  .wb-grid,
+  .forecast-fixture {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .toolbar {
+    flex-wrap: wrap;
+  }
+  .heading {
+    flex-wrap: wrap;
+  }
+}
+@container (max-width: 620px) {
+  .compare-grid,
+  .brief-grid,
+  .analyst-fields,
+  .analyst-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .panel-head,
+  .context-bar,
+  .table-tools {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .forecast-distribution,
+  .forecast-gauges {
+    min-width: 0;
+  }
+  .forecast-gauge strong {
+    font-size: clamp(18px, 5cqi, 32px);
+  }
+  .score-cells {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .comparison-identity h2 {
+    font-size: clamp(22px, 6cqi, 32px);
+  }
+}
+@media (max-width: 1100px) and (min-width: 901px) {
+  .sidebar {
+    width: 190px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .workspace {
+    margin-left: 190px;
+  }
+  main {
+    padding: 24px;
+  }
+}
+@media (max-width: 400px) {
+  main {
+    padding: 16px 10px;
+  }
+  .sidebar {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .mobile-view {
+    width: 100%;
+    max-width: none;
+  }
+  .mobile-view select {
+    width: 100%;
+  }
+  .topbar {
+    padding: 12px;
+    font-size: 11px;
+  }
+  .heading {
+    padding: 18px 12px;
+  }
+  .heading h1 {
+    font-size: 30px;
+  }
+  .league-tabs {
+    gap: 4px;
+  }
+  .league-tab {
+    padding: 10px 2px;
+    font-size: 9px;
+  }
+  .context-controls {
+    flex-wrap: wrap;
+  }
+  .panel-body {
+    padding: 14px;
+  }
+  .toolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .metric {
+    padding: 14px;
+  }
+  .forecast-gauges {
+    gap: 4px;
+  }
+}
+@media print {
+  .view-guide,
+  .release-update {
+    display: none;
+  }
+}
+.forecast-fixture > .score-explorer {
+  grid-column: 1 / -1;
+}
+.compact-match .sides > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.compact-match .team-emblem {
+  width: 23px;
+  height: 27px;
+  flex-basis: 23px;
+}

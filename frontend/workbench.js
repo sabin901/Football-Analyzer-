@@ -28,18 +28,10 @@ const wb = {
   eventSearch: '',
   eventPage: 1,
   evalSeason: '',
+  replay: '',
 };
 function crest(team) {
-  const url = team?.logo;
-  return url && /^https:\/\/a\.espncdn\.com\//.test(url)
-    ? `<img class="club-crest" src="${esc(url)}" alt="" loading="lazy" width="36" height="36">`
-    : `<span class="club-monogram" aria-hidden="true">${esc(
-        (team?.name || 'FC')
-          .split(' ')
-          .map((s) => s[0])
-          .join('')
-          .slice(0, 3),
-      )}</span>`;
+  return teamIdentity(team?.name, team?.logo);
 }
 function portrait(p, d) {
   return p.photo && /^https:\/\/a\.espncdn\.com\//.test(p.photo)
@@ -200,7 +192,7 @@ document.addEventListener(
     if (e.target instanceof HTMLImageElement && e.target.classList.contains('club-crest')) {
       const fallback = document.createElement('span');
       fallback.className = 'club-monogram';
-      fallback.textContent = 'FC';
+      fallback.innerHTML = teamIdentity(e.target.dataset.teamName || 'Club');
       fallback.setAttribute('aria-hidden', 'true');
       e.target.replaceWith(fallback);
     }
@@ -222,4 +214,11 @@ document.addEventListener('click', (e) => {
     period: 'all',
   });
   showView('heatmap');
+});
+
+document.addEventListener('change', (event) => {
+  if (event.target.id === 'forecast-replay') {
+    wb.replay = event.target.value;
+    render();
+  }
 });

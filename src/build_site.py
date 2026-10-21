@@ -11,6 +11,7 @@ from open_policy import WORKBENCH as OUT, OPEN, validate_public
 import json
 import subprocess
 import os
+from current_provider import load_current, display_snapshot, upcoming_overlay
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -84,11 +85,20 @@ def build():
         ),
         "data_revision": os.environ.get("FOOTLYZER_DATA_REVISION", "bundled"),
     }
+    provider_snapshots = {}
     for league in data.LEAGUES:
         seasons = []
         for path in sorted(data.LIVE.glob(f"dashboard_{league['id']}_*.json"), reverse=True):
             raw = validate_public(data.read_json(path))
             snapshot = data.snapshot(league["id"], raw["season"])
+            provider = (
+                load_current(league["id"], raw["season"])
+                if raw["season"] == data.current_season()
+                else None
+            )
+            if provider:
+                snapshot = display_snapshot(provider)
+                provider_snapshots[league["id"]] = provider
             snapshot["predictions"] = []
             file = f"data/{league['id']}_{raw['season']}.json"
             data.write_json(site / file, snapshot)
@@ -106,6 +116,17 @@ def build():
         if not seasons:
             raise RuntimeError(f"No permitted results for {league['id']}")
         manifest["leagues"].append({**league, "seasons": seasons})
+    manifest["current_provider"] = {
+        "active_leagues": sorted(provider_snapshots),
+        "mode": "delayed" if provider_snapshots else "community",
+        "refresh_minutes": 60,
+    }
+    if provider_snapshots:
+        manifest["publication_policy"] = "open-archives-with-provider-display-v1"
+        manifest["current_provider"].update(
+            terms="https://www.football-data.org/client/register",
+            attribution="Football data provided by the Football-Data.org API",
+        )
     data.write_json(site / "data/manifest.json", manifest)
     event_manifest = validate_public(data.read_json(OUT / "events_manifest.json"))
     current = [validate_public(data.read_json(p)) for p in OUT.glob("current_*.json")]
@@ -127,6 +148,17 @@ def build():
         target = site / "data/workbench" / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(path, target)
+    for lid, provider in provider_snapshots.items():
+        history = []
+        for path in data.LIVE.glob(f"dashboard_{lid}_*.json"):
+            raw = validate_public(data.read_json(path))
+            history.extend(
+                {**m, "season": raw["season"]} for m in raw["matches"] if m["hg"] is not None
+            )
+        forecast_path = site / "data/workbench" / f"forecast_{lid}.json"
+        data.write_json(
+            forecast_path, upcoming_overlay(data.read_json(forecast_path), provider, history)
+        )
     shutil.copyfile(OPEN / "source_registry.json", site / "data/source_registry.json")
     shutil.copyfile(OPEN / "wyscout_sources.json", site / "data/wyscout_sources.json")
     shutil.copyfile(build_warehouse(), site / "data/football.sqlite")
