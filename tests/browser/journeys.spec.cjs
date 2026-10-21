@@ -123,7 +123,7 @@ test('Guided historical comparison and forecast explorer use actual archive exam
   await expect(page.locator('#content')).toHaveAttribute('aria-busy', 'false');
   await page.locator('#view-guide summary').click();
   await page.getByRole('button', { name: 'Compare two historical teams' }).click();
-  await expect(page.getByLabel('Season', { exact: true })).toHaveValue('2017-18');
+  await expect(page.locator('#season')).toHaveValue('2017-18');
   await expect(page.locator('.comparison-team .team-emblem')).toHaveCount(2);
   await page.goto('/#view=forecast&league=PD');
   await expect(page.locator('#content')).toHaveAttribute('aria-busy', 'false');
