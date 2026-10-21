@@ -131,5 +131,17 @@ test('Guided historical comparison and forecast explorer use actual archive exam
   await page.getByLabel('Historical fixture example').selectOption({ index: 1 });
   await page.getByText('Explore scorelines & model disagreement', { exact: true }).first().click();
   await expect(page.locator('.score-cells').first()).toBeVisible();
+  expect(
+    await page
+      .locator('.forecast-fixture > div:first-child')
+      .first()
+      .evaluate((el) => el.getBoundingClientRect().width),
+  ).toBeGreaterThan(200);
+  expect(
+    await page
+      .locator('.score-explorer')
+      .first()
+      .evaluate((el) => el.getBoundingClientRect().width),
+  ).toBeGreaterThan(500);
   await expect(page.locator('.replay-label')).toContainText('NOT A LIVE PREDICTION');
 });

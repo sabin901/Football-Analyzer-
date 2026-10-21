@@ -121,6 +121,12 @@ def build():
         "mode": "delayed" if provider_snapshots else "community",
         "refresh_minutes": 60,
     }
+    if provider_snapshots:
+        manifest["publication_policy"] = "open-archives-with-provider-display-v1"
+        manifest["current_provider"].update(
+            terms="https://www.football-data.org/client/register",
+            attribution="Football data provided by the Football-Data.org API",
+        )
     data.write_json(site / "data/manifest.json", manifest)
     event_manifest = validate_public(data.read_json(OUT / "events_manifest.json"))
     current = [validate_public(data.read_json(p)) for p in OUT.glob("current_*.json")]

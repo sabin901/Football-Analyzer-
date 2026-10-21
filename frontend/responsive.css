@@ -166,6 +166,17 @@ svg:not(.icon):not(.team-emblem):not(.touchline-art) {
 .model-disagreement span {
   display: block;
 }
+.forecast-fixture {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 1fr);
+}
+.forecast-fixture > * {
+  min-width: 0;
+}
+.forecast-distribution {
+  width: 100%;
+  min-width: 0;
+}
 @container (max-width: 960px) {
   .dashboard-grid,
   .method-grid,
