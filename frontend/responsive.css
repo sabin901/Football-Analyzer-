@@ -305,3 +305,15 @@ svg:not(.icon):not(.team-emblem):not(.touchline-art) {
   height: 27px;
   flex-basis: 23px;
 }
+
+.coverage-warning {
+  margin-top: 12px;
+  padding: 16px;
+  border: 1px solid currentColor;
+  border-left-width: 4px;
+  border-radius: 8px;
+}
+.coverage-warning p {
+  margin: 8px 0 12px;
+  max-width: 85ch;
+}
