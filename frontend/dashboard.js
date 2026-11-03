@@ -507,10 +507,7 @@ async function loadLeague(push = false) {
   const league = manifest.leagues.find((l) => l.id === leagueId) || manifest.leagues[0];
   leagueId = league.id;
   if (!league.seasons.some((s) => s.id === seasonId))
-    seasonId =
-      league.seasons.find((s) => s.id === manifest.current_season)?.id ||
-      league.seasons[0]?.id ||
-      '';
+    seasonId = preferredSeason(league, manifest.current_season);
   $('#league-tabs').innerHTML = manifest.leagues
     .map(
       (l) =>
@@ -559,12 +556,23 @@ async function loadLeague(push = false) {
     const oldFetch =
       seasonId === manifest.current_season &&
       Date.now() - Date.parse(data.fetched_at) > 36 * 3600000;
+    const resultAge = Math.floor((Date.now() - Date.parse(data.last_result)) / 86400000);
+    const staleResults = seasonId === manifest.current_season && resultAge >= 14;
     const warning =
-      overdue || oldFetch || data.refresh_ok === false || seasonId !== manifest.current_season;
+      staleResults ||
+      overdue ||
+      oldFetch ||
+      data.refresh_ok === false ||
+      seasonId !== manifest.current_season;
     $('#data-status').innerHTML =
-      `<span class="status-tag ${warning ? '' : 'good'}">${seasonId !== manifest.current_season ? 'HISTORICAL SNAPSHOT' : overdue ? 'PARTIAL RESULTS' : oldFetch ? 'STALE SNAPSHOT' : data.refresh_ok === false ? 'REFRESH FAILED' : 'CURRENT-SEASON SNAPSHOT'}</span> Latest recorded result <strong>${day(data.last_result)}</strong> <span aria-hidden="true">·</span> Fetched ${stamp(data.fetched_at)}${overdue ? ` <span aria-hidden="true">·</span> <strong>${overdue} past fixtures have no recorded result.</strong>` : ''}${data.refresh_ok === false ? ' · Last refresh failed; showing the last successful snapshot.' : ''}${oldFetch ? ' · Fetch is older than 36 hours.' : ''}`;
+      `<span class="status-tag ${warning ? '' : 'good'}">${seasonId !== manifest.current_season ? 'HISTORICAL SNAPSHOT' : staleResults ? 'RESULTS OUT OF DATE' : overdue ? 'PARTIAL RESULTS' : oldFetch ? 'STALE SNAPSHOT' : data.refresh_ok === false ? 'REFRESH FAILED' : 'CURRENT-SEASON SNAPSHOT'}</span> Latest recorded result <strong>${day(data.last_result)}</strong> <span aria-hidden="true">·</span> Fetched ${stamp(data.fetched_at)}${overdue ? ` <span aria-hidden="true">·</span> <strong>${overdue} past fixtures have no recorded result.</strong>` : ''}${data.refresh_ok === false ? ' · Last refresh failed; showing the last successful snapshot.' : ''}${oldFetch ? ' · Fetch is older than 36 hours.' : ''}`;
     $('#data-status').innerHTML +=
       `<br><a href="#view=coverage&league=${leagueId}&season=${seasonId}">${data.source_id === 'football_data_org' ? 'Delayed provider feed · ' + (data.quality?.standings?.status === 'matched' ? 'table reconciled within provider' : 'table reconciliation pending') : 'Computed table · community source · independent verification unavailable'}${data.quarantined?.length ? ' · ' + data.quarantined.length + ' quarantined rows' : ''}</a>`;
+    if (overdue || staleResults || data.quarantined?.length) {
+      const alternative = preferredSeason(league, manifest.current_season);
+      $('#data-status').innerHTML +=
+        `<div class="coverage-warning"><strong>${staleResults ? `Latest recorded result is ${resultAge} days old.` : 'This season has incomplete source coverage.'}</strong><p>Tables, form and comparisons use only recorded results. They must not be presented as official standings${seasonId === manifest.current_season ? ' or current team performance' : ''}. Refreshing the page cannot fill gaps in the source.</p>${alternative && alternative !== seasonId ? `<button class="secondary" data-archive-season="${esc(alternative)}">Explore ${esc(alternative.replace('-', '/'))} archive</button>` : ''}</div>`;
+    }
     $('#export').disabled = false;
     render();
   } catch (error) {
@@ -582,7 +590,7 @@ async function start() {
     manifest = await fetchJson('data/manifest.json');
     const params = new URLSearchParams(location.hash.slice(1));
     leagueId = params.get('league') || 'PL';
-    seasonId = params.get('season') || manifest.current_season;
+    seasonId = params.get('season') || '';
     view = titles[params.get('view')] ? params.get('view') : 'overview';
     render();
     await loadLeague();
@@ -605,6 +613,10 @@ document.addEventListener('click', (event) => {
   if (b.hasAttribute('data-refresh-publication')) {
     $('#release-update').hidden = true;
     $('#refresh').click();
+  }
+  if (b.dataset.archiveSeason) {
+    seasonId = b.dataset.archiveSeason;
+    loadLeague(true);
   }
   if (b.dataset.view) showView(b.dataset.view);
   if (b.dataset.league) {

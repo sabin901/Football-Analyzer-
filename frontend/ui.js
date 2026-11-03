@@ -76,3 +76,24 @@ function downloadFile(name, body, type = 'text/markdown;charset=utf-8') {
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+// Choose a usable archive for first-time visitors when current coverage has gaps.
+// Explicit season links are preserved by the caller; completeness is not verification.
+function preferredSeason(league, currentSeason) {
+  const usable = (s) => s.completed > 0 && s.overdue === 0 && s.quarantined === 0;
+  const current = league.seasons.find((s) => s.id === currentSeason);
+  if (
+    current &&
+    usable(current) &&
+    current.refresh_ok === true &&
+    Date.now() - Date.parse(current.fetched_at) < 36 * 3600000 &&
+    Date.now() - Date.parse(current.last_result) < 14 * 86400000
+  )
+    return current.id;
+  return (
+    league.seasons.find((s) => s.id !== currentSeason && usable(s))?.id ||
+    current?.id ||
+    league.seasons[0]?.id ||
+    ''
+  );
+}

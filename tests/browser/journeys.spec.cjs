@@ -145,3 +145,22 @@ test('Guided historical comparison and forecast explorer use actual archive exam
   ).toBeGreaterThan(500);
   await expect(page.locator('.replay-label')).toContainText('NOT A LIVE PREDICTION');
 });
+
+test('incomplete current seasons stay explicit and offer a usable archive', async ({ page }) => {
+  await page.route('**/data/PL_2026-27.json', async (route) => {
+    const response = await route.fetch();
+    const snapshot = await response.json();
+    snapshot.last_result = '2000-01-01';
+    await route.fulfill({ response, json: snapshot });
+  });
+  await page.goto('/#view=overview&league=PL&season=2026-27');
+  await expect(page.locator('#content')).toHaveAttribute('aria-busy', 'false');
+  await expect(page.locator('#season')).toHaveValue('2026-27');
+  await expect(page.locator('.coverage-warning')).toContainText(
+    'must not be presented as official standings',
+  );
+  await page.locator('[data-archive-season]').click();
+  await expect(page.locator('#content')).toHaveAttribute('aria-busy', 'false');
+  await expect(page.locator('#season')).not.toHaveValue('2026-27');
+  await expect(page.locator('#data-status')).toContainText('HISTORICAL SNAPSHOT');
+});
