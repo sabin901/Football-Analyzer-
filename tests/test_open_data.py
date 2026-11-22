@@ -9,13 +9,49 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 from open_policy import validate_public, provenance, WORKBENCH, RESULTS
 from open_events import point, progress
-from open_results import quality
+from open_results import quality, apply_competition_context
 from forecast_lab import publication_gate, losses, evaluate
 from forecast_benchmarks import Challengers
 from workbench_data import playing_position, aggregate_players
 
 
 class OpenDataTests(unittest.TestCase):
+    def test_curtailed_season_is_not_reported_as_missing_results(self):
+        raw = json.loads((RESULTS / "dashboard_FL1_2019-20.json").read_text())
+        raw.pop("competition_context", None)
+        for match in raw["matches"]:
+            match.pop("status", None)
+        original = copy.deepcopy(raw)
+        self.assertTrue(apply_competition_context(raw))
+        self.assertFalse(apply_competition_context(raw))
+        self.assertEqual(sum(m.get("status") == "cancelled" for m in raw["matches"]), 101)
+        self.assertEqual(quality(raw)["results"]["past_missing"], 0)
+        self.assertEqual(raw["fetched_at"], original["fetched_at"])
+        self.assertEqual(raw["source_sha256"], original["source_sha256"])
+        for before, after in zip(original["matches"], raw["matches"]):
+            for field in ("date", "home", "away", "hg", "ag"):
+                self.assertEqual(before[field], after[field])
+        incomplete = copy.deepcopy(original)
+        next(m for m in incomplete["matches"] if m["hg"] is not None)["hg"] = None
+        self.assertFalse(apply_competition_context(incomplete))
+        other = {**original, "league": "PL"}
+        self.assertFalse(apply_competition_context(other))
+
+    def test_quality_excludes_interrupted_fixtures_but_keeps_missing_results(self):
+        raw = json.loads((RESULTS / "dashboard_PL_2026-27.json").read_text())
+        raw["matches"] = [
+            {
+                "home": "A",
+                "away": "B",
+                "date": "2020-01-01",
+                "hg": None,
+                "ag": None,
+                "status": status,
+            }
+            for status in ("cancelled", "postponed", "abandoned", "scheduled")
+        ]
+        self.assertEqual(quality(raw)["results"]["past_missing"], 1)
+
     def test_license_gate_fails_closed(self):
         for value in [
             {},

@@ -17,10 +17,41 @@ from open_policy import RESULTS, OPEN, provenance, validate_public
 from data_quality import results_digest
 
 
+def apply_competition_context(snapshot):
+    """Annotate the curtailed French season without inventing scores or dates.
+
+    Keep the source fingerprint and acquisition time. This is a separately cited
+    competition decision, applied only to the known complete 279-result archive.
+    """
+    if (snapshot.get("league"), snapshot.get("season")) != ("FL1", "2019-20"):
+        return False
+    matches = snapshot["matches"]
+    played = [m for m in matches if m["hg"] is not None]
+    if len(matches) != 380 or len(played) != 279 or any(m["date"] > "2020-03-08" for m in played):
+        return False
+    context = {
+        "note": "The 2019/20 Ligue 1 season ended early after 279 matches. The 101 unplayed fixtures were cancelled, not missing results. This table shows match points, not the official points-per-game ranking.",
+        "source_url": "https://www.lfp.fr/assets/20200430_PV_Conseil_Administration_LFP_e824a457fa.pdf",
+        "decision_date": "2020-04-30",
+    }
+    changed = snapshot.get("competition_context") != context
+    snapshot["competition_context"] = context
+    for match in matches:
+        if match["hg"] is None and match["ag"] is None and match.get("status") != "cancelled":
+            match["status"] = "cancelled"
+            changed = True
+    return changed
+
+
 def quality(snapshot):
     today = datetime.now(timezone.utc).date().isoformat()
     past_missing = [
-        m for m in snapshot["matches"] if m.get("date") and m["date"] < today and m["hg"] is None
+        m
+        for m in snapshot["matches"]
+        if m.get("date")
+        and m["date"] < today
+        and m["hg"] is None
+        and m.get("status") not in {"abandoned", "postponed", "cancelled"}
     ]
     return {
         "schema_version": 2,
@@ -91,18 +122,30 @@ def fetch_one(league, season):
         "expected_fixtures": expected * (expected - 1),
         "raw_fixtures": len(raw["matches"]),
     }
+    apply_competition_context(result)
     validate_public(result)
+    report = quality(result)
     write_json(RESULTS / f"dashboard_{league['id']}_{season}.json", result)
-    write_json(RESULTS / f"quality_{league['id']}_{season}.json", quality(result))
+    write_json(RESULTS / f"quality_{league['id']}_{season}.json", report)
     return {
         "league": league["id"],
         "season": season,
         "results": sum(m["hg"] is not None for m in matches),
         "quarantined": len(rejected),
+        "past_missing": report["results"]["past_missing"],
+        "last_result": max((m["date"] for m in matches if m["hg"] is not None), default=None),
     }
 
 
 def sync(archive=False):
+    # Restored snapshots may predate this documented status annotation. Migrate
+    # that archive once without pretending it was fetched again today.
+    path = RESULTS / "dashboard_FL1_2019-20.json"
+    archived = read_json(path)
+    if archived and apply_competition_context(archived):
+        validate_public(archived)
+        write_json(path, archived)
+        write_json(RESULTS / "quality_FL1_2019-20.json", quality(archived))
     seasons = (
         [f"{y}-{str(y+1)[-2:]}" for y in range(2010, int(current_season()[:4]) + 1)]
         if archive
@@ -126,6 +169,15 @@ def sync(archive=False):
             if error and season == current_season():
                 failures.append(key)
             print(result or f"{key}: unavailable ({error})", flush=True)
+            if (
+                result
+                and season == current_season()
+                and (result["past_missing"] or result["quarantined"])
+            ):
+                print(
+                    f"::warning::{key}: fetch succeeded, but {result['past_missing']} past fixtures have no result and {result['quarantined']} rows are quarantined. Latest recorded result: {result['last_result'] or 'none'}. A successful fetch is not complete coverage.",
+                    flush=True,
+                )
     write_json(RESULTS / "dashboard_sync.json", status)
     write_json(
         OPEN / "source_registry.json",
