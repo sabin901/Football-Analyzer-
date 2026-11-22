@@ -309,7 +309,7 @@ function matchesView() {
             ['results', 'Recorded results'],
             ['upcoming', 'Upcoming schedule'],
             ['missing', 'Missing past results'],
-            ['interrupted', 'Postponed / abandoned'],
+            ['interrupted', 'Postponed / abandoned / cancelled'],
             ['all', 'Full schedule'],
           ]
             .map(
@@ -568,6 +568,10 @@ async function loadLeague(push = false) {
       `<span class="status-tag ${warning ? '' : 'good'}">${seasonId !== manifest.current_season ? 'HISTORICAL SNAPSHOT' : staleResults ? 'RESULTS OUT OF DATE' : overdue ? 'PARTIAL RESULTS' : oldFetch ? 'STALE SNAPSHOT' : data.refresh_ok === false ? 'REFRESH FAILED' : 'CURRENT-SEASON SNAPSHOT'}</span> Latest recorded result <strong>${day(data.last_result)}</strong> <span aria-hidden="true">·</span> Fetched ${stamp(data.fetched_at)}${overdue ? ` <span aria-hidden="true">·</span> <strong>${overdue} past fixtures have no recorded result.</strong>` : ''}${data.refresh_ok === false ? ' · Last refresh failed; showing the last successful snapshot.' : ''}${oldFetch ? ' · Fetch is older than 36 hours.' : ''}`;
     $('#data-status').innerHTML +=
       `<br><a href="#view=coverage&league=${leagueId}&season=${seasonId}">${data.source_id === 'football_data_org' ? 'Delayed provider feed · ' + (data.quality?.standings?.status === 'matched' ? 'table reconciled within provider' : 'table reconciliation pending') : 'Computed table · community source · independent verification unavailable'}${data.quarantined?.length ? ' · ' + data.quarantined.length + ' quarantined rows' : ''}</a>`;
+    if (data.competition_context) {
+      $('#data-status').innerHTML +=
+        `<p>${esc(data.competition_context.note)} <a href="${esc(data.competition_context.source_url)}">Competition decision</a></p>`;
+    }
     if (overdue || staleResults || data.quarantined?.length) {
       const alternative = preferredSeason(league, manifest.current_season);
       $('#data-status').innerHTML +=

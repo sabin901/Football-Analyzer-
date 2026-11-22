@@ -1,4 +1,18 @@
 const { test, expect } = require('@playwright/test');
+
+test('Curtailed Ligue 1 season separates cancellations from missing results', async ({ page }) => {
+  await page.goto('/#view=matches&league=FL1&season=2019-20');
+  await expect(page.locator('#content')).toHaveAttribute('aria-busy', 'false');
+  await expect(page.locator('#data-status')).toContainText('101 unplayed fixtures were cancelled');
+  await expect(page.locator('#data-status')).not.toContainText(
+    'past fixtures have no recorded result',
+  );
+  await page.getByRole('combobox', { name: 'Match status' }).selectOption('missing');
+  await expect(page.locator('#content')).toContainText('0 matches');
+  await page.getByRole('combobox', { name: 'Match status' }).selectOption('interrupted');
+  await expect(page.locator('#content')).toContainText('101 matches');
+  await expect(page.locator('#content')).toContainText('Cancelled');
+});
 test('Every public view renders without JavaScript errors or missing assets', async ({ page }) => {
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));

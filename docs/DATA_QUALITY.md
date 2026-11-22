@@ -10,6 +10,10 @@ The free community source can lag. The latest recorded result date and missing p
 
 Official standings are not independently verified. Tables show computed match points, without claiming official disciplinary deductions or competition tie-break rules. The 2019/20 Premier League source contains out-of-season dates; rejected rows remain visible in the quarantine report rather than being silently repaired from a restricted feed.
 
+The 2019/20 Ligue 1 season was ended early by the [LFP decision of 30 April 2020](https://www.lfp.fr/assets/20200430_PV_Conseil_Administration_LFP_e824a457fa.pdf). For the archive containing 279 recorded matches, the remaining 101 fixtures are annotated as cancelled, rather than missing results. This documented annotation preserves source scores, dates, fingerprint and acquisition time. The displayed table remains a calculation of match points, not the official points per game ranking. Cancelled, postponed and abandoned fixtures are excluded from missing-result counts.
+
+Refresh logs warn when a successful current-season fetch still contains missing past results or quarantined rows. Download success and data completeness are separate checks; publication retains the visible coverage warnings and forecast gate.
+
 ## Event checks
 
 Archive files are pinned by checksum; their Figshare records must retain the approved license. Match and event IDs, team membership, unique events, finite coordinate ranges and heatmap mass are validated. Event IDs are retained in shot tables. Grid counts must sum exactly to the number of located events; player transfers remain separate records.
